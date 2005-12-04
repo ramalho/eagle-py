@@ -1,0 +1,5 @@
+recursive-include tests *.py *.png *.jpg
+include MANIFEST.in
+include AUTHORS
+include COPYING
+include README

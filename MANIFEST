@@ -1,0 +1,8 @@
+AUTHORS
+COPYING
+MANIFEST.in
+README
+eagle.py
+setup.py
+tests/showroom.py
+tests/test.png

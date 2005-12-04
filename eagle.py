@@ -16,10 +16,43 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+# Changed: $LastChangedBy$ at $LastChangedDate$
+
 __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
+__url__ = "http://code.gustavobarbieri.com.br/eagle/"
+__version__ = "0.1"
+__revision__ = "$Rev$"
+__description__ = """\
+Eagle is an abstraction layer atop Graphical Toolkits focused on
+making simple applications easy to build while powerful in features.
+"""
+__long_description__ = """\
+Eagle is an abstraction layer atop Graphical Toolkits focused on
+making simple applications easy to build while powerful in features.
 
+With Eagle you have many facilities to build application that needs
+just some buttons, user input and a canvas to draw.
+
+Canvas is really simple, what makes Eagle a great solution to 
+Computer Graphics and Image Processing software, the primary focus
+of this library.
+
+User input widgets are persistent, you just need to mark them
+"persistent" or put them in the preferences area.
+
+Eagle is not meant to be another Graphical Toolkit, you already
+have a bunch of them, like Qt, Gtk, wxWidgets (to name just a few).
+It's focused on applications that have few windows, with buttons,
+simple user input and canvas. Widgets are laid out automatically
+in 5 areas: left, right, top, bottom and center.
+
+It provides useful widgets like: Color selector, Font selector,
+Quit button, Preferences button and bialog, About dialog and Help
+dialog.
+"""
+__doc__ = __long_description__
 
 __all__ = [
     "run", "quit", "get_value", "set_value",
