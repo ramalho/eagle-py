@@ -2,44 +2,44 @@
 
 from eagle import *
 
-def update( app_id, widget_id ):
-    print "update called from: ", widget_id
-    print "rot_hor:", get_value( "rot_hor", app_id )
-    print "color:", get_value( "color", app_id )
-    print "pizza:", get_value( "pizza", app_id )
+def update( app, widget ):
+    print "update called from: ", widget.id
+    print "rot_hor:", get_value( "rot_hor", app )
+    print "color:", app[ "color" ]
+    print "pizza:", app[ "pizza" ]
 
-    print "active?", get_value( "active", app_id )
-    print "something:", get_value( "name", app_id )
+    print "active?", get_value( "active", app )
+    print "something:", get_value( "name", app )
 
-    set_value( "rot_hor", -10, app_id )
-    set_value(  "pizza", "Marguerita", app_id )
-    set_value( "color", "#00ff00", app_id )
+    set_value( "rot_hor", -10, app )
+    app[ "pizza" ] = "Marguerita"
+    app[ "color" ] = "#00ff00"
 
     if update.hidden:
-        show( "color", app_id )
-        set_active( "group", True, app_id )
+        show( "color", app )
+        set_active( "group", True, app )
     else:
-        hide( "color", app_id )
-        set_inactive( "group", app_id )
+        hide( "color", app )
+        set_inactive( "group", app )
 
     update.hidden = not update.hidden
 
 
     i = Image( filename="test.png" )
-    canvas = get_widget_by_id( "canvas", app_id )
+    canvas = get_widget_by_id( "canvas", app )
     canvas.draw_image( i )
 # update()
 update.hidden=False
 
 
-def changed( app_id, widget_id, value ):
-    print app_id, widget_id, "changed to", value
+def changed( app, widget, value ):
+    print app.id, widget.id, "changed to", value
 # changed()
 
 
-def mouse_callback( app_id, widget_id, button, x, y ):
-    color = get_widget_by_id( "color", app_id ).get_value()
-    canvas = get_widget_by_id( widget_id, app_id )
+def mouse_callback( app, widget, button, x, y ):
+    color = app[ "color" ]
+    canvas = app[ "canvas" ]
     if mouse_callback.last_point is not None:
         x0, y0 = mouse_callback.last_point
         canvas.draw_line( x0, y0, x, y, color=color )
@@ -48,8 +48,8 @@ def mouse_callback( app_id, widget_id, button, x, y ):
 mouse_callback.last_point = None
 
 
-def file_choose( app_id, widget_id, filename ):
-    print app_id, widget_id, filename
+def file_choose( app, widget, filename ):
+    print app.id, widget.id, filename
 # file_choose()
 
 

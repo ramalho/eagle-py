@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- -*- coding: utf-8 -*- -->
+<!-- -*- mode: auto-fill -*- -->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Eagle Documentation</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+h1 {
+   font-family: sans-serif;
+   border-bottom: 2px black solid;
+}
+
+code {
+   font-family: monospace;
+   font-weight: bold;
+}
+
+code.listing {
+   display: block;
+   border: 1px solid #666666;
+   padding: 5px 5px 5px 5px;
+   background: #e9e9e9;
+   color: black;
+}
+
+code.comment {
+   font-style: italic;
+   font-family: serif;
+   font-weight: normal;
+   color: #666666;
+   background: inherit;
+   display: block;
+}
+
+code.class {
+   color: #0000aa;
+   background: inherit;
+}
+
+code.function {
+   color: #aa0000;
+   background: inherit;
+}
+
+code.optional {
+   font-style: italic;
+   color: #666666;
+}
+
+code.var {
+   color: #336600;
+   background: inherit;
+}
+
+code.bool {
+   color: #006666;
+   background: inherit;
+}
+
+code.string {
+   color: #aa00aa;
+   background: inherit;
+}
+
+code.optional:before {
+   content: "[";
+}
+
+code.optional:after {
+   content: "]";
+}
+
+div.text {
+   width: 90%;
+   text-align: justify;
+   margin-left: 10px;
+}
+
+div.img {
+   margin: 2px;
+   cursor: pointer;
+}
+
+div.img p:before {
+   content: "Figura: ";
+   font-weight: bold;
+}
+
+div.img p {
+   text-indent: 0;
+   margin: 0px;
+   padding: 0px;
+   width: 100%;
+}
+
+
+body, p {
+   font-family: georgia, times, serif;
+}
+
+    </style>
+    <script type="text/javascript">
+<!--
+      var browser = null;
+      function whichBrowser() {
+         an = navigator.appName;
+	 prod = navigator.product;
+         if ( an.indexOf( "Microsoft" ) >= 0 )
+	 {  return "ie"; }
+	 else if ( ( prod == "Gecko" ) || ( an.indexOf( "Netscape" ) >= 0 ) )
+	 { return "mozilla"; }
+	 else if ( an.indexOf( "Konqueror" ) >= 0 )
+	 { return "konqueror"; }
+	 else { return "unknow"; }
+      }
+      browser = whichBrowser();
+
+      if ( document.getElementById ) {
+
+
+         function getElement( e ) {
+	    return document.getElementById( e )
+	 }
+
+
+         function getStyle( e ) {
+	    return getElement( e ).style;
+         }
+
+
+	 function hide( e ) {
+	    getStyle( e ).display="none";
+	 }
+
+
+	 function unhide( e ) {
+	    getStyle( e ).display="block";
+	 }
+
+
+	 function setOpacity( e, v ) {
+	    v = parseFloat( v );
+	    if ( browser == "mozilla" ) {
+	       getStyle( e ).opacity = v;
+            } else if ( browser == "konqueror" ) {
+	       getStyle( e ).KhtmlOpacity = v;
+	    } else if ( browser == "ie" ) {
+               getElement( e ).filters.alpha.opacity = parseInt( v * 100 );
+	    }
+	 }
+
+
+         function toggleFontStyle( e ) {
+	    s = getStyle( e );
+	    if ( s.fontStyle != "italic" ) {
+	       s.fontStyle = "italic";
+	    } else {
+	       s.fontStyle = "normal";
+	    }
+	 }
+
+         function toggleFontWeight( e ) {
+	    s = getStyle( e );
+	    if ( s.fontWeight != "bold" ) {
+	       s.fontWeight = "bold";
+	    } else {
+	       s.fontWeight = "normal";
+	    }
+	 }
+
+	 function toggleBorder( e ) {
+	   s = getStyle( e );
+	   if ( s.borderStyle.indexOf( "dotted" ) < 0 ) {
+	      s.borderStyle = "dotted";
+	      s.borderWidth = "1px";
+	   } else {
+	      s.borderStyle = "none";
+	      s.borderWidth = "1px";
+	   }
+	 }
+
+	 function fadeOut( e, v ) {
+	    if ( v == undefined ) v = 1.0;
+	    v = parseFloat( v ) - 0.2
+	    setOpacity( e, v );
+	    if ( v > 0 ) {
+               setTimeout( 'fadeOut( "' + e + '", ' + v + ' ) ', 30 );
+	    } else {
+	       hide( e );
+	    }
+	 }
+
+	 function fadeIn( e, v ) {
+	    if ( v == undefined ) v = 0.0;
+	    v = parseFloat( v ) + 0.2
+	    setOpacity( e, v );
+	    if ( v < 1.0 ) {
+               setTimeout( 'fadeIn( "' + e + '", ' + v + ' ) ', 30 );
+	    }
+	 }
+
+
+	 function toggle( e ) {
+	    if ( getStyle( e ).display != "none" )
+	    {
+               fadeOut( e );
+	    }
+	    else {
+               unhide( e );
+	       fadeIn( e );
+	    }
+	 }
+
+
+	 function hToggle( h ) {
+	   toggleFontStyle( "h-" + h );
+	   toggle( h );
+	 }
+
+
+         function imgToggle( img ) {
+	   toggleFontStyle( "caption-" + img );
+	   toggleFontWeight( "caption-" + img );
+	   toggle( "img-" + img );
+	   toggleBorder( "div-" + img );
+	 }
+
+      } else {
+
+
+
+         function showoff() {
+	    window.alert( "Your browser (" + navigator.appName +
+     	                  ") doesn't support getElementById()!" );
+	    return true;
+	 }
+	 function hide( e ) {
+	    showoff();
+	 }
+	 function show( e ) {
+	    showoff();
+	 }
+	 function setOpacity( e, v ) {
+	    showoff();
+	 }
+	 function imgToggle( e ) {
+	    showoff();
+	 }
+
+      }
+-->
+    </script>
+  </head>
+  <body>
+
+    <h1 id="intro-head">Eagle Introduction</h1>
+
+    <div id="intro" class="text">
+      <p>
+	Eagle is an abstraction layer atop Graphical Toolkits to make
+	<abbr title="Graphical User Interface">GUI</abbr>
+	programming as easy as possible. Eagle reaches this by
+	narrowing what's possible to do and providing high level
+	components with easy to use <abbr title="Application Program
+	Interface">API</abbr>.
+      </p>
+
+      <p>
+	Eagle doesn't enable you to create every kind of GUI, it
+	provides resources to create windows with 5 areas (left,
+	right, top, bottom and center), each one provides automatic
+	scrollbars and lay out components in a sensible way: left,
+	right and center provides vertical scrollbars and vertical
+	layout, while top and bottom uses horizontal. Eagle calls each
+	window an application (<code class="class">App</code>).
+      </p>
+
+      <p>
+	Each <code class="class">App</code> provides a preferences
+	window, a window that is modal to the application window and
+	will save and restore its components values automatically
+	together with other <code class="class">App</code> persistent
+	components.
+      </p>
+
+      <p>
+	Every component have an identification name (id) and can be
+	reach by this, so you can avoid global variables to access
+	components. Each id have the scope of the application it's
+	inside and thus one component can be in just one <code
+	class="class">App</code>. You may access components instances
+	with <code><code class="function">get_widget_by_id</code>(
+	<code class="var">id</code><code class="optional">, <code
+	class="var">app_id</code></code> )</code>, <code
+	class="var">app_id</code> may be omitted, the first declared
+	application will be used, this is useful when you have just
+	one, since you can save some typing. Some components may not
+	receive an id (<code class="class">App</code>, customized
+	buttons like <code class="class">CloseButton</code>) since you
+	usually will not use they name directly (probably they already
+	do everything, like <code class="class">QuitButton</code> that
+	quits program), these will be named sequentially. Every widget
+	can be accessed using Python's dict syntax.
+      </p>
+
+      <p>
+	Every input component can be persisted, that is, its contents
+	will be saved to a file after they changed and will be loaded
+	from this file automatically when the application
+	starts. Components that are in <code class="class">App</code>
+	preferences will be marked persistent automatically, other
+	components should be marked with the parameter <code><code
+	class="var">persistent</code>=<code
+	class="bool">True</code></code>.
+      </p>
+
+      <p>
+	Every input or output component have a common API to set/get
+	value, you may use the <code><code
+	class="function">set_value</code>( <code
+	class="var">new_value</code> )</code> or <code><code
+	class="function">get_value</code>()</code> methods if you
+	like Object Oriented Programming or you may use <code><code
+	class="function">set_value</code>( <code
+	class="var">component_id</code>, <code
+	class="var">new_value</code><code class="optional"><code
+	class="var">, app_id</code></code> )</code> or <code><code
+	class="function">get_value</code>( <code
+	class="var">component_id</code><code class="optional">, <code
+	class="var">app_id</code></code> )</code> if you don't. Eagle
+	has special support for input and output components if using the
+	dict-like syntax: it already does <code
+	class="function">set_value</code> or <code
+	class="function">get_value</code> as appropriated:
+      </p>
+
+      <code class="listing">
+<code class="comment"># It's easier to write</code>
+<code class="var">value</code> = <code class="var">my_app</code>[
+<code class="string">"my_widget"</code> ]<br />
+<code class="var">my_app</code>[ <code
+class="string">"my_widget"</code> ] = <code class="var">value</code><br />
+
+<br />
+<code class="comment"># instead of</code>
+<code class="var">my_widget</code> = <code
+class="function">get_widget_by_id</code>( <code
+class="var">my_app</code>, <code class="string">"my_widget"</code>
+)<br />
+<code class="var">value</code> = <code
+class="var">my_widget</code>.<code
+class="function">get_value</code>()<br />
+<code class="var">my_widget</code>.<code
+class="function">set_value</code>( <code class="var">value</code> )
+<br />
+      </code>
+
+      <p>
+	Input and Buttons components provide a callback to notify some
+	action. Input calls back the provided function with <code
+	class="var">app_id</code>, <code
+	class="var">component_id</code> and value as parameters when
+	they contents changed, while buttons calls back when with
+	<code class="var">app_id</code> and <code
+	class="var">component_id</code> when clicked. Eagle, different
+	from toolkits like GTK, Qt, Tk and others doesn't provide
+	various callbacks for the same component, like double-clicked
+	or mouse-over, just the callback that makes more sense. This
+	makes programming much easier and GUI more consistent
+	usability-wise. There is, however, one exception: <code
+	class="class">App</code>, it provides 2 callbacks: one to
+	notify that data changed (if you use the same callback to
+	handle every input component, you may use this and avoid some
+	typing!) and other that is called before the <code
+	class="class">App</code> closes.
+      </p>
+
+      <div class="img" id="div-showroom"
+	   onclick="imgToggle( 'showroom' )">
+	<img src="images/showroom.png"
+	     id="img-showroom"
+	     alt="Eagle show room" />
+	<p id="caption-showroom">Eagle show room.</p>
+      </div>
+
+    </div>
+
+  </body>
+</html>

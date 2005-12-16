@@ -35,7 +35,7 @@ making simple applications easy to build while powerful in features.
 With Eagle you have many facilities to build application that needs
 just some buttons, user input and a canvas to draw.
 
-Canvas is really simple, what makes Eagle a great solution to 
+Canvas is really simple, what makes Eagle a great solution to
 Computer Graphics and Image Processing software, the primary focus
 of this library.
 
@@ -81,9 +81,10 @@ import pygtk
 pygtk.require( "2.0" )
 import gtk
 import pango
+import gobject
 import cPickle as pickle
 
-required_gtk = ( 2, 4, 0 )
+required_gtk = ( 2, 6, 0 )
 m = gtk.check_version( *required_gtk )
 if m:
     raise SystemExit(
@@ -350,7 +351,28 @@ class AutoGenId( object ):
 
 
 class Image( _EGObject, AutoGenId ):
+    """
+    An image that can be loaded from files or binary data and saved to files.
+    """
+
     def __init__( self, **kargs ):
+        """Image constructor.
+
+        Images can be constructed in 2 ways using keyword arguments:
+         - from files, in this case you give it B{filename} keyword:
+
+              >>> Image( filename='myfile.png' )
+
+         - from raw data, in this case you need to provide at least
+           B{data}, B{width} and B{height} as arguments. Optional
+           arguments are I{depth}, I{has_alpha} and I{row_stride}.
+           See L{load_data()} for more information:
+
+              >>> Image( data=data, width=200, height=200, depth=32, has_alpha=False )
+
+        @see: L{load_data()}
+        @see: L{load_file()}
+        """
         _EGObject.__init__( self, self.__get_id__() )
 
         self._img = None
@@ -374,7 +396,7 @@ class Image( _EGObject, AutoGenId ):
                 self._img = kargs[ "__int_image__" ]
             else:
                 raise ValueError( "Wrong internal image given!" )
-        else:
+        elif len( kargs ) > 0:
             params = [ "%s=%r" % kv for kv in kargs.iteritems() ]
             raise ValueError( "Unknow parameters: %s" % params )
     # __init__()
@@ -391,6 +413,17 @@ class Image( _EGObject, AutoGenId ):
 
 
     def save( self, filename, format=None, **options ):
+        """Save image to a file.
+
+        If format is not specified, it will be guessed from filename.
+
+        Format may be an extension or a mime type, see
+        L{get_writable_formats()}.
+
+        @see: L{get_writable_formats()}.
+        @raise Exception: if errors happened during write
+        @raise ValueError: if format is unsupported
+        """
         if isinstance( filename, ( tuple, list ) ):
             filename = os.path.join( *filename )
 
@@ -416,11 +449,25 @@ class Image( _EGObject, AutoGenId ):
 
 
     def get_formats( self ):
+        """Get supported image format information.
+
+        @return: list of dicts with keys:
+         - B{name}: format name
+         - B{description}: format description
+         - B{extensions}: extensions that match format
+         - B{mime_types}: mime types that match format
+         - B{is_writable}: if it is possible to write in this format, otherwise
+           it's just readable
+        """
         return gtk.gdk.pixbuf_get_formats()
     # get_formats()
 
 
     def get_writable_formats( self ):
+        """Get formats that support saving/writing.
+
+        @see: L{get_formats()}
+        """
         k = []
         for f in self.get_formats():
             if f[ "is_writable" ]:
@@ -434,6 +481,10 @@ class Image( _EGObject, AutoGenId ):
 
         filename may be a string or a tuple/list with path elements,
         this helps your program to stay portable across different platforms.
+
+           >>> i = Image()
+           >>> i.load_file( 'img.png' )
+           >>> i.load_file( ( 'test', 'img.png' ) )
         """
         if isinstance( filename, ( tuple, list ) ):
             filename = os.path.join( *filename )
@@ -449,11 +500,15 @@ class Image( _EGObject, AutoGenId ):
                    depth=24, has_alpha=None, rowstride=None ):
         """Load image from raw data.
 
-        If no value is provided as has_alpha, then it's set to False if
-        depth is less or equal 24 or set to True if depth is 32.
+        If no value is provided as B{has_alpha}, then it's set to C{False}
+        if B{depth} is less or equal 24 or set to C{True} if depth is 32.
 
-        If no value is provided as rowstride, then it's set to
-        width * depth / bits_per_sample.
+        If no value is provided as B{rowstride}, then it's set to
+        M{width * depth / bits_per_sample}.
+
+           >>> i = Image()
+           >>> i.load_data( my_data1, 800, 600, depth=32, has_alpha=False )
+           >>> i.load_data( my_data2, 400, 300, depth=24 )
         """
         colorspace = gtk.gdk.COLORSPACE_RGB
         bits_per_sample = 8
@@ -491,14 +546,51 @@ class Image( _EGObject, AutoGenId ):
     # load_data()
 
 
+    def get_data( self ):
+        """Return raw data and information about this image.
+
+        @return: a tuple of:
+         - width
+         - height
+         - depth
+         - has alpha?
+         - rowstride
+         - raw pixel data
+        """
+        return ( self.get_width(), self.get_height(), self.get_depth(),
+                 self.has_alpha(), self.get_rowstride(),
+                 self._img.get_pixels() )
+    # get_data()
+
+    def get_width( self ):
+        return self._img.get_width()
+    # get_width()
+
+
+    def get_height( self ):
+        return self._img.get_height()
+    # get_height()
+
+
+    def get_size( self ):
+        return ( self.get_width(), self.get_height() )
+    # get_size()
+
+
+    def get_rowstride( self ):
+        return self._img.get_rowstride()
+    # get_rowstride()
+
+
     def get_n_channels( self ):
         return self._img.get_n_channels()
     # get_n_channels()
 
 
-    def get_bytes_per_pixel( self ):
+    def get_bits_per_pixel( self ):
         return self.get_n_channels() * self._img.get_bits_per_sample()
-    # get_bytes_per_pixel()
+    # get_bits_per_pixel()
+    get_depth = get_bits_per_pixel
 
 
     def has_alpha( self ):
@@ -510,8 +602,6 @@ class Image( _EGObject, AutoGenId ):
 
 class _EGWidget( _EGObject ):
     app = _gen_ro_property( "app" )
-    persistent = False
-    can_persist = False
 
     def __init__( self, id, persistent, app=None ):
         _EGObject.__init__( self, id )
@@ -554,17 +644,20 @@ class _EGWidget( _EGObject ):
         for w in self.get_widgets():
             w.hide()
     # hide()
+# _EGWidget
 
 
-    def set_value( self, value ):
-        raise NotImplementedError
-    # set_value()
-
+class _EGDataWidget( _EGWidget ):
+    persistent = False
 
     def get_value( self ):
         raise NotImplementedError
     # get_value()
-# _EGWidget
+
+    def set_value( self, value ):
+        raise NotImplementedError
+    # set_value()
+# _EGDataWidget
 
 
 class AboutDialog( _EGWidget ):
@@ -892,7 +985,7 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
 
     def __add_widgets_to_app__( self ):
         for w in self.children:
-            if w.can_persist:
+            if isinstance( w, _EGDataWidget ):
                 w.persistent = True
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
@@ -1094,7 +1187,7 @@ class DebugDialog( _EGObject ):
 sys.excepthook = DebugDialog.except_hook
 
 
-class _EGWidLabelEntry( _EGWidget ):
+class _EGWidLabelEntry( _EGDataWidget ):
     """Widget that holds a label and an associated Entry.
 
     You must setup an instance attribute _entry before using it, since
@@ -1102,7 +1195,6 @@ class _EGWidLabelEntry( _EGWidget ):
     get_widgets()
     """
     label = _gen_ro_property( "label" )
-    can_persist = True
 
     def __init__( self, id, persistent, label="" ):
         _EGWidget.__init__( self, id, persistent )
@@ -1176,8 +1268,32 @@ class App( _EGObject, AutoGenId ):
     # __init__()
 
 
+    def __getitem__( self, name ):
+        w = self.get_widget_by_id( name )
+        if isinstance( w, _EGDataWidget ):
+            return w.get_value()
+        else:
+            return w
+    # __getitem__()
+
+
+    def __setitem__( self, name, value ):
+        w = self.get_widget_by_id( name )
+        if isinstance( w, _EGDataWidget ):
+            return w.set_value( value )
+        else:
+            raise TypeError(
+                "Could not set value of widget '%s' of type '%s'." % \
+                ( name, type( w ).__name__ ) )
+    # __setitem__()
+
+
     def get_widget_by_id( self, widget_id ):
-        return self._widgets.get( widget_id, None )
+        if isinstance( widget_id, _EGWidget ) and \
+           widget_id in self._widgets.itervalues():
+            return widget_id
+        else:
+            return self._widgets.get( widget_id, None )
     # get_widget_by_id()
 
 
@@ -1339,17 +1455,17 @@ class App( _EGObject, AutoGenId ):
     # __setup_connections__()
 
 
-    def data_changed( self, widget_id, value ):
+    def data_changed( self, widget, value ):
         self.save()
         for c in self.data_changed_callback:
-            c( self.id, widget_id, value )
+            c( self, widget, value )
     # data_changed()
 
 
     def __delete_event__( self, *args ):
         self.save()
         for c in self.quit_callback:
-            c( self.id )
+            c( self )
 
         del _apps[ self.id ]
         if not _apps:
@@ -1493,7 +1609,7 @@ class Canvas( _EGWidget ):
         def button_press_event( widget, event ):
             if self._pixmap != None:
                 for c in self._callback:
-                    c( self.app.id, self.id, event.button,
+                    c( self.app, self, event.button,
                        int( event.x ), int( event.y ) )
             return True
         # button_press_event()
@@ -1510,7 +1626,7 @@ class Canvas( _EGWidget ):
 
             if state & gtk.gdk.BUTTON1_MASK and self._pixmap != None:
                 for c in self._callback:
-                    c( self.app.id, self.id, 1, x, y )
+                    c( self.app, self, 1, x, y )
 
             return True
         # motion_notify_event()
@@ -1869,9 +1985,9 @@ class Entry( _EGWidLabelEntry ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._entry.connect( "changed", callback )
     # __setup_connections__()
@@ -1954,9 +2070,9 @@ class Spin( _EGWidLabelEntry ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._entry.connect( "value-changed", callback )
     # __setup_connections__()
@@ -2052,9 +2168,9 @@ class Color( _EGWidLabelEntry ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._entry.connect( "color-set", callback )
     # __setup_connections__()
@@ -2099,9 +2215,9 @@ class Font( _EGWidLabelEntry ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._entry.connect( "font-set", callback )
     # __setup_connections__()
@@ -2148,9 +2264,9 @@ class Selection( _EGWidLabelEntry ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._entry.connect( "changed", callback )
     # __setup_connections__()
@@ -2171,7 +2287,6 @@ class Selection( _EGWidLabelEntry ):
 
 class Progress( _EGWidLabelEntry ):
     value = _gen_ro_property( "value" )
-    can_persist = False
 
     def __init__( self, id, label="", value=0.0 ):
         self.value = value
@@ -2208,9 +2323,8 @@ class Progress( _EGWidLabelEntry ):
 # Progress
 
 
-class CheckBox( _EGWidget ):
+class CheckBox( _EGDataWidget ):
     state = _gen_ro_property( "state" )
-    can_persist = True
 
     def __init__( self, id, label="", state=False, callback=None,
                   persistent=False ):
@@ -2236,9 +2350,9 @@ class CheckBox( _EGWidget ):
     def __setup_connections__( self ):
         def callback( obj ):
             v = self.get_value()
-            self.app.data_changed( self.id, v )
+            self.app.data_changed( self, v )
             for c in self.callback:
-                c( self.app.id, self.id, v )
+                c( self.app, self, v )
         # callback()
         self._wid.connect( "toggled", callback )
     # __setup_connections__()
@@ -2372,7 +2486,7 @@ class Button( _EGWidget ):
     def __setup_connections__( self ):
         def callback( obj ):
             for c in self.callback:
-                c( self.app.id, self.id )
+                c( self.app, self )
         # callback()
         self._button.connect( "clicked", callback )
     # __setup_connections__()
@@ -2431,7 +2545,7 @@ class OpenFileButton( Button, AutoGenId ):
             f = self.app.file_chooser( FileChooser.ACTION_OPEN,
                                        filter=filter, multiple=multiple )
             if f is not None and callback:
-                callback( self.app.id, self.id, f )
+                callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="open", callback=c )
@@ -2444,7 +2558,7 @@ class SelectFolderButton( Button, AutoGenId ):
         def c( app_id, wid_id ):
             f = self.app.file_chooser( FileChooser.ACTION_SELECT_FOLDER )
             if f is not None and callback:
-                callback( self.app.id, self.id, f )
+                callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="open", callback=c )
@@ -2460,7 +2574,7 @@ class SaveFileButton( Button, AutoGenId ):
                                        filename=filename,
                                        filter=filter )
             if f is not None and callback:
-                callback( self.app.id, self.id, f )
+                callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="save", callback=c )
@@ -2551,22 +2665,22 @@ def get_app_by_id( app_id ):
             return _apps.values()[ 0 ]
         except IndexError, e:
             raise ValueError( "No application defined!" )
-    else:
+    elif isinstance( app_id, ( str, unicode ) ):
         try:
             return _apps[ app_id ]
         except KeyError, e:
             raise ValueError( "Application id \"%s\" doesn't exists!" % \
                               app_id )
+    elif isinstance( app_id, App ):
+        return app_id
+    else:
+        raise ValueError( "app_id must be string or App instance!" )
 # get_app_by_id()
 
 
 def get_widget_by_id( widget_id, app_id=None ):
-    if app_id is None or isinstance( app_id, ( str, unicode) ):
-        app = get_app_by_id( app_id )
-    elif isinstance( app_id, App ):
-        app = app_id
-    else:
-        raise ValueError( "app_id must be string or App instance!" )
+    app = get_app_by_id( app_id )
+
     if app:
         w = app.get_widget_by_id( widget_id )
         if not w:
