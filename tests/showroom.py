@@ -2,35 +2,46 @@
 
 from eagle import *
 
-def update( app, widget ):
-    print "update called from: ", widget.id
+def print_data( app, button ):
     print "rot_hor:", get_value( "rot_hor", app )
     print "color:", app[ "color" ]
     print "pizza:", app[ "pizza" ]
 
     print "active?", get_value( "active", app )
     print "something:", get_value( "name", app )
+# print_data()
 
-    set_value( "rot_hor", -10, app )
-    app[ "pizza" ] = "Marguerita"
-    app[ "color" ] = "#00ff00"
 
-    if update.hidden:
-        show( "color", app )
-        set_active( "group", True, app )
+def change_color( app, button ):
+    app[ "color" ] = "green"
+# change_color()
+
+
+def hide_group( app, button ):
+    if hide_group.hidden:
+        show( "group", app )
     else:
-        hide( "color", app )
-        set_inactive( "group", app )
+        hide( "group", app )
 
-    update.hidden = not update.hidden
+    hide_group.hidden = not hide_group.hidden
+# hide_group()
+hide_group.hidden = False
 
 
-    i = Image( filename="test.png" )
-    canvas = get_widget_by_id( "canvas", app )
-    canvas.draw_image( i )
-# update()
-update.hidden=False
+def toggle_spin_active( app, button ):
+    if toggle_spin_active.active:
+        set_inactive( "rot_hor", app )
+    else:
+        set_active( "rot_hor", True, app )
 
+    toggle_spin_active.active = not toggle_spin_active.active
+# toggle_spin_active()
+toggle_spin_active.active = True
+
+
+def raise_exception( app, button ):
+    raise Exception( "As requested, this exception was raised." )
+# raise_exception()
 
 def changed( app, widget, value ):
     print app.id, widget.id, "changed to", value
@@ -100,10 +111,13 @@ I have nothing to help you.
            callback=changed,
            persistent=True,
            ),
-    Button( id="update",
-            stock="update",
-            callback=update,
-            )
+    Button( id="print_data", label="Print Data", callback=print_data ),
+    Button( id="change_color", label="Change color", callback=change_color ),
+    Button( id="hide_group", label="Hide Group", callback=hide_group ),
+    Button( id="toggle_spin_active", label="Toggle Spin Active",
+            callback=toggle_spin_active ),
+    Button( id="raise_exception", label="Raise Exception",
+            callback=raise_exception ),
     ),
      right=(
     Selection( id="pizza",

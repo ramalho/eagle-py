@@ -1,4 +1,5 @@
 recursive-include tests *.py *.png *.jpg
+recursive-include docs *.py *.txt *.html *.png *.jpg *.svg
 include MANIFEST.in
 include AUTHORS
 include COPYING

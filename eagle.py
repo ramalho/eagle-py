@@ -214,7 +214,7 @@ class _Table( gtk.Table ):
             self.resize( n, 2 )
 
         for idx, c in enumerate( self.children ):
-            w = c.get_widgets()
+            w = c.__get_widgets__()
             xrm, yrm = c.__get_resize_mode__()
             if len( w ) == 1:
                 if self.horizontal:
@@ -265,9 +265,9 @@ class _Table( gtk.Table ):
     # __setup_gui__()
 
 
-    def get_widgets( self ):
+    def __get_widgets__( self ):
         return self.children
-    # get_widgets()
+    # __get_widgets__()
 # _Table
 
 
@@ -309,9 +309,9 @@ class _Panel( gtk.ScrolledWindow ):
     # __add_widgets_to_app__()
 
 
-    def get_widgets( self ):
-        return self._tab.get_widgets()
-    # get_widgets()
+    def __get_widgets__( self ):
+        return self._tab.__get_widgets__()
+    # __get_widgets__()
 # _Panel
 
 
@@ -335,6 +335,12 @@ class _EGObject( object ):
     def __init__( self, id ):
         self.id = id
     # __init__()
+
+
+    def __str__( self ):
+        return "%s( id=%r )" % ( self.__class__.__name__, self.id )
+    # __str__()
+    __repr__ = __str__
 # _EGObject
 
 
@@ -601,13 +607,13 @@ class Image( _EGObject, AutoGenId ):
 
 
 class _EGWidget( _EGObject ):
+    """The base of every Graphical Component in Eagle."""
     app = _gen_ro_property( "app" )
 
-    def __init__( self, id, persistent, app=None ):
+    def __init__( self, id, app=None ):
         _EGObject.__init__( self, id )
         if app is not None:
             self.app = app
-        self.persistent = persistent
         self._widgets = tuple()
     # __init__()
 
@@ -618,53 +624,89 @@ class _EGWidget( _EGObject ):
     # __get_resize_mode__()
 
 
-    def get_widgets( self ):
+    def __get_widgets__( self ):
         return self._widgets
-    # get_widgets()
+    # __get_widgets__()
 
 
     def set_active( self, active=True ):
-        for w in self.get_widgets():
+        """Set the widget as active.
+
+        An active widget have their actions enabled, while an inactive
+        (active=False) will be grayed and actions disabled.
+        """
+        for w in self.__get_widgets__():
             w.set_sensitive( active )
     # set_active()
 
 
     def set_inactive( self ):
+        """Same as L{set_active}( False )"""
         self.set_active( False )
     # set_inactive()
 
 
     def show( self ):
-        for w in self.get_widgets():
+        """Make widget visible."""
+        for w in self.__get_widgets__():
             w.show()
     # show()
 
 
     def hide( self ):
-        for w in self.get_widgets():
+        """Make widget invisible."""
+        for w in self.__get_widgets__():
             w.hide()
     # hide()
 # _EGWidget
 
 
 class _EGDataWidget( _EGWidget ):
+    """The base of every Eagle widget that holds data.
+
+    Widgets that holds data implement the interface with L{get_value}() and
+    L{set_value}().
+
+    It can be made persistent with L{persistent}=True
+    """
     persistent = False
 
+    def __init__( self, id, persistent, app=None ):
+        _EGObject.__init__( self, id )
+        if app is not None:
+            self.app = app
+        self.persistent = persistent
+        self._widgets = tuple()
+    # __init__()
+
+
     def get_value( self ):
+        """Get data from this widget."""
         raise NotImplementedError
     # get_value()
 
     def set_value( self, value ):
+        """Set data to this widget."""
         raise NotImplementedError
     # set_value()
 # _EGDataWidget
 
 
-class AboutDialog( _EGWidget ):
+class AboutDialog( _EGWidget, AutoGenId ):
+    """A window that displays information about the application.
+
+    @attention: avoid using this directly, use L{AboutButton} instead.
+    """
+    border = 12
+    spacing = 6
+    width = 600
+    height = 400
+    margin = 6
+
     def __init__( self, app,
                   title, author=None, description=None, help=None,
                   version=None, license=None, copyright=None ):
-        self.app = app
+        _EGWidget.__init__( self, self.__get_id__(), app )
         self.title = str( title )
         self.author = _str_tuple( author )
         self.description = _str_tuple( description )
@@ -689,20 +731,28 @@ class AboutDialog( _EGWidget ):
         self._diag = gtk.Dialog( title=( "About: %s" % self.title ),
                                  parent=win,
                                  flags=flags, buttons=btns )
-        self._diag.set_default_size( 400, 300 )
+
+        self._diag.set_border_width( self.border )
+        self._diag.set_default_size( self.width, self.height )
+        self._diag.set_has_separator( False )
+        self._diag.vbox.set_spacing( self.spacing )
+
         _set_icon_list( self._diag, gtk.STOCK_ABOUT )
 
         self._sw = gtk.ScrolledWindow()
-        self._diag.get_child().pack_start( self._sw, expand=True, fill=True )
+        self._diag.vbox.pack_start( self._sw, expand=True, fill=True )
 
         self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
                              vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        self._sw.set_shadow_type( gtk.SHADOW_IN )
 
         self._text = gtk.TextView()
         self._sw.add( self._text )
         self._text.set_editable( False )
         self._text.set_cursor_visible( False )
         self._text.set_wrap_mode( gtk.WRAP_WORD )
+        self._text.set_left_margin( self.margin )
+        self._text.set_right_margin( self.margin )
 
         self.__setup_text__()
     # __setup_gui__()
@@ -770,9 +820,19 @@ class AboutDialog( _EGWidget ):
 # AboutDialog
 
 
-class HelpDialog( _EGWidget ):
+class HelpDialog( _EGWidget, AutoGenId ):
+    """A window that displays application help.
+
+    @attention: avoid using this directly, use L{HelpButton} instead.
+    """
+    border = 12
+    spacing = 6
+    width = 600
+    height = 400
+    margin = 6
+
     def __init__( self, app, title, help=None ):
-        self.app = app
+        _EGWidget.__init__( self, self.__get_id__(), app )
         self.title = title
         self.help = _str_tuple( help )
         self.__setup_gui__()
@@ -791,7 +851,10 @@ class HelpDialog( _EGWidget ):
         self._diag = gtk.Dialog( title=( "Help: %s" % self.title ),
                                  parent=win,
                                  flags=flags, buttons=btns )
-        self._diag.set_default_size( 400, 300 )
+        self._diag.set_border_width( self.border )
+        self._diag.set_default_size( self.width, self.height )
+        self._diag.set_has_separator( False )
+        self._diag.vbox.set_spacing( self.spacing )
         _set_icon_list( self._diag, gtk.STOCK_HELP )
 
         self._sw = gtk.ScrolledWindow()
@@ -799,12 +862,15 @@ class HelpDialog( _EGWidget ):
 
         self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
                              vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        self._sw.set_shadow_type( gtk.SHADOW_IN )
 
         self._text = gtk.TextView()
         self._sw.add( self._text )
         self._text.set_editable( False )
         self._text.set_cursor_visible( False )
         self._text.set_wrap_mode( gtk.WRAP_WORD )
+        self._text.set_left_margin( self.margin )
+        self._text.set_right_margin( self.margin )
 
         self.__setup_text__()
     # __setup_gui__()
@@ -836,7 +902,12 @@ class HelpDialog( _EGWidget ):
 # HelpDialog
 
 
-class FileChooser( _EGObject ):
+class FileChooser( _EGWidget, AutoGenId ):
+    """A dialog to choose a file.
+
+    @attention: avoid using this directly, use L{App.file_chooser},
+    L{OpenFileButton}, L{SaveFileButton} or L{SelectFolderButton} instead.
+    """
     ACTION_OPEN = 0
     ACTION_SAVE = 1
     ACTION_SELECT_FOLDER = 2
@@ -854,7 +925,7 @@ class FileChooser( _EGObject ):
             [ 'Text', '*.text', 'text/plain' ],
           ]
         """
-        self.app = app
+        _EGWidget.__init__( self, self.__get_id__(), app )
         self.action = action
         self.filter = filter
         self.multiple = multiple or False
@@ -946,9 +1017,15 @@ class FileChooser( _EGObject ):
 
 
 class PreferencesDialog( _EGWidget, AutoGenId ):
+    """A dialog to present user with preferences.
+
+    Preferences is another L{App} area, just like C{left}, C{right}, C{center},
+    C{top} or C{bottom}, but will be displayed in a separate window.
+
+    @attention: avoid using this directly, use L{PreferencesButton} instead.
+    """
     def __init__( self, app, children ):
-        self.id = self.__get_id__()
-        self.app = app
+        _EGWidget.__init__( self, self.__get_id__(), app )
         self.children = _obj_tuple( children )
         self.__setup_gui__()
         self.__add_widgets_to_app__()
@@ -999,12 +1076,16 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
 # PreferencesDialog
 
 
-class DebugDialog( _EGObject ):
+class DebugDialog( _EGObject, AutoGenId ):
     # Most of DebugDialog code came from Gazpacho code! Thanks!
     border = 12
     spacing = 6
+    width = 600
+    height = 400
+    margin = 6
 
     def __init__( self ):
+        _EGObject.__init__( self, self.__get_id__() )
         self.__setup_gui__()
     # __init__()
 
@@ -1016,8 +1097,8 @@ class DebugDialog( _EGObject ):
                                  flags=gtk.DIALOG_MODAL,
                                  buttons=b )
         self._diag.set_border_width( self.border )
-        self._diag.set_default_size( 600, 400 )
-
+        self._diag.set_default_size( self.width, self.height )
+        self._diag.set_has_separator( False )
         self._diag.vbox.set_spacing( self.spacing )
 
         self._hbox1 = gtk.HBox()
@@ -1055,6 +1136,9 @@ class DebugDialog( _EGObject ):
         self._text.set_editable( False )
         self._text.set_cursor_visible( False )
         self._text.set_wrap_mode( gtk.WRAP_WORD )
+        self._text.set_left_margin( self.margin )
+        self._text.set_right_margin( self.margin )
+
         self._sw.add( self._text )
         self._text.show()
         self._diag.vbox.pack_start( self._sw, expand=True, fill=True )
@@ -1167,7 +1251,7 @@ class DebugDialog( _EGObject ):
 
     def run( self, error=None ):
         r = self._diag.run()
-        if r == gtk.RESPONSE_CLOSE:
+        if r == gtk.RESPONSE_CLOSE or gtk.RESPONSE_DELETE_EVENT:
             raise SystemExit( error )
     # run()
 
@@ -1190,14 +1274,17 @@ sys.excepthook = DebugDialog.except_hook
 class _EGWidLabelEntry( _EGDataWidget ):
     """Widget that holds a label and an associated Entry.
 
-    You must setup an instance attribute _entry before using it, since
-    this will be set as mnemonic for this label and also returned in
-    get_widgets()
+    @note: _EGWidLabelEntry must B{NOT} be used directly! You should use
+    a widget that specialize this instead.
+
+    @attention: B{Widget Developers:} You must setup an instance attribute
+    C{_entry} before using it, since this will be set as mnemonic for this
+    label and also returned in L{__get_widgets__}().
     """
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, persistent, label="" ):
-        _EGWidget.__init__( self, id, persistent )
+        _EGDataWidget.__init__( self, id, persistent )
         self.label = label or id
         self.__setup_gui__()
     # __init__()
@@ -1220,10 +1307,66 @@ class _EGWidLabelEntry( _EGDataWidget ):
     def set_value( self, value ):
         self._entry.set_value( value )
     # set_value()
+
+
+    def __str__( self ):
+        return "%s( id=%r, label=%r, value=%r )" % \
+               ( self.__class__.__name__, self.id, self.label,
+                 self.get_value() )
+    # __str__()
+    __repr__ = __str__
 # _EGWidLabelEntry
 
 
 class App( _EGObject, AutoGenId ):
+    """An application window.
+
+    This is the base of Eagle programs, since it will hold every graphical
+    component.
+
+    An App window is split in 5 areas:
+     - left
+     - right
+     - center
+     - top
+     - bottom
+    the first 3 have a vertical layout, the other have horizontal layout.
+    Every area has its own scroll bars that are shown automatically when
+    need.
+
+    Also provide is an extra area, that is shown in another window. This is
+    the preferences area. It have a vertical layout and components that
+    hold data are made persistent automatically. You should use
+    L{PreferencesButton} to show this area.
+
+    Extra information like author, description, help, version, license and
+    copyright are used in specialized dialogs. You may show these dialogs
+    with L{AboutButton} and L{HelpButton}.
+
+    Widgets can be reach with L{get_widget_by_id}, example:
+       >>> app = App( "My App", left=Entry( id="entry" ) )
+       >>> app.get_widget_by_id( "entry" )
+       Entry( id='entry', label='entry', value='' )
+
+    You may also reach widgets using dict-like syntax, but with the
+    special case for widgets that hold data, these will be provided
+    using their L{set_data<_EGDataWidget.set_data>} and
+    L{get_data<_EGDataWidget.get_data>}, it make things easier, but
+    B{be careful to don't misuse it!}. Example:
+
+       >>> app= App( "My App", left=Entry( id="entry" ),
+       ...           right=Canvas( "canvas", 300, 300 ) )
+       >>> app[ "entry" ]
+       ''
+       >>> app[ "entry" ] = "text"
+       >>> app[ "entry" ]
+       'text'
+       >>> app[ "canvas" ]
+       Canvas( id='canvas', width=300, height=300, label='' )
+       >>> app[ "canvas" ].draw_text( "hello" )
+       >>> app[ "entry" ].get_value() # will fail, since it's a data widget
+
+    """
     border_width = 10
     spacing = 3
 
@@ -1242,6 +1385,41 @@ class App( _EGObject, AutoGenId ):
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None ):
+        """App Constructor.
+
+        @param title: application name, to be displayed in the title bar.
+        @param id: unique id to this application, or None to generate one
+               automatically.
+        @param center: list of widgets to be laid out vertically in the
+               window's center.
+        @param left: list of widgets to be laid out vertically in the
+               window's left side.
+        @param right: list of widgets to be laid out vertically in the
+               window's right side.
+        @param top: list of widgets to be laid out horizontally in the
+               window's top.
+        @param bottom: list of widgets to be laid out horizontally in the
+               window's bottom.
+        @param preferences: list of widgets to be laid out vertically in
+               another window, this can be shown with L{PreferencesButton}.
+        @param author: the application author or list of author, used in
+               L{AboutDialog}, this can be shown with L{AboutButton}.
+        @param description: application description, used in L{AboutDialog}.
+        @param help: help text, used in L{AboutDialog} and L{HelpDialog}, this
+               can be shown with L{HelpButton}.
+        @param version: application version, used in L{AboutDialog}.
+        @param license: application license, used in L{AboutDialog}.
+        @param copyright: application copyright, used in L{AboutDialog}.
+        @param quit_callback: function (or list of functions) that will be
+               called when application is closed. Function will receive as
+               parameter the reference to App.
+        @param data_changed_callback: function (or list of functions) that will
+               be called when some widget that holds data have its data
+               changed. Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        """
         _EGObject.__init__( self, id )
         self.title = title
         self.left = left
@@ -1289,6 +1467,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def get_widget_by_id( self, widget_id ):
+        """Return referece to widget with provided id or None if not found."""
         if isinstance( widget_id, _EGWidget ) and \
            widget_id in self._widgets.itervalues():
             return widget_id
@@ -1298,6 +1477,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def show_about_dialog( self ):
+        """Show L{AboutDialog} of this App."""
         diag = AboutDialog( app=self,
                             title=self.title,
                             author=self.author,
@@ -1312,6 +1492,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def show_help_dialog( self ):
+        """Show L{HelpDialog} of this App."""
         diag = HelpDialog( app=self,
                            title=self.title,
                            help=self.help,
@@ -1322,6 +1503,13 @@ class App( _EGObject, AutoGenId ):
 
     def file_chooser( self, action, filename=None,
                       filter=None, multiple=False ):
+        """Show L{FileChooser} and return selected file(s).
+
+        @param action: must be one of ACTION_* as defined in L{FileChooser}.
+        @param filter: a pattern (ie: '*.png'), mime type or a list.
+
+        @see: L{FileChooser}
+        """
         diag = FileChooser( app=self, action=action,
                             filename=filename, filter=filter,
                             multiple=multiple )
@@ -1330,6 +1518,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def show_preferences_dialog( self ):
+        """Show L{PreferencesDialog} associated with this App."""
         return self._preferences.run()
     # show_preferences_dialog()
 
@@ -1360,8 +1549,17 @@ class App( _EGObject, AutoGenId ):
                                 self.id,
                                 w.__class__.__name__ ) )
         else:
-            self._widgets[ widget.id ] = widget
-            widget.app = self
+            if widget.app is None:
+                self._widgets[ widget.id ] = widget
+                widget.app = self
+            elif widget.app != self:
+                try:
+                    id = widget.app.id
+                except:
+                    id = widget.app
+                raise ValueError( ( "Object \"%s\" already is in another "
+                                    "App: \"%s\"" ) % \
+                                  ( widget.id, id ) )
     # __add_widget__()
 
 
@@ -1384,33 +1582,34 @@ class App( _EGObject, AutoGenId ):
 
         self._vbox = gtk.VBox( False, self.spacing )
 
-        if self._top.get_widgets():
+        if self._top.__get_widgets__():
             self._vbox.pack_start( self._top, expand=False, fill=True )
-            if self._center.get_widgets() or self._bottom.get_widgets():
+            if self._center.__get_widgets__() or \
+               self._bottom.__get_widgets__():
                 self._vbox.pack_start( gtk.HSeparator(), expand=False,
                                        fill=True )
 
-        if self._center.get_widgets():
+        if self._center.__get_widgets__():
             self._vbox.pack_start( self._center, expand=True, fill=True )
 
-        if self._bottom.get_widgets():
-            if self._center.get_widgets():
+        if self._bottom.__get_widgets__():
+            if self._center.__get_widgets__():
                 self._vbox.pack_start( gtk.HSeparator(), expand=False,
                                        fill=True )
             self._vbox.pack_start( self._bottom, expand=False, fill=True )
 
-        if self._left.get_widgets():
+        if self._left.__get_widgets__():
             self._hbox.pack_start( self._left,  expand=False, fill=True )
-            if self._center.get_widgets() or self._top.get_widgets or \
-               self._bottom.get_widgets() or self._right.get_widgets():
+            if self._center.__get_widgets__() or self._top.__get_widgets__ or \
+               self._bottom.__get_widgets__() or self._right.__get_widgets__():
                 self._hbox.pack_start( gtk.VSeparator(),
                                        expand=False, fill=False )
 
         self._hbox.pack_start( self._vbox,  expand=True, fill=True )
 
-        if self._right.get_widgets():
-            if self._center.get_widgets() or self._top.get_widgets or \
-               self._bottom.get_widgets():
+        if self._right.__get_widgets__():
+            if self._center.__get_widgets__() or self._top.__get_widgets__ or \
+               self._bottom.__get_widgets__():
                 self._hbox.pack_start( gtk.VSeparator(),
                                        expand=False, fill=False )
             self._hbox.pack_end( self._right, expand=False, fill=True )
@@ -1456,6 +1655,10 @@ class App( _EGObject, AutoGenId ):
 
 
     def data_changed( self, widget, value ):
+        """Notify that widget changed it's value.
+
+        Probably you will not need to call this directly.
+        """
         self.save()
         for c in self.data_changed_callback:
             c( self, widget, value )
@@ -1479,9 +1682,13 @@ class App( _EGObject, AutoGenId ):
 
 
     def save( self ):
+        """Save data from widgets to file.
+
+        Probably you will not need to call this directly.
+        """
         d = {}
         for id, w in self._widgets.iteritems():
-            if w.persistent:
+            if isinstance( w, _EGDataWidget ) and w.persistent:
                 d[ id ] = w.get_value()
 
         f = open( self.__persistence_filename__(), "wb" )
@@ -1491,6 +1698,10 @@ class App( _EGObject, AutoGenId ):
 
 
     def load( self ):
+        """Load data to widgets from file.
+
+        Probably you will not need to call this directly.
+        """
         try:
             f = open( self.__persistence_filename__(), "rb" )
         except IOError:
@@ -1504,12 +1715,13 @@ class App( _EGObject, AutoGenId ):
                 w = self._widgets[ id ]
             except KeyError:
                 w = None
-            if w and w.persistent:
+            if isinstance( w, _EGDataWidget ) and w.persistent:
                 w.set_value( v )
     # load()
 
 
     def close( self ):
+        """Close application window."""
         self.__delete_event__()
         self._win.destroy()
     # close()
@@ -1517,6 +1729,12 @@ class App( _EGObject, AutoGenId ):
 
 
 class Canvas( _EGWidget ):
+    """The drawing area.
+
+    Eagle's drawing area (Canvas) is provided with a frame and an optional
+    label, together with scrollbars, to make it fit everywhere.
+
+    """
     padding = 5
     bgcolor= "black"
 
@@ -1537,8 +1755,29 @@ class Canvas( _EGWidget ):
 
     def __init__( self, id, width, height, label="", bgcolor=None,
                   callback=None ):
-        _EGWidget.__init__( self, id, False )
+        """Canvas Constructor.
+
+        @param id: unique identifier.
+        @param width: width of the drawing area in pixels, widget can be
+               larger or smaller because and will use scrollbars if need.
+        @param height: height of the drawing area in pixels, widget can be
+               larger or smaller because and will use scrollbars if need.
+        @param label: label to display in the widget frame around the
+               drawing area.
+        @param bgcolor: color to paint background.
+        @param callback: function (or list of functions) to call when
+               mouse state changed in the drawing area. Function will get
+               as parameters:
+                - App reference
+                - Canvas reference
+                - Button state
+                - horizontal positon (x)
+                - version positon (y)
+        """
+        _EGWidget.__init__( self, id )
         self.label = label
+        self.width = width
+        self.height = height
 
         self._pixmap = None
         self._callback = _callback_tuple( callback )
@@ -1702,6 +1941,7 @@ class Canvas( _EGWidget ):
 
 
     def resize( self, width, height ):
+        """Resize the drawing area."""
         old = self._pixmap
         self._pixmap = gtk.gdk.Pixmap( self._area.window, width, height )
         if old is None:
@@ -1823,6 +2063,7 @@ class Canvas( _EGWidget ):
 
 
     def draw_point( self, x, y, color=None ):
+        """Draw point."""
         gc = self.__configure_gc__( fgcolor=color )
         self._pixmap.draw_point( gc, x, y )
         self._area.queue_draw_area( x, y, 1, 1 )
@@ -1830,6 +2071,7 @@ class Canvas( _EGWidget ):
 
 
     def draw_points( self, points, color=None ):
+        """Draw points."""
         gc = self.__configure_gc__( fgcolor=color )
         self._pixmap.draw_points( gc, points )
         w, h = self._pixmap.get_size()
@@ -1838,6 +2080,7 @@ class Canvas( _EGWidget ):
 
 
     def draw_line( self, x0, y0, x1, y1, color=None, size=1 ):
+        """Draw line."""
         gc = self.__configure_gc__( fgcolor=color, line_width=size )
         self._pixmap.draw_line( gc, x0, y0, x1, y1 )
 
@@ -1871,6 +2114,13 @@ class Canvas( _EGWidget ):
 
     def draw_rectangle( self, x, y, width, height, color=None, size=1,
                         fillcolor=None, filled=False ):
+        """Draw rectagle.
+
+        If filled=True, it will be filled with fillcolor.
+
+        If color is provided, it will draw the rectangle's frame, even
+        if filled=True.
+        """
         if filled:
             gc = self.__configure_gc__( fgcolor=fillcolor, fill=filled )
             self._pixmap.draw_rectangle( gc, True, x, y, width, height )
@@ -1931,6 +2181,7 @@ class Canvas( _EGWidget ):
 
 
     def clear( self ):
+        """Clear using bgcolor."""
         self.fill( self.bgcolor )
     # clear()
 
@@ -1948,12 +2199,21 @@ class Canvas( _EGWidget ):
 
 
     def get_image( self ):
+        """Get the L{Image} that represents this drawing area."""
         w, h = self._pixmap.get_size()
         img = gtk.gdk.Pixbuf( gtk.gdk.COLORSPACE_RGB, True, 8, w, h )
         img.get_from_drawable( self._pixmap, self._area.get_colormap(),
                                0, 0, 0, 0, w, h )
         return Image( __int_image__=img )
     # get_image()
+
+
+    def __str__( self ):
+        return "%s( id=%r, width=%r, height=%r, label=%r )" % \
+               ( self.__class__.__name__, self.id, self.width, self.height,
+                 self.label )
+    # __str__()
+    __repr__ = __str__
 # Canvas
 
 
@@ -2332,7 +2592,7 @@ class CheckBox( _EGDataWidget ):
         self.state = state
         self.callback = _callback_tuple( callback )
 
-        _EGWidget.__init__( self, id, persistent )
+        _EGDataWidget.__init__( self, id, persistent )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -2391,7 +2651,7 @@ class Group( _EGWidget ):
 
 
     def __init__( self, id, label="", children=None ):
-        _EGWidget.__init__( self, id, False )
+        _EGWidget.__init__( self, id )
         self.label = label
         self.children = children or tuple()
 
@@ -2417,8 +2677,49 @@ class Group( _EGWidget ):
 
 
 class Button( _EGWidget ):
+    """A push button.
+    """
     stock = _gen_ro_property( "stock" )
     callback = _gen_ro_property( "callback" )
+
+    stock_items = (
+        "about",
+        "help",
+        "quit",
+        "add",
+        "remove",
+        "refresh",
+        "update",
+        "yes",
+        "no",
+        "zoom_100",
+        "zoom_in",
+        "zoom_out",
+        "zoom_fit",
+        "undo",
+        "execute",
+        "stop",
+        "open",
+        "save",
+        "save_as",
+        "properties",
+        "preferences",
+        "print",
+        "print_preview",
+        "ok",
+        "cancel",
+        "apply",
+        "close",
+        "clear",
+        "convert",
+        "next",
+        "back",
+        "up",
+        "down",
+        "font",
+        "color",
+        )
+
 
     _gtk_stock_map = {
         "about": gtk.STOCK_ABOUT,
@@ -2459,11 +2760,26 @@ class Button( _EGWidget ):
         }
 
     def __init__( self, id, label="", stock=None, callback=None ):
+        """Push button constructor.
+
+        @param label: what text to show, if stock isn't provided.
+        @param stock: optional. One of L{stock_items}.
+        @param callback: the function (or list of functions) to call
+               when button is pressed. Function will get as parameter:
+                - App reference
+                - Button reference
+        """
         self.label = label
         self.stock = stock
         self.callback = _callback_tuple( callback )
 
-        _EGWidget.__init__( self, id, False )
+        # Check if provided stock items are implemented
+        for i in self.stock_items:
+            if i not in self._gtk_stock_map:
+                print >> sys.stderr, \
+                      "Stock item %s missing in implementation map!" % ( i, )
+
+        _EGWidget.__init__( self, id )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -2494,7 +2810,9 @@ class Button( _EGWidget ):
 
 
 class AboutButton( Button, AutoGenId ):
+    """Push button to show L{AboutDialog} of L{App}."""
     def __init__( self, id=None ):
+        """You may not provide id, it will be generated automatically"""
         def show_about( app_id, wid_id ):
             self.app.show_about_dialog()
         # show_about()
@@ -2505,7 +2823,9 @@ class AboutButton( Button, AutoGenId ):
 
 
 class CloseButton( Button, AutoGenId ):
+    """Push button to close L{App}."""
     def __init__( self, id=None ):
+        """You may not provide id, it will be generated automatically"""
         def close( app_id, wid_id ):
             self.app.close()
         # close()
@@ -2516,7 +2836,9 @@ class CloseButton( Button, AutoGenId ):
 
 
 class QuitButton( Button, AutoGenId ):
+    """Push button to quit all L{App}s."""
     def __init__( self, id=None ):
+        """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             quit()
         # c()
@@ -2527,7 +2849,9 @@ class QuitButton( Button, AutoGenId ):
 
 
 class HelpButton( Button, AutoGenId ):
+    """Push button to show L{HelpDialog} of L{App}."""
     def __init__( self, id=None ):
+        """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             self.app.show_help_dialog()
         # c()
@@ -2538,6 +2862,7 @@ class HelpButton( Button, AutoGenId ):
 
 
 class OpenFileButton( Button, AutoGenId ):
+    """Push button to show dialog to choose an existing file."""
     def __init__( self, id=None,
                   filter=None, multiple=False,
                   callback=None ):
@@ -2554,6 +2879,7 @@ class OpenFileButton( Button, AutoGenId ):
 
 
 class SelectFolderButton( Button, AutoGenId ):
+    """Push button to show dialog to choose an existing folder/directory."""
     def __init__( self, id=None, callback=None ):
         def c( app_id, wid_id ):
             f = self.app.file_chooser( FileChooser.ACTION_SELECT_FOLDER )
@@ -2567,6 +2893,7 @@ class SelectFolderButton( Button, AutoGenId ):
 
 
 class SaveFileButton( Button, AutoGenId ):
+    """Push button to show dialog to choose a file to save."""
     def __init__( self, id=None, filename=None,
                   filter=None, callback=None ):
         def c( app_id, wid_id ):
@@ -2583,7 +2910,9 @@ class SaveFileButton( Button, AutoGenId ):
 
 
 class PreferencesButton( Button, AutoGenId ):
+    """Push button to show L{PreferencesDialog} of L{App}."""
     def __init__( self, id=None ):
+        """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             f = self.app.show_preferences_dialog()
         # c()
@@ -2594,8 +2923,10 @@ class PreferencesButton( Button, AutoGenId ):
 
 
 class HSeparator( _EGWidget, AutoGenId ):
+    """Horizontal separator"""
     def __init__( self, id=None ):
-        _EGWidget.__init__( self, id or self.__get_id__(), False )
+        """You may not provide id, it will be generated automatically"""
+        _EGWidget.__init__( self, id or self.__get_id__() )
         self._wid = gtk.HSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -2604,8 +2935,10 @@ class HSeparator( _EGWidget, AutoGenId ):
 
 
 class VSeparator( _EGWidget ):
+    """Horizontal separator"""
     def __init__( self, id=None ):
-        _EGWidget.__init__( self, id or self.__get_id__(), False )
+        """You may not provide id, it will be generated automatically"""
+        _EGWidget.__init__( self, id or self.__get_id__() )
         self._wid = gtk.VSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -2625,7 +2958,7 @@ class Label( _EGWidget, AutoGenId ):
 
     def __init__( self, id=None, label="",
                   halignment=LEFT, valignment=MIDDLE ):
-        _EGWidget.__init__( self, id or self.__get_id__(), False )
+        _EGWidget.__init__( self, id or self.__get_id__() )
         self.label = label
 
         self._wid = gtk.Label( self.label )
@@ -2648,6 +2981,7 @@ class Label( _EGWidget, AutoGenId ):
 
 
 def run():
+    """Enter the event loop"""
     try:
         gtk.main()
     except KeyboardInterrupt:
@@ -2655,11 +2989,13 @@ def run():
 # run()
 
 def quit():
+    """Quit the event loop"""
     gtk.main_quit()
 # quit()
 
 
 def get_app_by_id( app_id ):
+    """Given an App unique identifier, return the reference to it."""
     if app_id is None:
         try:
             return _apps.values()[ 0 ]
@@ -2679,6 +3015,13 @@ def get_app_by_id( app_id ):
 
 
 def get_widget_by_id( widget_id, app_id=None ):
+    """Given an Widget unique identifier, return the reference to it.
+
+    If app_id is not provided, will use the first App found.
+
+    @attention: Try to always provide app_id since it may lead to problems if
+    your program have more than one App.
+    """
     app = get_app_by_id( app_id )
 
     if app:
@@ -2691,6 +3034,7 @@ def get_widget_by_id( widget_id, app_id=None ):
 
 
 def get_value( widget_id, app_id=None ):
+    """Convenience function to get widget and call its get_value() method."""
     try:
         wid = get_widget_by_id( widget_id, app_id )
         return wid.get_value()
@@ -2700,6 +3044,7 @@ def get_value( widget_id, app_id=None ):
 
 
 def set_value( widget_id, value, app_id=None ):
+    """Convenience function to get widget and call its set_value() method."""
     try:
         wid = get_widget_by_id( widget_id, app_id )
         wid.set_value( value )
@@ -2709,6 +3054,7 @@ def set_value( widget_id, value, app_id=None ):
 
 
 def show( widget_id, app_id=None ):
+    """Convenience function to get widget and call its show() method."""
     try:
         wid = get_widget_by_id( widget_id, app_id )
         wid.show()
@@ -2718,6 +3064,7 @@ def show( widget_id, app_id=None ):
 
 
 def hide( widget_id, app_id=None ):
+    """Convenience function to get widget and call its hide() method."""
     try:
         wid = get_widget_by_id( widget_id, app_id )
         wid.hide()
@@ -2727,6 +3074,7 @@ def hide( widget_id, app_id=None ):
 
 
 def set_active( widget_id, active=True, app_id=None ):
+    """Convenience function to get widget and call its set_active() method."""
     try:
         wid = get_widget_by_id( widget_id, app_id )
         wid.set_active( active )
@@ -2736,6 +3084,9 @@ def set_active( widget_id, active=True, app_id=None ):
 
 
 def set_inactive( widget_id, app_id=None ):
+    """
+    Convenience function to get widget and call its set_inactive() method.
+    """
     try:
         wid = get_widget_by_id( widget_id, app_id )
         wid.set_inactive()
@@ -2745,6 +3096,7 @@ def set_inactive( widget_id, app_id=None ):
 
 
 def close( app_id=None ):
+    """Convenience function to get app and call its close() method."""
     try:
         app = get_app_by_id( app_id )
         app.close()
