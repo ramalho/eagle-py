@@ -38,10 +38,48 @@ def toggle_spin_active( app, button ):
 # toggle_spin_active()
 toggle_spin_active.active = True
 
+def draw_image( app, button ):
+    i = Image( filename="test.png" )
+    app[ "canvas" ].draw_image( i )
+# draw_image()
+
+def draw_arc( app, button ):
+    app[ "canvas" ].draw_arc( x=0, y=0, width=100, height=100,
+                              start_angle=0, end_angle=3.14/2,
+                              color="red", size=2,
+                              fillcolor="blue", filled=True )
+# draw_arc()
+
 
 def raise_exception( app, button ):
     raise Exception( "As requested, this exception was raised." )
 # raise_exception()
+
+
+def show_info( app, button ):
+    info( "Some info." )
+# show_info()
+
+def show_error( app, button ):
+    error( "Some error." )
+# show_error()
+
+def show_warn( app, button ):
+    warn( "Some warning." )
+# show_warn()
+
+def show_yesno( app, button ):
+    r = yesno( "Some question?" )
+    info( "Question returned: %s" % r )
+# show_yesno()
+
+def show_confirm( app, button ):
+    r = confirm( "Some question?", okdefault=True )
+    info( "Question returned: %s" % r )
+# show_confirm()
+
+
+
 
 def changed( app, widget, value ):
     print app.id, widget.id, "changed to", value
@@ -116,8 +154,16 @@ I have nothing to help you.
     Button( id="hide_group", label="Hide Group", callback=hide_group ),
     Button( id="toggle_spin_active", label="Toggle Spin Active",
             callback=toggle_spin_active ),
+    Button( id="draw_image", label="Draw Image", callback=draw_image ),
+    Button( id="draw_arc", label="Draw Arc", callback=draw_arc ),
     Button( id="raise_exception", label="Raise Exception",
             callback=raise_exception ),
+    Button( id="show_info", label="Show Info", callback=show_info ),
+    Button( id="show_warn", label="Show Warning", callback=show_warn ),
+    Button( id="show_error", label="Show Error", callback=show_error ),
+    Button( id="show_yesno", label="Show Yes/No", callback=show_yesno ),
+    Button( id="show_confirm", label="Show Confirmation",
+            callback=show_confirm ),
     ),
      right=(
     Selection( id="pizza",

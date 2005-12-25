@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 
 # Copyright (C) 2005 by Gustavo Sverzut Barbieri
 #
@@ -72,6 +73,8 @@ __all__ = [
     "HSeparator", "VSeparator",
     "Label",
     "Canvas", "Image",
+    "information", "info", "error", "err", "warning", "warn",
+    "yesno", "confirm",
     ]
 
 import os
@@ -183,6 +186,11 @@ def _set_icon_list( gtkwidget, stock_id ):
 
 
 class _Table( gtk.Table ):
+    """Internal widget to arrange components in tabular form.
+
+    @warning: never use it directly in Eagle applications!
+    """
+
     padding = 3
     id = _gen_ro_property( "id" )
     children = _gen_ro_property( "children" )
@@ -203,6 +211,7 @@ class _Table( gtk.Table ):
 
 
     def __setup_gui__( self ):
+        """Lay out components in a horizontal or vertical table."""
         if not self.children:
             return
 
@@ -272,6 +281,11 @@ class _Table( gtk.Table ):
 
 
 class _Panel( gtk.ScrolledWindow ):
+    """Internal widget to arrange components.
+
+    @warning: never use it directly in Eagle applications!
+    """
+
     spacing = 5
     app = _gen_ro_property( "app" )
     id = _gen_ro_property( "id" )
@@ -316,6 +330,11 @@ class _Panel( gtk.ScrolledWindow ):
 
 
 class _VPanel( _Panel ):
+    """Internal widget to arrange components vertically.
+
+    @warning: never use it directly in Eagle applications!
+    """
+
     _horizontal = False
     _hscrollbar_policy = gtk.POLICY_NEVER
     _vscrollbar_policy = gtk.POLICY_AUTOMATIC
@@ -323,6 +342,11 @@ class _VPanel( _Panel ):
 
 
 class _HPanel( _Panel ):
+    """Internal widget to arrange components horizontally.
+
+    @warning: never use it directly in Eagle applications!
+    """
+
     _horizontal = True
     _hscrollbar_policy = gtk.POLICY_AUTOMATIC
     _vscrollbar_policy = gtk.POLICY_NEVER
@@ -330,6 +354,13 @@ class _HPanel( _Panel ):
 
 
 class _EGObject( object ):
+    """The basic Eagle Object.
+
+    All eagle objects provides an attribute "id".
+
+    @warning: never use it directly in Eagle applications!
+    """
+
     id = _gen_ro_property( "id" )
 
     def __init__( self, id ):
@@ -345,6 +376,10 @@ class _EGObject( object ):
 
 
 class AutoGenId( object ):
+    """Mix-In to auto-generate ids.
+
+    @warning: never use it directly in Eagle applications!
+    """
     last_id_num = 0
 
     def __get_id__( classobj ):
@@ -579,27 +614,40 @@ class Image( _EGObject, AutoGenId ):
 
 
     def get_size( self ):
+        """Return a tuple ( width, heigt )"""
         return ( self.get_width(), self.get_height() )
     # get_size()
 
 
     def get_rowstride( self ):
+        """Row stride is the allocated size of a row.
+
+        Generally, rowstride is the number of elements in a row multiplied
+        by the size of each element (bits per pixel).
+
+        But there are cases that there is more space left, a padding, to
+        align it to some boundary, so you may get different value for
+        row stride.
+        """
         return self._img.get_rowstride()
     # get_rowstride()
 
 
     def get_n_channels( self ):
+        """Number of channels."""
         return self._img.get_n_channels()
     # get_n_channels()
 
 
     def get_bits_per_pixel( self ):
+        """Bits per pixel"""
         return self.get_n_channels() * self._img.get_bits_per_sample()
     # get_bits_per_pixel()
     get_depth = get_bits_per_pixel
 
 
     def has_alpha( self ):
+        """If it has an alpha channel"""
         return self._img.get_has_alpha()
     # has_alpha()
 # Image
@@ -607,7 +655,10 @@ class Image( _EGObject, AutoGenId ):
 
 
 class _EGWidget( _EGObject ):
-    """The base of every Graphical Component in Eagle."""
+    """The base of every Graphical Component in Eagle.
+
+    @warning: never use it directly in Eagle applications!
+    """
     app = _gen_ro_property( "app" )
 
     def __init__( self, id, app=None ):
@@ -625,6 +676,10 @@ class _EGWidget( _EGObject ):
 
 
     def __get_widgets__( self ):
+        """Return a list of B{internal} widgets this Eagle widget contains.
+
+        @warning: never use it directly in Eagle applications!
+        """
         return self._widgets
     # __get_widgets__()
 
@@ -1077,6 +1132,11 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
 
 
 class DebugDialog( _EGObject, AutoGenId ):
+    """Dialog to show uncaught exceptions.
+
+    This dialog shows information about uncaught exceptions and also save
+    the traceback to a file.
+    """
     # Most of DebugDialog code came from Gazpacho code! Thanks!
     border = 12
     spacing = 6
@@ -1334,7 +1394,7 @@ class App( _EGObject, AutoGenId ):
     Every area has its own scroll bars that are shown automatically when
     need.
 
-    Also provide is an extra area, that is shown in another window. This is
+    Also provided is an extra area, that is shown in another window. This is
     the preferences area. It have a vertical layout and components that
     hold data are made persistent automatically. You should use
     L{PreferencesButton} to show this area.
@@ -1772,7 +1832,7 @@ class Canvas( _EGWidget ):
                 - Canvas reference
                 - Button state
                 - horizontal positon (x)
-                - version positon (y)
+                - vertical positon (y)
         """
         _EGWidget.__init__( self, id )
         self.label = label
@@ -2071,7 +2131,11 @@ class Canvas( _EGWidget ):
 
 
     def draw_points( self, points, color=None ):
-        """Draw points."""
+        """Draw points.
+
+        Efficient way to draw more than one point with the same
+        characteristics.
+        """
         gc = self.__configure_gc__( fgcolor=color )
         self._pixmap.draw_points( gc, points )
         w, h = self._pixmap.get_size()
@@ -2091,7 +2155,13 @@ class Canvas( _EGWidget ):
 
 
     def draw_segments( self, segments, color=None, size=1 ):
-        """Draw line segments."""
+        """Draw line segments.
+
+        Efficient way to draw more than one line with the same
+        characteristics.
+
+        Lines are not connected, use L{draw_lines} instead.
+        """
         gc = self.__configure_gc__( fgcolor=color, line_width=size )
         self._pixmap.draw_segments( gc, segments )
         w, h = self._pixmap.get_size()
@@ -2102,8 +2172,8 @@ class Canvas( _EGWidget ):
     def draw_lines( self, points, color=None, size=1 ):
         """Draw lines connecting points.
 
-        First and last points are not connected, use draw_polygon
-        to do that
+        Points are connected using lines, but first and last points
+        are not connected, use L{draw_polygon} instead.
         """
         gc = self.__configure_gc__( fgcolor=color, line_width=size )
         self._pixmap.draw_lines( gc, points )
@@ -2116,10 +2186,10 @@ class Canvas( _EGWidget ):
                         fillcolor=None, filled=False ):
         """Draw rectagle.
 
-        If filled=True, it will be filled with fillcolor.
+        If L{filled} is C{True}, it will be filled with L{fillcolor}.
 
-        If color is provided, it will draw the rectangle's frame, even
-        if filled=True.
+        If L{color} is provided, it will draw the rectangle's frame, even
+        if L{filled} is C{True}.
         """
         if filled:
             gc = self.__configure_gc__( fgcolor=fillcolor, fill=filled )
@@ -2140,7 +2210,17 @@ class Canvas( _EGWidget ):
                   color=None, size=1, fillcolor=None, filled=False ):
         """Draw arc on canvas.
 
-        start and end angles are in radians.
+        Arc will be the part of an ellipse that starts at ( L{x}, L{y} )
+        and have size of L{width}xL{height}.
+
+        L{start_angle} and L{end_angle} are in radians, starts from the
+        positive x-axis and are counter-clockwise.
+
+        If L{filled} is C{True}, it will be filled with L{fillcolor}.
+
+        If L{color} is provided, it will draw the arc's frame, even
+        if L{filled} is C{True}. Frame here is just the curve, not the
+        straight lines that are limited by L{start_angle} and L{end_angle}.
         """
         # GTK: angles are in 1/64 of degree and must be integers
         mult = 180.0 / 3.1415926535897931 * 64.0
@@ -2165,6 +2245,13 @@ class Canvas( _EGWidget ):
 
     def draw_polygon( self, points, color=None, size=1,
                       fillcolor=None, filled=False ):
+        """Draw polygon on canvas.
+
+        If L{filled} is C{True}, it will be filled with L{fillcolor}.
+
+        If L{color} is provided, it will draw the polygon's frame, even
+        if L{filled} is C{True}.
+        """
         if filled:
             gc = self.__configure_gc__( fgcolor=fillcolor, fill=filled )
             self._pixmap.draw_polygon( gc, True, points )
@@ -2218,11 +2305,29 @@ class Canvas( _EGWidget ):
 
 
 class Entry( _EGWidLabelEntry ):
+    """Text entry.
+
+    The simplest user input component. Its contents are free-form and not
+    filtered/masked.
+    """
     value = _gen_ro_property( "value" )
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", value="", callback=None,
                   persistent=False ):
+        """Entry constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.value = value
         self.callback = _callback_tuple( callback )
 
@@ -2265,8 +2370,25 @@ class Entry( _EGWidLabelEntry ):
 
 
 class Password( Entry ):
+    """Password entry.
+
+    Like L{Entry}, but will show '*' instead of typed chars.
+    """
     def __init__( self, id, label="", value="", callback=None,
                   persistent=False ):
+        """Password constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         Entry.__init__( self, id, label, value, callback, persistent )
         self._entry.set_visibility( False )
     # __init__()
@@ -2274,6 +2396,12 @@ class Password( Entry ):
 
 
 class Spin( _EGWidLabelEntry ):
+    """Spin button entry.
+
+    Spin buttons are numeric user input that checks if value is inside
+    a specified range. It also provides small buttons to help incrementing/
+    decrementing value.
+    """
     value = _gen_ro_property( "value" )
     min = _gen_ro_property( "min" )
     max = _gen_ro_property( "max" )
@@ -2285,6 +2413,23 @@ class Spin( _EGWidLabelEntry ):
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None, digits=3,
                   callback=None, persistent=False ):
+        """Spin constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param min: minimum value.
+        @param max: maximum value.
+        @param step: step to use to decrement/increment using buttons.
+        @param digits: how many digits to show.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.value = value
         self.min = min
         self.max = max
@@ -2345,9 +2490,31 @@ class Spin( _EGWidLabelEntry ):
 
 
 class IntSpin( Spin ):
+    """Integer-only Spin button.
+
+    Convenience widget that behaves like L{Spin} with digits set to
+    zero and also ensure L{set_value} and L{get_value} operates on
+    integers.
+    """
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None,
                   callback=None, persistent=False ):
+        """Integer Spin constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param min: minimum value.
+        @param max: maximum value.
+        @param step: step to use to decrement/increment using buttons.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         if value is not None:
             value = int( value )
         if min is not None:
@@ -2373,9 +2540,30 @@ class IntSpin( Spin ):
 
 
 class UIntSpin( IntSpin ):
+    """Unsigned integer-only Spin button.
+
+    Convenience widget that behaves like L{IntSpin} with minimum value
+    always greater or equal zero.
+    """
     def __init__( self, id, label="",
                   value=None, min=0, max=None, step=None,
                   callback=None, persistent=False ):
+        """Unsigned Integer Spin constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param min: minimum value, must be greater or equal zero.
+        @param max: maximum value.
+        @param step: step to use to decrement/increment using buttons.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         if min < 0:
             raise ValueError( "UIntSpin cannot have min < 0!" )
         Spin.__init__( self, id, label, value, min, max, step, 0, callback,
@@ -2385,11 +2573,31 @@ class UIntSpin( IntSpin ):
 
 
 class Color( _EGWidLabelEntry ):
+    """Button to select colors.
+
+    It show current/last selected color and may pop-up a new dialog to
+    select a new one.
+    """
     color = _gen_ro_property( "color" )
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", color=0, callback=None,
                   persistent=False ):
+        """Color selector constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param color: initial content. May be a triple with elements within
+               the range 0-255, an string with color in HTML format or even
+               a color present in X11's rgb.txt.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.color = self.color_from( color )
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label )
@@ -2437,6 +2645,7 @@ class Color( _EGWidLabelEntry ):
 
 
     def get_value( self ):
+        """Return a tuple with ( red, green, blue ), each in 0-255 range."""
         c = self._entry.get_color()
         r = int( c.red   / 65535.0 * 255 )
         g = int( c.green / 65535.0 * 255 )
@@ -2446,17 +2655,40 @@ class Color( _EGWidLabelEntry ):
 
 
     def set_value( self, value ):
+        """
+        @param value: May be a triple with elements within
+               the range 0-255, an string with color in HTML format or even
+               a color present in X11's rgb.txt.
+        """
         self._entry.set_color( self.color_from( value ) )
     # set_value()
 # Color
 
 
 class Font( _EGWidLabelEntry ):
+    """Button to select fonts.
+
+    It show current/last selected font and may pop-up a new dialog to
+    select a new one.
+    """
     font = _gen_ro_property( "font" )
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", font="sans 12", callback=None,
                   persistent=False ):
+        """Font selector constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param font: initial content.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.font = font
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label )
@@ -2495,11 +2727,30 @@ class Font( _EGWidLabelEntry ):
 
 
 class Selection( _EGWidLabelEntry ):
+    """Selection box (aka Combo box).
+
+    Selection or combo box is an element that allow you to select one of
+    various pre-defined values.
+    """
     options = _gen_ro_property( "options" )
     active = _gen_ro_property( "active" )
 
     def __init__( self, id, label="", options=None, active=None,
                   callback=None, persistent=False ):
+        """Selection constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param options: list of possible values.
+        @param active: selected element.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.options = options or []
         self.active  = active
         self.callback = _callback_tuple( callback )
@@ -2546,9 +2797,14 @@ class Selection( _EGWidLabelEntry ):
 
 
 class Progress( _EGWidLabelEntry ):
+    """Progress bar."""
     value = _gen_ro_property( "value" )
 
     def __init__( self, id, label="", value=0.0 ):
+        """Progress bar constructor.
+
+        0 <= value <= 1.0
+        """
         self.value = value
         _EGWidLabelEntry.__init__( self, id, False, label )
     # __init__()
@@ -2578,16 +2834,35 @@ class Progress( _EGWidLabelEntry ):
 
 
     def pulse( self ):
+        """Animate progress bar."""
         self._entry.pulse()
     # pulse()
 # Progress
 
 
 class CheckBox( _EGDataWidget ):
+    """Check box.
+
+    Check box is an component that have only two values: True (checked) or
+    False (unchecked).
+    """
     state = _gen_ro_property( "state" )
 
     def __init__( self, id, label="", state=False, callback=None,
                   persistent=False ):
+        """Check box constructor.
+
+        @param label: what to show on a label on the left side of the widget.
+        @param state: initial state.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        """
         self.label = label
         self.state = state
         self.callback = _callback_tuple( callback )
@@ -2625,6 +2900,13 @@ class CheckBox( _EGDataWidget ):
 
 
 class Group( _EGWidget ):
+    """Group of various components.
+
+    Group is a component that holds other components, always in a vertical
+    layout.
+
+    Group has a frame and may show a label.
+    """
     children = _gen_ro_property( "children" )
 
     def _get_app( self ):
@@ -2651,6 +2933,13 @@ class Group( _EGWidget ):
 
 
     def __init__( self, id, label="", children=None ):
+        """Group constructor.
+
+        @param id: unique identified.
+        @param label: displayed at top-left.
+        @param children: a list of eagle widgets that this group contains.
+               They're presented in vertical layout.
+        """
         _EGWidget.__init__( self, id )
         self.label = label
         self.children = children or tuple()
@@ -2866,6 +3155,19 @@ class OpenFileButton( Button, AutoGenId ):
     def __init__( self, id=None,
                   filter=None, multiple=False,
                   callback=None ):
+        """Constructor.
+
+        @param id: may not be provided, it will be generated automatically.
+        @param filter: filter files to show, see L{FileChooser}.
+        @param multiple: enable selection of multiple files.
+        @param callback: function (or list of functions) to call back
+               when file is selected. Function will get as parameters:
+                - app reference.
+                - widget reference.
+                - file name or file list (if multiple).
+
+        @see: L{FileChooser}
+        """
         def c( app_id, wid_id ):
             f = self.app.file_chooser( FileChooser.ACTION_OPEN,
                                        filter=filter, multiple=multiple )
@@ -2881,6 +3183,17 @@ class OpenFileButton( Button, AutoGenId ):
 class SelectFolderButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing folder/directory."""
     def __init__( self, id=None, callback=None ):
+        """Constructor.
+
+        @param id: may not be provided, it will be generated automatically.
+        @param callback: function (or list of functions) to call back
+               when file is selected. Function will get as parameters:
+                - app reference.
+                - widget reference.
+                - directory/folder name.
+
+        @see: L{FileChooser}
+        """
         def c( app_id, wid_id ):
             f = self.app.file_chooser( FileChooser.ACTION_SELECT_FOLDER )
             if f is not None and callback:
@@ -2896,6 +3209,19 @@ class SaveFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose a file to save."""
     def __init__( self, id=None, filename=None,
                   filter=None, callback=None ):
+        """Constructor.
+
+        @param id: may not be provided, it will be generated automatically.
+        @param filename: default filename.
+        @param filter: filter files to show, see L{FileChooser}.
+        @param callback: function (or list of functions) to call back
+               when file is selected. Function will get as parameters:
+                - app reference.
+                - widget reference.
+                - file name.
+
+        @see: L{FileChooser}
+        """
         def c( app_id, wid_id ):
             f = self.app.file_chooser( FileChooser.ACTION_SAVE,
                                        filename=filename,
@@ -2947,6 +3273,7 @@ class VSeparator( _EGWidget ):
 
 
 class Label( _EGWidget, AutoGenId ):
+    """Text label"""
     label = _gen_ro_property( "label" )
 
     LEFT   = 0.0
@@ -2958,6 +3285,15 @@ class Label( _EGWidget, AutoGenId ):
 
     def __init__( self, id=None, label="",
                   halignment=LEFT, valignment=MIDDLE ):
+        """Label constructor.
+
+        @param id: may not be provided, it will be generated automatically.
+        @param label: what this label will show.
+        @param halignment: horizontal alignment, like L{LEFT}, L{RIGHT} or
+               L{CENTER}.
+        @param valignment: vertical alignment, like L{TOP}, L{BOTTOM} or
+               L{MIDDLE}.
+        """
         _EGWidget.__init__( self, id or self.__get_id__() )
         self.label = label
 
@@ -2977,6 +3313,98 @@ class Label( _EGWidget, AutoGenId ):
         self._wid.set_text( str( value ) )
     # set_value()
 # Label
+
+
+def information( message ):
+    """Show info message to user."""
+
+    d = gtk.MessageDialog( type=gtk.MESSAGE_INFO,
+                           message_format=message,
+                           buttons=gtk.BUTTONS_CLOSE )
+    d.run()
+    d.destroy()
+    return
+# information()
+info = information
+
+
+def warning( message ):
+    """Show warning message to user."""
+
+    d = gtk.MessageDialog( type=gtk.MESSAGE_WARNING,
+                           message_format=message,
+                           buttons=gtk.BUTTONS_CLOSE )
+    d.run()
+    d.destroy()
+    return
+# warning()
+warn = warning
+
+
+def error( message ):
+    """Show error message to user."""
+
+    d = gtk.MessageDialog( type=gtk.MESSAGE_ERROR,
+                           message_format=message,
+                           buttons=gtk.BUTTONS_CLOSE )
+    d.run()
+    d.destroy()
+    return
+# error()
+err = error
+
+
+def yesno( message, yesdefault=False ):
+    """Show yes/no message to user.
+
+    @param yesdefault: if yes should be the default action.
+    """
+
+    d = gtk.MessageDialog( type=gtk.MESSAGE_QUESTION,
+                           message_format=message,
+                           buttons=gtk.BUTTONS_YES_NO )
+    if yesdefault:
+        d.set_default_response( gtk.RESPONSE_YES )
+    else:
+        d.set_default_response( gtk.RESPONSE_NO )
+
+    r = d.run()
+    d.destroy()
+
+    if r == gtk.RESPONSE_YES:
+        return True
+    elif r == gtk.RESPONSE_NO:
+        return False
+    else:
+        return yesdefault
+# yesno()
+    
+
+
+def confirm( message, okdefault=False ):
+    """Show confirm message to user.
+
+    @param okdefault: if ok should be the default action.
+    """
+
+    d = gtk.MessageDialog( type=gtk.MESSAGE_QUESTION,
+                           message_format=message,
+                           buttons=gtk.BUTTONS_OK_CANCEL )
+    if okdefault:
+        d.set_default_response( gtk.RESPONSE_OK )
+    else:
+        d.set_default_response( gtk.RESPONSE_CANCEL )
+
+    r = d.run()
+    d.destroy()
+
+    if r == gtk.RESPONSE_OK:
+        return True
+    elif r == gtk.RESPONSE_CANCEL:
+        return False
+    else:
+        return okdefault
+# confirm()
 
 
 
