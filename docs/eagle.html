@@ -11,6 +11,8 @@
 h1 {
    font-family: sans-serif;
    border-bottom: 2px black solid;
+   cursor: pointer;
+   margin-top: 1em;
 }
 
 code {
@@ -26,6 +28,28 @@ code.listing {
    color: black;
 }
 
+code.screen {
+   display: block;
+   border: 1px solid #666666;
+   padding: 5px 5px 5px 5px;
+   background: #000000;
+   color: #dddddd;
+}
+
+span.userprompt, span.rootprompt {
+   display: block;
+}
+
+span.userprompt:before {
+   content: "user$ ";
+   color: #00ff00;
+}
+
+span.rootprompt:before {
+   content: "root$ ";
+   color: #ff0000;
+}
+
 code.comment {
    font-style: italic;
    font-family: serif;
@@ -35,13 +59,18 @@ code.comment {
    display: block;
 }
 
+code.keyword {
+   color: #0000aa;
+   background: inherit;
+}
+
 code.class {
    color: #0000aa;
    background: inherit;
 }
 
 code.function {
-   color: #aa0000;
+   color: #aa6600;
    background: inherit;
 }
 
@@ -51,7 +80,7 @@ code.optional {
 }
 
 code.var {
-   color: #336600;
+   color: #663300;
    background: inherit;
 }
 
@@ -80,12 +109,13 @@ div.text {
 }
 
 div.img {
-   margin: 2px;
+   margin-top: 1em;
+   margin-bottom: 1em;
    cursor: pointer;
 }
 
 div.img p:before {
-   content: "Figura: ";
+   content: "Figure: ";
    font-weight: bold;
 }
 
@@ -95,6 +125,25 @@ div.img p {
    padding: 0px;
    width: 100%;
 }
+
+div.listing {
+   margin: 2px;
+}
+
+div.listing p:before {
+   content: "Listing: ";
+   font-weight: bold;
+}
+
+div.listing p {
+   text-indent: 0;
+   margin: 0px;
+   padding: 0px;
+   width: 100%;
+   cursor: pointer;
+}
+
+
 
 
 body, p {
@@ -228,6 +277,13 @@ body, p {
 	   toggleBorder( "div-" + img );
 	 }
 
+         function listingToggle( listing ) {
+	   toggleFontStyle( "caption-" + listing );
+	   toggleFontWeight( "caption-" + listing );
+	   toggleBorder( "caption-" + listing );
+	   toggle( listing );
+	 }
+
       } else {
 
 
@@ -249,6 +305,9 @@ body, p {
 	 function imgToggle( e ) {
 	    showoff();
 	 }
+	 function listingToggle( e ) {
+	    showoff();
+	 }
 
       }
 -->
@@ -256,7 +315,7 @@ body, p {
   </head>
   <body>
 
-    <h1 id="intro-head">Eagle Introduction</h1>
+    <h1 id="h-intro" onclick="hToggle( 'intro' )">Eagle Introduction</h1>
 
     <div id="intro" class="text">
       <p>
@@ -337,7 +396,8 @@ body, p {
 	class="function">get_value</code> as appropriated:
       </p>
 
-      <code class="listing">
+      <div class="listing">
+	<code class="listing" id="dict-access-example">
 <code class="comment"># It's easier to write</code>
 <code class="var">value</code> = <code class="var">my_app</code>[
 <code class="string">"my_widget"</code> ]<br />
@@ -356,7 +416,11 @@ class="function">get_value</code>()<br />
 <code class="var">my_widget</code>.<code
 class="function">set_value</code>( <code class="var">value</code> )
 <br />
-      </code>
+	</code>
+	<p id="caption-dict-access-example"
+	   onclick="listingToggle( 'dict-access-example' )">
+	Example of dict-like access.</p>
+      </div>
 
       <p>
 	Input and Buttons components provide a callback to notify some
@@ -386,6 +450,396 @@ class="function">set_value</code>( <code class="var">value</code> )
 	<p id="caption-showroom">Eagle show room.</p>
       </div>
 
+      <div class="img" id="div-showroom-annotated"
+	   onclick="imgToggle( 'showroom-annotated' )">
+	<img src="images/showroom-annotated.png"
+	     id="img-showroom-annotated"
+	     alt="Eagle show room annotated" />
+	<p id="caption-showroom-annotated">Eagle show room annotated.</p>
+      </div>
+
+    </div>
+
+
+
+    <h1 id="h-install" onclick="hToggle( 'install' )">Installing Eagle</h1>
+
+    <div id="install" class="text">
+      <p>
+	Eagle code is available at <a
+	href="http://subversion.tigris.org" title="Subversion">SVN</a>
+	repository:
+	<a
+	  href="http://code.gustavobarbieri.com.br/eagle/">http://code.gustavobarbieri.com.br/eagle/</a>
+      </p>
+      <p>
+	Grab it with:
+	<code class="screen">
+	  <span class="userprompt">
+	    svn co http://code.gustavobarbieri.com.br/eagle
+	  </span>
+	  <span class="userprompt">
+	    cd eagle
+	  </span>
+	</code>
+      </p>
+      <p>
+	Then use Python's distutils to install:
+	<code class="screen">
+	  <span class="rootprompt">
+	    python setup.py install
+	  </span>
+	</code>
+      </p>
+    </div>
+
+
+
+    <h1 id="h-hello" onclick="hToggle( 'hello' )">Hello World!</h1>
+
+    <div id="hello" class="text">
+      <p>
+	Let's create a simple program, it will present the message
+	Hello World as a button, that when clicked will print the same
+	message to standard output and then quit the program.
+      </p>
+      <div class="listing">
+	<code class="listing" id="helloworld.py">
+<code class="keyword">from</code>
+<code class="var">eagle</code>
+<code class="keyword">import</code>
+*<br />
+<br />
+<code class="keyword">def</code>
+<code class="function">my_callback</code>(
+<code class="var">app</code>,
+<code class="var">widget</code>
+):<br />
+&nbsp;&nbsp;&nbsp;<code class="keyword">print</code>
+<code class="string">"Hello World"</code><br />
+&nbsp;&nbsp;&nbsp;<code class="function">quit</code>()<br />
+
+<br />
+
+<code class="class">App</code>(<br/>
+&nbsp;&nbsp;&nbsp;<code class="var">title</code>=<code
+class="string">"Hello World"</code>,<br />
+&nbsp;&nbsp;&nbsp;<code class="var">center</code>=<code
+class="class">Button</code>(<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="var">id</code>=<code
+class="string">"button"</code>,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="var">label</code>=<code
+class="string">"Hello World"</code>,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="var">callback</code>=<code
+class="function">my_callback</code>,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br />
+&nbsp;&nbsp;&nbsp;)
+<br />
+<br />
+<code class="function">run</code>()<br />
+	</code>
+	<p id="caption-helloworld.py"
+	   onclick="listingToggle( 'helloworld.py' )">helloworld.py
+	</p>
+      </div>
+
+      <p>
+	The first thing we must do is import symbols from the eagle
+	module.
+	For sake of simplicity, we import every symbol.
+      </p>
+      <p>
+	Then we define a python function that get two parameters, a
+	reference to the application and the widget that was the
+	source of the event. This function is really simple, it prints
+	the message and then calls Eagle's <code
+	class="function">quit</code>() function, that stops the main
+	event loop.
+      </p>
+      <p>
+	Next we declare the user interface, providing it a title and a
+	widget to the center position. This widget is the <code
+	class="class">Button</code> class, that takes as arguments an
+	id, label and the function to call back when the button is
+	pushed.
+      </p>
+      <p>
+	We are almost done, just need to enter the main event loop and
+	have Eagle to deliver actions based on defined callbacks.
+      </p>
+      <p>
+	You may check <abbr title="Application Program
+	Interface">API</abbr> of these elements at <a
+	href="http://www.gustavobarbieri.com.br/eagle/docs/api/">http://www.gustavobarbieri.com.br/eagle/docs/api/</a>:
+      </p>
+      <ul>
+	<li>
+	  <a
+	      href="http://www.gustavobarbieri.com.br/eagle/docs/api/public/eagle-module.html#quit"
+	      title="quit() API">quit</a>
+	</li>
+	<li>
+	  <a
+	      href="http://www.gustavobarbieri.com.br/eagle/docs/api/public/eagle.App-class.html"
+	      title="App API">App</a>
+	</li>
+	<li>
+	  <a
+	      href="http://www.gustavobarbieri.com.br/eagle/docs/api/public/eagle.Button-class.html"
+	      title="Button API">Button</a>
+	</li>
+
+	<li>
+	  <a
+	      href="http://www.gustavobarbieri.com.br/eagle/docs/api/public/eagle-module.html#run"
+	      title="run() API">run</a>
+	</li>
+
+      </ul>
+    </div>
+
+
+    <h1 id="h-multiplewidgets" onclick="hToggle( 'multiplewidgets'
+					)">Multiple widgets</h1>
+
+    <div id="multiplewidgets" class="text">
+      <p>
+	As already said, you can add multiple widgets to each of 6
+	areas (left, right, center, top, bottom and preferences). Just
+	use a Python list or tuple!
+      </p>
+
+      <div class="listing">
+	<code class="listing" id="multiplewidgets.py">
+<code class="keyword">from</code>
+<code class="var">eagle</code>
+<code class="keyword">import</code>
+*<br />
+<br />
+
+<code class="class">App</code>(<br/>
+&nbsp;&nbsp;&nbsp;<code class="var">title</code>=<code
+class="string">"Look Mamma, Multiple Widgets!"</code>,<br />
+&nbsp;&nbsp;&nbsp;<code class="var">center</code>=(<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Button</code>(
+<code class="var">id</code>=<code
+class="string">"b1"</code>,
+<code class="var">label</code>=<code
+class="string">"Button 1"</code> ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Button</code>(
+<code class="var">id</code>=<code
+class="string">"b2"</code>,
+<code class="var">label</code>=<code
+class="string">"Button 2"</code> ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br />
+&nbsp;&nbsp;&nbsp;)
+<br />
+<br />
+<code class="function">run</code>()<br />
+	</code>
+	<p id="caption-multiplewidgets.py"
+	   onclick="listingToggle( 'multiplewidgets.py' )">multiplewidgets.py
+	</p>
+      </div>
+    </div>
+
+
+
+    <h1 id="h-userinput" onclick="hToggle( 'userinput' )">User Input</h1>
+
+    <div id="userinput" class="text">
+      <p>
+	Almost every program needs to communicate with user.
+	Ealge is optimized for this, making this common task a snap!
+      </p>
+
+      <div class="listing">
+	<code class="listing" id="userinput.py">
+<code class="keyword">from</code>
+<code class="var">eagle</code>
+<code class="keyword">import</code>
+*<br />
+<br />
+
+<code class="keyword">def</code>
+<code class="function">user_input</code>(
+<code class="var">app</code>,
+<code class="var">wid</code>,
+<code class="var">text</code> ):<br />
+&nbsp;&nbsp;&nbsp;<code class="keyword">print</code>
+<code class="var">app</code>,
+<code class="var">wid</code>,
+<code class="var">text</code>
+<br />
+<br />
+
+<code class="keyword">def</code>
+<code class="function">set_text</code>(
+<code class="var">app</code>,
+<code class="var">wid</code> ):<br />
+&nbsp;&nbsp;&nbsp;<code class="var">app</code>[
+<code class="string">"entry"</code> ] =
+<code class="string">"some text"</code>
+<br />
+<br />
+
+
+<code class="class">App</code>(<br/>
+&nbsp;&nbsp;&nbsp;<code class="var">title</code>=<code
+class="string">"Type something or press the button"</code>,<br />
+&nbsp;&nbsp;&nbsp;<code class="var">center</code>=(<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Entry</code>(
+<code class="var">id</code>=<code
+class="string">"entry"</code>,
+<code class="var">label</code>=<code
+class="string">"Input:"</code>,
+<code class="var">callback</code>=<code
+class="function">user_input</code>
+ ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Button</code>(
+<code class="var">id</code>=<code
+class="string">"button"</code>,
+<code class="var">label</code>=<code
+class="string">"Change Text"</code>,
+<code class="var">callback</code>=<code
+class="function">set_text</code>
+ ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br />
+&nbsp;&nbsp;&nbsp;)
+<br />
+<br />
+<code class="function">run</code>()<br />
+	</code>
+	<p id="caption-userinput.py"
+	   onclick="listingToggle( 'userinput.py' )">userinput.py
+	</p>
+      </div>
+    </div>
+
+
+    <h1 id="h-canvas" onclick="hToggle( 'canvas' )">Canvas: The Drawing Areas</h1>
+
+    <div id="canvas" class="text">
+      <p>
+	Eagle was born to help to create GUIs for Computer Graphics
+	and Image Processing software, so it have an easy-to-use
+	canvas where you can draw.
+      </p>
+      <div class="listing">
+	<code class="listing" id="canvas.py">
+<code class="keyword">from</code>
+<code class="var">eagle</code>
+<code class="keyword">import</code>
+*<br />
+<br />
+
+<code class="keyword">def</code>
+<code class="function">mouse_callback</code>(
+<code class="var">app</code>,
+<code class="var">wid</code>,
+<code class="var">button</code>,
+<code class="var">x</code>,
+<code class="var">y</code> ):<br />
+&nbsp;&nbsp;&nbsp;<code class="keyword">if</code>
+<code class="function">mouse_callback</code>.<code
+class="var">last_point</code> <code class="keyword">is</code> <code
+class="keyword">not</code> <code class="keyword">None</code>:<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="var">x0</code>, <code
+class="var">y0</code> = <code class="function">mouse_callback</code>.<code
+class="var">last_point</code><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="var">app</code>[
+<code class="string">"canvas"</code> ].<code
+class="function">draw_line</code>(
+<code class="var">x0</code>,
+<code class="var">y0</code>,
+<code class="var">x</code>,
+<code class="var">y</code>,
+<code class="string">"red"</code> )
+<br />
+&nbsp;&nbsp;&nbsp;<code class="function">mouse_callback</code>.<code
+class="var">last_point</code> = (
+<code class="var">x</code>, <code class="var">y</code> )
+<br />
+<br />
+
+<code class="keyword">def</code>
+<code class="function">draw_image</code>(
+<code class="var">app</code>,
+<code class="var">wid</code> ):<br />
+&nbsp;&nbsp;&nbsp;<code class="var">img</code> =
+<code class="class">Image</code>( <code
+class="var">filename</code>=<code class="string">"img.png"</code> )<br />
+&nbsp;&nbsp;&nbsp;<code class="var">app</code>[
+<code class="string">"canvas"</code> ].<code
+class="function">draw_image</code>( <code class="var">image</code>=<code class="var">img</code>, <code class="var">x</code>=10,
+<code class="var">y</code>=10 )
+<br />
+<br />
+
+
+<code class="class">App</code>(<br/>
+&nbsp;&nbsp;&nbsp;<code class="var">title</code>=<code
+class="string">"Type something or press the button"</code>,<br />
+&nbsp;&nbsp;&nbsp;<code class="var">center</code>=(<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Canvas</code>(
+<code class="var">id</code>=<code
+class="string">"canvas"</code>,
+<code class="var">label</code>=<code
+class="string">"Canvas:"</code>,
+<code class="var">width</code>=800,
+<code class="var">height</code>=600,
+<code class="var">callback</code>=<code
+class="function">mouse_callback</code>
+ ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code class="class">Button</code>(
+<code class="var">id</code>=<code
+class="string">"button"</code>,
+<code class="var">label</code>=<code
+class="string">"Draw Image"</code>,
+<code class="var">callback</code>=<code
+class="function">draw_image</code>
+ ),<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br />
+&nbsp;&nbsp;&nbsp;)
+<br />
+<br />
+<code class="function">run</code>()<br />
+	</code>
+	<p id="caption-canvas.py"
+	   onclick="listingToggle( 'canvas.py' )">canvas.py
+	</p>
+      </div>
+
+      <p>
+	This example requires a further explanation because of the
+	weird <code class="function">mouse_callback</code>. What we do
+	there is to remember the last draw point using a function
+	attribute <code class="var">last_point</code>. Remember that in
+	Python everything is an object, so functions, then you
+	can use an attribute, like with other objects, and simulate
+	<b>static variables</b> (in C).
+      </p>
+
+    </div>
+
+
+
+
+    <h1 id="h-about" onclick="hToggle( 'about' )">About This Document</h1>
+
+    <div id="about" class="text">
+      <p>
+	This document was written by <a
+	href="http://www.gustavobarbieri.com.br">Gustavo Sverzut
+	Barbieri</a> and is licensed under <a
+	href="http://creativecommons.org/licenses/by-sa/2.5">Creative
+	Commons - Attribution/Share Alike</a>.
+      </p>
+      <p>
+	Grab most recent version at:
+      </p>
+      <a
+	  href="http://www.gustavobarbieri.com.br/eagle/docs/eagle.html">http://www.gustavobarbieri.com.br/eagle/docs/eagle.html</a>
     </div>
 
   </body>
