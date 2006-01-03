@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<!-- Created by htmlize-1.16 in css mode. -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>01-gui.py</title>
+    <link rel="stylesheet" type="text/css" title="Default" href="style.css" />
+  </head>
+  <body>
+    <pre class="listing">
+<span class="comment">#!/usr/bin/env python2</span>
+
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton(),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            ),
+                    )
+           )
+
+run()
+
+</pre>
+  </body>
+</html>

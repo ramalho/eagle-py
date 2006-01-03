@@ -1,0 +1,186 @@
+--- 05-extra.py	2006-01-03 17:43:12.000000000 -0200
++++ 06-polishing.py	2006-01-03 17:51:02.000000000 -0200
+@@ -35,6 +35,17 @@
+ class Tool( object ):
+     """Interface to be implemented by tools."""
+ 
++    def set_active( self, app ):
++        """This tool is now active."""
++        pass
++    # set_active()
++
++
++    def set_inactive( self, app ):
++        """This tool is now inactive. """
++        pass
++    # set_inactive()
++
+ 
+     def mouse( self, app, canvas, buttons, x, y ):
+         """This tool have a user feedback using mouse on canvas."""
+@@ -47,13 +58,29 @@
+ class Line( Tool ):
+     def __init__( self ):
+         self.first_point = None
++        self.message_id = None
+     # __init__()
+ 
+ 
++    def set_active( self, app ):
++        self.message_id = app.status_message(
++            "Press the left mouse button to mark the first point." )
++    # set_active()
++
++
++    def set_inactive( self, app ):
++        if self.message_id is not None:
++            app.remove_status_message( self.message_id )
++    # set_inactive()
++
++
+     def mouse( self, app, canvas, buttons, x, y ):
+         if buttons & Canvas.MOUSE_BUTTON_1:
+             if self.first_point is None:
+                 self.first_point = ( x, y )
++                self.inner_message_id = app.status_message(
++                    ( "First poit at ( %d, %d ). Now mark the second." ) %
++                    ( x, y ) )
+             else:
+                 color = app[ "fg" ]
+                 size  = app[ "size" ]
+@@ -61,6 +88,7 @@
+                 app.undo.push()
+                 canvas.draw_line( x0, y0, x, y, color, size )
+                 self.first_point = None
++                app.remove_status_message( self.inner_message_id )
+     # mouse()
+ # Line
+ 
+@@ -69,10 +97,23 @@
+ class Pencil( Tool ):
+     def __init__( self ):
+         self.last_point = None
++        self.message_id = None
+         self.changed = False
+     # __init__()
+ 
+ 
++    def set_active( self, app ):
++        self.message_id = app.status_message(
++            "Press the left mouse button and move your mouse." )
++    # set_active()
++
++
++    def set_inactive( self, app ):
++        if self.message_id is not None:
++            app.remove_status_message( self.message_id )
++    # set_inactive()
++
++
+     def mouse( self, app, canvas, buttons, x, y ):
+         if buttons & Canvas.MOUSE_BUTTON_1:
+             if not self.changed:
+@@ -107,13 +148,31 @@
+ class Rectangle( Tool ):
+     def __init__( self ):
+         self.first_point = None
++        self.message_id = None
+     # __init__()
+ 
+ 
++    def set_active( self, app ):
++        app[ "rectgroup" ].show()
++        self.message_id = app.status_message(
++            "Press the left mouse button to mark first point." )
++    # set_active()
++
++
++    def set_inactive( self, app ):
++        app[ "rectgroup" ].hide()
++        if self.message_id is not None:
++            app.remove_status_message( self.message_id )
++    # set_inactive()
++
++
+     def mouse( self, app, canvas, buttons, x, y ):
+         if buttons & Canvas.MOUSE_BUTTON_1:
+             if self.first_point is None:
+                 self.first_point = ( x, y )
++                self.inner_message_id = app.status_message(
++                    ( "First poit at ( %d, %d ). Now mark the second." ) %
++                    ( x, y ) )
+             else:
+                 fg   = app[ "fg" ]
+                 bg   = app[ "bg" ]
+@@ -133,12 +192,33 @@
+                 app.undo.push()
+                 canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                 self.first_point = None
++                app.remove_status_message( self.inner_message_id )
+     # mouse()
+ # Rectangle
+ 
+ 
+ 
+ class Text( Tool ):
++    def __init__( self ):
++        self.message_id = None
++    # __init__()
++
++
++    def set_active( self, app ):
++        app[ "textgroup" ].show()
++        self.message_id = app.status_message(
++            "Type your text in 'Contents' and press the left button " \
++            "to place it." )
++    # set_active()
++
++
++    def set_inactive( self, app ):
++        app[ "textgroup" ].hide()
++        if self.message_id is not None:
++            app.remove_status_message( self.message_id )
++    # set_inactive()
++
++
+     def mouse( self, app, canvas, buttons, x, y ):
+         if buttons & Canvas.MOUSE_BUTTON_1 and app[ "text" ]:
+             text  = app[ "text" ]
+@@ -165,6 +245,16 @@
+ def_tool="Line"
+ 
+ 
++def tool_changed( app, tool, value ):
++    if tool_changed.last_tool:
++        tool_changed.last_tool.set_inactive( app )
++
++    t = tools[ value ]
++    tool_changed.last_tool = t
++    t.set_active( app )
++# tool_changed()
++tool_changed.last_tool = None
++
+ 
+ def canvas_action( app, canvas, buttons, x, y ):
+     tool = app[ "tool" ]
+@@ -215,6 +305,7 @@
+                              label="Tool:",
+                              options=tools.keys(),
+                              active=def_tool,
++                             callback=tool_changed,
+                              ),
+                   UIntSpin( id="size",
+                             label="Line Size:",
+@@ -264,6 +355,12 @@
+                     )
+            )
+ 
++
++for tool in tools.itervalues():
++    tool.set_inactive( app )
++
++tool_changed( app, app.get_widget_by_id( "tool" ), def_tool )
++
+ Undo( app )
+ 
+ run()

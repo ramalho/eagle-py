@@ -80,23 +80,32 @@ __all__ = [
 import os
 import sys
 import gc
-import pygtk
-pygtk.require( "2.0" )
-import gtk
-import pango
-import gobject
 import cPickle as pickle
+
+try:
+    import pygtk
+    pygtk.require( "2.0" )
+    import gtk
+    import pango
+    import gobject
+except ImportError, e:
+    sys.stderr.writelines(
+        ( "Missing module: ", str( e ), "\n",
+          "This module is part of pygtk (http://pygtk.org).\n",
+          ) )
+    sys.exit( -1 )
 
 required_gtk = ( 2, 6, 0 )
 m = gtk.check_version( *required_gtk )
 if m:
-    raise SystemExit(
-        ( "Error checking GTK version: %s. "
-          "This system requires pygtk >= %s, you have %s installed." )
+    sys.stderr.writelines(
+        ( "Error checking GTK version: %s\n"
+          "This system requires pygtk >= %s, you have %s installed.\n" )
         % ( m,
             ".".join( [ str( v ) for v in required_gtk ] ),
             ".".join( [ str( v ) for v in gtk.pygtk_version ] )
             ) )
+    sys.exit( -1 )
 
 
 _apps = {}
@@ -1242,7 +1251,8 @@ class DebugDialog( _EGObject, AutoGenId ):
     def save_exception( self, exctype, value, tb ):
         import traceback
         import time
-        filename = "%s-%s-%s.tb" % ( sys.argv[ 0 ],
+        progname = os.path.split( sys.argv[ 0 ] )[ -1 ]
+        filename = "%s-%s-%s.tb" % ( progname,
                                   os.getuid(),
                                   int( time.time() ) )
         filename = os.path.join( os.path.sep, "tmp", filename )
@@ -1437,6 +1447,7 @@ class App( _EGObject, AutoGenId ):
     bottom = _gen_ro_property( "bottom" )
     center = _gen_ro_property( "center" )
     preferences = _gen_ro_property( "preferences" )
+    statusbar = _gen_ro_property( "statusbar" )
     _widgets = _gen_ro_property( "_widgets" )
 
     def __init__( self, title, id=None,
@@ -1444,7 +1455,8 @@ class App( _EGObject, AutoGenId ):
                   preferences=None,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
-                  license=None, copyright=None ):
+                  license=None, copyright=None,
+                  statusbar=False ):
         """App Constructor.
 
         @param title: application name, to be displayed in the title bar.
@@ -1462,6 +1474,8 @@ class App( _EGObject, AutoGenId ):
                window's bottom.
         @param preferences: list of widgets to be laid out vertically in
                another window, this can be shown with L{PreferencesButton}.
+        @param statusbar: if C{True}, an statusbar will be available and
+               usable with L{status_message} method.
         @param author: the application author or list of author, used in
                L{AboutDialog}, this can be shown with L{AboutButton}.
         @param description: application description, used in L{AboutDialog}.
@@ -1472,7 +1486,8 @@ class App( _EGObject, AutoGenId ):
         @param copyright: application copyright, used in L{AboutDialog}.
         @param quit_callback: function (or list of functions) that will be
                called when application is closed. Function will receive as
-               parameter the reference to App.
+               parameter the reference to App. If return value is False,
+               it will abort closing the window.
         @param data_changed_callback: function (or list of functions) that will
                be called when some widget that holds data have its data
                changed. Function will receive as parameters:
@@ -1494,6 +1509,7 @@ class App( _EGObject, AutoGenId ):
         self.version = _str_tuple( version )
         self.license = _str_tuple( license )
         self.copyright = _str_tuple( copyright )
+        self.statusbar = statusbar
         self._widgets = {}
 
         self.quit_callback = _callback_tuple( quit_callback )
@@ -1517,7 +1533,9 @@ class App( _EGObject, AutoGenId ):
 
     def __setitem__( self, name, value ):
         w = self.get_widget_by_id( name )
-        if isinstance( w, _EGDataWidget ):
+        if w is None:
+            raise ValueError( "Could not find any widget with id=%r" % name )
+        elif isinstance( w, _EGDataWidget ):
             return w.set_value( value )
         else:
             raise TypeError(
@@ -1628,10 +1646,13 @@ class App( _EGObject, AutoGenId ):
         self._win.set_name( self.id )
         self._win.set_title( self.title )
         self._win.set_default_size( 800, 600 )
-        self._win.set_border_width( self.border_width )
+
+        self._top_layout = gtk.VBox( False )
+        self._win.add( self._top_layout )
 
         self._hbox = gtk.HBox( False, self.spacing )
-        self._win.add( self._hbox )
+        self._hbox.set_border_width( self.border_width )
+        self._top_layout.pack_start( self._hbox, expand=True, fill=True )
 
         self.__setup_gui_left__()
         self.__setup_gui_right__()
@@ -1673,6 +1694,13 @@ class App( _EGObject, AutoGenId ):
                 self._hbox.pack_start( gtk.VSeparator(),
                                        expand=False, fill=False )
             self._hbox.pack_end( self._right, expand=False, fill=True )
+
+        if self.statusbar:
+            self._statusbar = gtk.Statusbar()
+            self._statusbar_ctx = self._statusbar.get_context_id( self.title )
+            self._statusbar.set_has_resize_grip( True )
+            self._top_layout.pack_end( self._statusbar,
+                                       expand=False, fill=True )
 
         self._win.show_all()
     # __setup_gui__()
@@ -1725,14 +1753,26 @@ class App( _EGObject, AutoGenId ):
     # data_changed()
 
 
-    def __delete_event__( self, *args ):
+    def __do_close__( self ):
         self.save()
+
         for c in self.quit_callback:
-            c( self )
+            if not c( self ):
+                return False
 
         del _apps[ self.id ]
         if not _apps:
             gtk.main_quit()
+
+        return True
+    # __do_close__()
+
+
+    def __delete_event__( self, *args ):
+        if self.__do_close__():
+            return False
+        else:
+            return True
     # __delete_event__()
 
 
@@ -1751,9 +1791,10 @@ class App( _EGObject, AutoGenId ):
             if isinstance( w, _EGDataWidget ) and w.persistent:
                 d[ id ] = w.get_value()
 
-        f = open( self.__persistence_filename__(), "wb" )
-        pickle.dump( d, f, pickle.HIGHEST_PROTOCOL )
-        f.close()
+        if d:
+            f = open( self.__persistence_filename__(), "wb" )
+            pickle.dump( d, f, pickle.HIGHEST_PROTOCOL )
+            f.close()
     # save()
 
 
@@ -1782,9 +1823,36 @@ class App( _EGObject, AutoGenId ):
 
     def close( self ):
         """Close application window."""
-        self.__delete_event__()
-        self._win.destroy()
+        if self.__do_close__():
+            self._win.destroy()
     # close()
+
+
+    def status_message( self, message ):
+        """Display a message in status bar and retrieve its identifier for
+        later removal.
+
+        @see: L{remove_status_message}
+        @note: this only active if statusbar=True
+        """
+        if self.statusbar:
+            return self._statusbar.push( self._statusbar_ctx, message )
+        else:
+            raise ValueError( "App '%s' doesn't use statusbar!" % self.id )
+    # status_message()
+
+
+    def remove_status_message( self, message_id ):
+        """Remove a previously displayed message.
+
+        @see: L{status_message}
+        @note: this only active if statusbar=True
+        """
+        if self.statusbar:
+            self._statusbar.remove( self._statusbar_ctx, message_id )
+        else:
+            raise ValueError( "App '%s' doesn't use statusbar!" % self.id )
+    # remove_status_message()
 # App
 
 
@@ -1811,6 +1879,12 @@ class Canvas( _EGWidget ):
     FONT_NAME_SANS         = "sans"
     FONT_NAME_MONO         = "monospace"
 
+    MOUSE_BUTTON_1         = 1
+    MOUSE_BUTTON_2         = 2
+    MOUSE_BUTTON_3         = 4
+    MOUSE_BUTTON_4         = 8
+    MOUSE_BUTTON_5         = 16
+
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, width, height, label="", bgcolor=None,
@@ -1830,9 +1904,11 @@ class Canvas( _EGWidget ):
                as parameters:
                 - App reference
                 - Canvas reference
-                - Button state
+                - Button state (or'ed MOUSE_BUTTON_*)
                 - horizontal positon (x)
                 - vertical positon (y)
+
+        @todo: honor the alpha value while drawing colors.
         """
         _EGWidget.__init__( self, id )
         self.label = label
@@ -1905,17 +1981,65 @@ class Canvas( _EGWidget ):
         self._area.connect( "expose_event", expose_event )
 
 
+        def get_buttons( state ):
+            buttons = 0
+            if state & gtk.gdk.BUTTON1_MASK:
+                buttons |= self.MOUSE_BUTTON_1
+            if state & gtk.gdk.BUTTON2_MASK:
+                buttons |= self.MOUSE_BUTTON_2
+            if state & gtk.gdk.BUTTON3_MASK:
+                buttons |= self.MOUSE_BUTTON_3
+            if state & gtk.gdk.BUTTON4_MASK:
+                buttons |= self.MOUSE_BUTTON_4
+            if state & gtk.gdk.BUTTON5_MASK:
+                buttons |= self.MOUSE_BUTTON_5
+            return buttons
+        # get_buttons()
+
+        buttons_map = {
+            1: self.MOUSE_BUTTON_1,
+            2: self.MOUSE_BUTTON_2,
+            3: self.MOUSE_BUTTON_3,
+            4: self.MOUSE_BUTTON_4,
+            5: self.MOUSE_BUTTON_5,
+            }
+
         def button_press_event( widget, event ):
             if self._pixmap != None:
+                btns = get_buttons( event.state )
+                btns |= buttons_map[ event.button ]
+
+                x = int( event.x )
+                y = int( event.y )
+
                 for c in self._callback:
-                    c( self.app, self, event.button,
-                       int( event.x ), int( event.y ) )
+                    c( self.app, self, btns, x, y )
             return True
         # button_press_event()
-        self._area.connect( "button_press_event", button_press_event )
+        if self._callback:
+            self._area.connect( "button_press_event", button_press_event )
+
+
+        def button_release_event( widget, event ):
+            if self._pixmap != None:
+                btns = get_buttons( event.state )
+                btns &= ~buttons_map[ event.button ]
+
+                x = int( event.x )
+                y = int( event.y )
+
+                for c in self._callback:
+                    c( self.app, self, btns, x, y )
+            return True
+        # button_press_event()
+        if self._callback:
+            self._area.connect( "button_release_event", button_release_event )
 
 
         def motion_notify_event( widget, event ):
+            if self._pixmap is None:
+                return True
+
             if event.is_hint:
                 x, y, state = event.window.get_pointer()
             else:
@@ -1923,9 +2047,14 @@ class Canvas( _EGWidget ):
                 y = event.y
                 state = event.state
 
-            if state & gtk.gdk.BUTTON1_MASK and self._pixmap != None:
+
+            btns = get_buttons( state )
+            x = int( x )
+            y = int( y )
+
+            if btns:
                 for c in self._callback:
-                    c( self.app, self, 1, x, y )
+                    c( self.app, self, btns, x, y )
 
             return True
         # motion_notify_event()
@@ -1937,6 +2066,7 @@ class Canvas( _EGWidget ):
         self._area.set_events( gtk.gdk.EXPOSURE_MASK |
                                gtk.gdk.LEAVE_NOTIFY_MASK |
                                gtk.gdk.BUTTON_PRESS_MASK |
+                               gtk.gdk.BUTTON_RELEASE_MASK |
                                gtk.gdk.POINTER_MOTION_MASK |
                                gtk.gdk.POINTER_MOTION_HINT_MASK )
     # __setup_connections__()
@@ -1954,25 +2084,41 @@ class Canvas( _EGWidget ):
         Gets a string, integer or tuple/list arguments and converts into
         internal color representation.
         """
-        if isinstance( color, str ):
-            return gtk.gdk.color_parse( color )
-        elif isinstance( color, gtk.gdk.Color ):
-            return color
+        a = 255
 
-        if isinstance( color, int ):
+        if isinstance( color, str ):
+            try:
+                c = gtk.gdk.color_parse( color )
+                r = int( c.red   / 65535.0 * 255 )
+                g = int( c.green / 65535.0 * 255 )
+                b = int( c.blue  / 65535.0 * 255 )
+            except ValueError, e:
+                raise ValueError( "%s. color=%r" % ( e, color ) )
+        elif isinstance( color, gtk.gdk.Color ):
+            r = int( color.red   / 65535.0 * 255 )
+            g = int( color.green / 65535.0 * 255 )
+            b = int( color.blue  / 65535.0 * 255 )
+        elif isinstance( color, int ):
             r = ( color >> 16 ) & 0xff
             g = ( color >>  8 ) & 0xff
             b = ( color & 0xff )
         elif isinstance( color, ( tuple, list ) ):
-            r, g, b = color
+            if len( color) == 3:
+                r, g, b = color
+            else:
+                a, r, g, b = color
 
-        r = int( r / 255.0 * 65535 )
-        g = int( g / 255.0 * 65535 )
-        b = int( b / 255.0 * 65535 )
-
-        return gtk.gdk.Color( r, g, b )
+        return a, r, g, b
     # __color_from__()
     __color_from__ = staticmethod( __color_from__ )
+
+
+    def __to_gtk_color__( self, color ):
+        r = int( color[ 1 ] / 255.0 * 65535 )
+        g = int( color[ 2 ] / 255.0 * 65535 )
+        b = int( color[ 3 ] / 255.0 * 65535 )
+        return gtk.gdk.Color( r, g, b )
+    # __to_gtk_color__()
 
 
     def __configure_gc__( self, fgcolor=None, bgcolor=None, fill=None,
@@ -1993,9 +2139,9 @@ class Canvas( _EGWidget ):
         gc = self._pixmap.new_gc( **k )
 
         if fgcolor is not None:
-            gc.set_rgb_fg_color( fgcolor )
+            gc.set_rgb_fg_color( self.__to_gtk_color__( fgcolor ) )
         if bgcolor is not None:
-            gc.set_rgb_bg_color( bgcolor )
+            gc.set_rgb_bg_color( self.__to_gtk_color__( bgcolor ) )
         return gc
     # __configure_gc__()
 
@@ -2059,6 +2205,7 @@ class Canvas( _EGWidget ):
     def draw_text( self, text, x=0, y=0,
                    fgcolor=None, bgcolor=None,
                    font_name=None, font_size=None, font_options=0,
+                   font_family=None,
                    width=None, wrap_word=False,
                    alignment=LEFT, justify=True ):
         """Draw text on canvas.
@@ -2073,17 +2220,22 @@ class Canvas( _EGWidget ):
         Colors can be specified with fgcolor an bgcolor. If not provided, the
         system foreground color is used and no background color is used.
 
-        Font name, size and options may be specified using font_name,
-        font_size and font_options, respectively. Try to avoid using
-        system specific font fames, use those provided by FONT_NAME_*.
+        Font name, family, size and options may be specified using
+        font_name, font_family, font_size and font_options, respectively.
+        Try to avoid using system specific font fames, use those provided
+        by FONT_NAME_*.
+
         Font options is OR'ed values from FONT_OPTIONS_*.
+
+        Font name is a string that have all the information, like
+        "sans bold 12". This is returned by L{Font}.
 
         Text alignment is one of LEFT, RIGHT or CENTER.
         """
         if fgcolor is not None:
-            fgcolor = self.__color_from__( fgcolor )
+            fgcolor = self.__to_gtk_color__( self.__color_from__( fgcolor ) )
         if bgcolor is not None:
-            bgcolor = self.__color_from__( bgcolor )
+            bgcolor = self.__to_gtk_color__( self.__color_from__( bgcolor ) )
 
         layout = self._area.create_pango_layout( text )
         if width is not None:
@@ -2098,11 +2250,12 @@ class Canvas( _EGWidget ):
                                                            pango.ALIGN_CENTER )
         layout.set_alignment( alignment )
 
-        if font_name or font_size or font_options:
-            ctx = layout.get_context()
-            fd = layout.get_context().get_font_description()
+        if font_name or font_size or font_options or font_family:
             if font_name:
-                fd.set_family( font_name )
+                fd = pango.FontDescription( font_name )
+            else:
+                fd = layout.get_context().get_font_description()
+
             if font_size:
                 fd.set_size( font_size * pango.SCALE)
             if font_options:
@@ -2148,8 +2301,10 @@ class Canvas( _EGWidget ):
         gc = self.__configure_gc__( fgcolor=color, line_width=size )
         self._pixmap.draw_line( gc, x0, y0, x1, y1 )
 
-        w, h = abs( x1 - x0 ) + 1, abs( y1 - y0 ) + 1
-        x, y = min( x0, x1 ), min( y0, y1 )
+        size2 = size * 2
+
+        w, h = abs( x1 - x0 ) + size2, abs( y1 - y0 ) + size2
+        x, y = max( min( x0, x1 ) - size, 0 ), max( min( y0, y1 ) - size, 0 )
         self._area.queue_draw_area( x, y, w, h )
     # draw_line()
 
@@ -2402,6 +2557,9 @@ class Spin( _EGWidLabelEntry ):
     a specified range. It also provides small buttons to help incrementing/
     decrementing value.
     """
+    default_min = -1e60
+    default_max =  1e60
+
     value = _gen_ro_property( "value" )
     min = _gen_ro_property( "min" )
     max = _gen_ro_property( "max" )
@@ -2417,8 +2575,8 @@ class Spin( _EGWidLabelEntry ):
 
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
-        @param min: minimum value.
-        @param max: maximum value.
+        @param min: minimum value. If None, L{default_min} will be used.
+        @param max: maximum value. If None, L{default_max} will be used.
         @param step: step to use to decrement/increment using buttons.
         @param digits: how many digits to show.
         @param callback: function (or list of functions) that will
@@ -2439,7 +2597,6 @@ class Spin( _EGWidLabelEntry ):
 
         _EGWidLabelEntry.__init__( self, id, persistent, label )
 
-        self.__setup_gui__()
         self.__setup_connections__()
     # __init__()
 
@@ -2452,21 +2609,26 @@ class Spin( _EGWidLabelEntry ):
 
         if self.min is not None:
             k[ "lower" ] = self.min
+        else:
+            k[ "lower" ] = self.default_min
 
         if self.max is not None:
             k[ "upper" ] = self.max
+        else:
+            k[ "upper" ] = self.default_max
 
         if self.step is not None:
             k[ "step_incr" ] = self.step
+            k[ "page_incr" ] = self.step * 2
+        else:
+            k[ "step_incr" ] = 1
+            k[ "page_incr" ] = 2
 
         adj = gtk.Adjustment( **k )
         self._entry = gtk.SpinButton( adjustment=adj, digits=self.digits )
         self._entry.set_name( self.id )
         self._entry.set_numeric( True )
         self._entry.set_snap_to_ticks( False )
-
-        if self.step is not None:
-            self._entry.set_increments( self.step / 2, self.step * 2 )
 
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
@@ -2496,6 +2658,9 @@ class IntSpin( Spin ):
     zero and also ensure L{set_value} and L{get_value} operates on
     integers.
     """
+    default_min = -sys.maxint
+    default_max =  sys.maxint
+
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None,
                   callback=None, persistent=False ):
@@ -2503,8 +2668,8 @@ class IntSpin( Spin ):
 
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
-        @param min: minimum value.
-        @param max: maximum value.
+        @param min: minimum value. If None, L{default_min} will be used.
+        @param max: maximum value. If None, L{default_max} will be used.
         @param step: step to use to decrement/increment using buttons.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
@@ -2545,6 +2710,8 @@ class UIntSpin( IntSpin ):
     Convenience widget that behaves like L{IntSpin} with minimum value
     always greater or equal zero.
     """
+    default_min = 0
+
     def __init__( self, id, label="",
                   value=None, min=0, max=None, step=None,
                   callback=None, persistent=False ):
@@ -2553,7 +2720,7 @@ class UIntSpin( IntSpin ):
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param min: minimum value, must be greater or equal zero.
-        @param max: maximum value.
+        @param max: maximum value. If None, L{default_max} will be used.
         @param step: step to use to decrement/increment using buttons.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
@@ -2579,9 +2746,11 @@ class Color( _EGWidLabelEntry ):
     select a new one.
     """
     color = _gen_ro_property( "color" )
+    use_alpha = _gen_ro_property( "use_alpha" )
     callback = _gen_ro_property( "callback" )
 
-    def __init__( self, id, label="", color=0, callback=None,
+    def __init__( self, id, label="", color=0, use_alpha=False,
+                  callback=None,
                   persistent=False ):
         """Color selector constructor.
 
@@ -2589,6 +2758,8 @@ class Color( _EGWidLabelEntry ):
         @param color: initial content. May be a triple with elements within
                the range 0-255, an string with color in HTML format or even
                a color present in X11's rgb.txt.
+        @param use_alpha: if the alpha channel should be used, it will be
+               the first value in the tuple representing the color.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
                Function will receive as parameters:
@@ -2599,6 +2770,7 @@ class Color( _EGWidLabelEntry ):
                sessions.
         """
         self.color = self.color_from( color )
+        self.use_alpha = use_alpha
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label )
 
@@ -2607,28 +2779,44 @@ class Color( _EGWidLabelEntry ):
 
 
     def color_from( color ):
+        a = 255
         if isinstance( color, str ):
-            return gtk.gdk.color_parse( color )
+            try:
+                c = gtk.gdk.color_parse( color )
+                r = int( c.red / 65535.0 * 255 )
+                g = int( c.green / 65535.0 * 255 )
+                b = int( c.blue / 65535.0 * 255 )
+            except ValueError, e:
+                raise ValueError( "%s. color=%r" % ( e, color ) )
 
         if isinstance( color, int ):
             r = ( color >> 16 ) & 0xff
             g = ( color >>  8 ) & 0xff
             b = ( color & 0xff )
         elif isinstance( color, ( tuple, list ) ):
-            r, g, b = color
+            if len( color ) == 3:
+                r, g, b = color
+            else:
+                a, r, g, b = color
 
-        r = int( r / 255.0 * 65535 )
-        g = int( g / 255.0 * 65535 )
-        b = int( b / 255.0 * 65535 )
-
-        return gtk.gdk.Color( r, g, b )
+        return a, r, g, b
     # color_from()
     color_from = staticmethod( color_from )
 
 
     def __setup_gui__( self ):
-        self._entry = gtk.ColorButton( self.color )
+        r = int( self.color[ 1 ] / 255.0 * 65535 )
+        g = int( self.color[ 2 ] / 255.0 * 65535 )
+        b = int( self.color[ 3 ] / 255.0 * 65535 )
+
+        c = gtk.gdk.Color( r, g, b )
+
+        self._entry = gtk.ColorButton( c )
         self._entry.set_name( self.id )
+        self._entry.set_use_alpha( self.use_alpha )
+        if self.use_alpha:
+            alpha = int( self.color[ 0 ] / 255.0 * 65535 )
+            self._entry.set_alpha( alpha )
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
 
@@ -2645,12 +2833,19 @@ class Color( _EGWidLabelEntry ):
 
 
     def get_value( self ):
-        """Return a tuple with ( red, green, blue ), each in 0-255 range."""
+        """Return a tuple with ( alpha, red, green, blue )
+          ( alpha, red, green, blue ) (use_alpha=True), each in 0-255 range.
+        """
         c = self._entry.get_color()
         r = int( c.red   / 65535.0 * 255 )
         g = int( c.green / 65535.0 * 255 )
         b = int( c.blue  / 65535.0 * 255 )
-        return ( r, g, b )
+
+        if self.use_alpha:
+            a = int( self._entry.get_alpha() / 65535.0 * 255 )
+            return ( a, r, g, b )
+        else:
+            return ( r, g, b )
     # get_value()
 
 
@@ -2660,7 +2855,16 @@ class Color( _EGWidLabelEntry ):
                the range 0-255, an string with color in HTML format or even
                a color present in X11's rgb.txt.
         """
-        self._entry.set_color( self.color_from( value ) )
+        a, r, g, b = self.color_from( value )
+        if self.use_alpha:
+            self._entry.set_alpha( int( a / 255.0 * 65535.0 ) )
+
+        r = int( r / 255.0 * 65535 )
+        g = int( g / 255.0 * 65535 )
+        b = int( b / 255.0 * 65535 )
+
+        c = gtk.gdk.Color( r, g, b )
+        self._entry.set_color( c )
     # set_value()
 # Color
 
@@ -2700,6 +2904,7 @@ class Font( _EGWidLabelEntry ):
     def __setup_gui__( self ):
         self._entry = gtk.FontButton( self.font )
         self._entry.set_name( self.id )
+        self._entry.set_show_style( True )
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
 
@@ -3272,7 +3477,7 @@ class VSeparator( _EGWidget ):
 # VSeparator
 
 
-class Label( _EGWidget, AutoGenId ):
+class Label( _EGDataWidget, AutoGenId ):
     """Text label"""
     label = _gen_ro_property( "label" )
 
@@ -3294,7 +3499,7 @@ class Label( _EGWidget, AutoGenId ):
         @param valignment: vertical alignment, like L{TOP}, L{BOTTOM} or
                L{MIDDLE}.
         """
-        _EGWidget.__init__( self, id or self.__get_id__() )
+        _EGDataWidget.__init__( self, id or self.__get_id__(), False )
         self.label = label
 
         self._wid = gtk.Label( self.label )
@@ -3312,6 +3517,12 @@ class Label( _EGWidget, AutoGenId ):
     def set_value( self, value ):
         self._wid.set_text( str( value ) )
     # set_value()
+
+
+    def __str__( self ):
+        return "%s( id=%r, label=%r )" % \
+               ( self.__class__.__name__, self.id, self.label )
+    # __str__()
 # Label
 
 
@@ -3378,7 +3589,7 @@ def yesno( message, yesdefault=False ):
     else:
         return yesdefault
 # yesno()
-    
+
 
 
 def confirm( message, okdefault=False ):

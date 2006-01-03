@@ -1,0 +1,116 @@
+--- 03-tools.py	2006-01-03 17:29:22.000000000 -0200
++++ 04-undo.py	2006-01-03 17:29:10.000000000 -0200
+@@ -2,6 +2,36 @@
+ 
+ from eagle import *
+ 
++class Undo( object ):
++    def __init__( self, app ):
++        self.last_images = []
++        self.app = app
++        app.undo = self
++        self.canvas = app[ "canvas" ]
++        self.button = app[ "undo" ]
++        self.button.set_inactive()
++    # __init__()
++
++
++    def push( self ):
++        img = self.canvas.get_image()
++        self.last_images.append( img )
++        self.button.set_active()
++    # push()
++
++
++    def pop( self ):
++        if self.last_images:
++            img = self.last_images.pop()
++            self.canvas.draw_image( img )
++
++        if not self.last_images:
++            self.button.set_inactive()
++    # pop()
++# Undo
++
++
++
+ class Tool( object ):
+     """Interface to be implemented by tools."""
+ 
+@@ -28,6 +58,7 @@
+                 color = app[ "fg" ]
+                 size  = app[ "size" ]
+                 x0, y0 = self.first_point
++                app.undo.push()
+                 canvas.draw_line( x0, y0, x, y, color, size )
+                 self.first_point = None
+     # mouse()
+@@ -38,11 +69,16 @@
+ class Pencil( Tool ):
+     def __init__( self ):
+         self.last_point = None
++        self.changed = False
+     # __init__()
+ 
+ 
+     def mouse( self, app, canvas, buttons, x, y ):
+         if buttons & Canvas.MOUSE_BUTTON_1:
++            if not self.changed:
++                app.undo.push()
++            self.changed = True
++
+             color = app[ "fg" ]
+             size  = app[ "size" ]
+             if self.last_point is not None:
+@@ -62,6 +98,7 @@
+         else:
+             # Button 1 was released, reset last point
+             self.last_point = None
++            self.changed = False
+     # mouse()
+ # Pencil
+ 
+@@ -93,6 +130,7 @@
+                 w = x - x0
+                 h = y - y0
+ 
++                app.undo.push()
+                 canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                 self.first_point = None
+     # mouse()
+@@ -111,6 +149,7 @@
+             if app[ "textbgtransp" ]:
+                 bg = None
+ 
++            app.undo.push()
+             canvas.draw_text( text, x, y, fg, bg, font )
+     # mouse()
+ # Text
+@@ -133,6 +172,11 @@
+ # canvas_action()
+ 
+ 
++def do_undo( app, button ):
++    app.undo.pop()
++# do_undo()
++
++
+ 
+ app = App( title="Paint",
+            id="paint",
+@@ -181,6 +225,7 @@
+                  CloseButton(),
+                  Button( id="undo",
+                          stock="undo",
++                         callback=do_undo,
+                          ),
+                  Button( id="clear",
+                          stock="clear",
+@@ -196,5 +241,7 @@
+                     )
+            )
+ 
++Undo( app )
++
+ run()
+ 

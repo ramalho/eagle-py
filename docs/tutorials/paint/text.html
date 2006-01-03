@@ -1,0 +1,1877 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- -*- coding: utf-8 -*- -->
+<!-- -*- mode: auto-fill -*- -->
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Paintbrush-like application using Eagle</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" title="Default" href="style.css" />
+    <script type="text/javascript" src="scripts.js"></script>
+  </head>
+  <body>
+
+    <div id="tips">
+      <p>
+	<b>Tips to follow this tutorial:</b>
+      </p>
+      <ul>
+	<li>Images can be collapsed, just click them to toogle.</li>
+	<li>Code listing can be collapsed, just click its caption.</li>
+	<li>Sections can be collapsed, click their heading.</li>
+	<li>Lines added to code are highlighted <span
+	class="highlightadd">this way</span></li>
+	<li>Lines removed from code are marked <span
+	class="highlightdel"># like this</span></li>
+	<li>Lines that were just changed are highlighted <span
+	class="highlight">like this</span>.</li>
+	<li>Classes and types are typed like <code
+	class="type">this</code>.</li>
+	<li>Keywords are like <code class="keyword">this</code>.</li>
+	<li>Strings, like <code class="string">"this"</code>.</li>
+	<li>Comments, like <code class="comment"># this</code>.</li>
+      </ul>
+    </div>
+
+    <div id="index">
+      <p>
+	<b>Index:</b>
+      </p>
+      <ul>
+	<li>
+	  <a href="#h-intro">Introduction</a>
+	</li>
+	<li>
+	  <a href="#h-ui">v01: Creating the User Interface</a>
+	</li>
+	<li>
+	  <a href="#h-line">v02: Creating The First Tool: Line</a>
+	</li>
+	<li>
+	  <a href="#h-tools">v03: Creating Other Tools </a>
+	</li>
+	<li>
+	  <a href="#h-undo">v04: Implementing The Undo Function</a>
+	</li>
+	<li>
+	  <a href="#h-extra">v05: Extra functionality</a>
+	</li>
+	<li>
+	  <a href="#h-polishing">v06: Polish it!</a>
+	</li>
+	<li>
+	  <a href="#h-about">About This Document</a>
+	</li>
+      </ul>
+    </div>
+
+    <h1 id="h-intro" onclick="hToggle( 'intro' )">Introduction</h1>
+
+    <div id="intro" class="text">
+      <p>
+	This tutorial will show how to create a simple
+	"paintbrush"-like Eagle application. It will draw free-hand,
+	lines, rectangles and text and even support undo!
+      </p>
+
+      <div class="img" id="div-screenshot"
+	   onclick="imgToggle( 'screenshot' )">
+	<img src="screenshot.png"
+	     id="img-screenshot"
+	     alt="Screen shot" />
+	<p id="caption-screenshot">Screen shot of final version.</p>
+      </div>
+    </div>
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+
+    <h1 id="h-ui" onclick="hToggle( 'ui' )">v01: Creating the User
+    Interface</h1>
+
+    <div id="ui" class="text">
+      <p>
+	Let's first create the Graphical User Interface, it will be
+	non-functional, but will already look like the final version!
+	The code is in <a class="filename"
+	href="01-gui.py">01-gui.py</a>.
+      </p>
+
+      <div class="listing">
+	<pre class="listing" id="01-gui">
+<span class="comment">#!/usr/bin/env python2</span>
+
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton(),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            ),
+                    )
+           )
+
+run()
+</pre>
+       <p id="caption-01-gui"
+	   onclick="listingToggle( '01-gui' )">
+	First version, with non-functional GUI.</p>
+      </div>
+
+      <p>
+	First we import symbols from Ealge, then we start to declare
+	our <code class="type">App</code>, first we give it a <code
+	class="var">title</code>, an <code class="var">id</code>
+	(optional) and enable its <code
+	class="var">statusbar</code>. Then we define the <code
+	class="var">left</code>, <code class="var">right</code>, <code
+	class="var">top</code> and <code class="var">center</code>,
+	those we will explain individually.
+      </p>
+
+      <h2 id="h-ui-left" onclick="hToggle( 'ui-left' )">Left Area</h2>
+      <div id="ui-left" class="text">
+	<p>
+	  This application will feature the main drawing menu at the
+	  left side. It will enable user to select background and
+	  foreground colors, what tool to use and also the size, that
+	  is used by most tools (except "Text"). So there we declare:
+	</p>
+	<dl>
+	  <dt>
+	    <code>
+	      <code class="type">Color</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"fg"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    This will be our foreground color component, it will
+	    enable users to choose colors and we can get its value
+	    with <code><code class="var">app</code>[ <code
+	    class="string">"fg"</code> ]</code>.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">Color</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"bg"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    This will be our background color component, similar to
+	    the foreground one.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">Selection</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"tool"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    Will enable users to select between various tools, right
+	    now we don't have any tool, so we don't provide it with
+	    any options.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">UIntSpin</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"size"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    This is an entry that restrict users to integer values
+	    greater than zero. We will use its value to draw the
+	    pencil, lines and rectangle border.
+	  </dd>
+	</dl>
+      </div>
+
+      <h2 id="h-ui-right" onclick="hToggle( 'ui-right' )">Right Area</h2>
+      <div id="ui-right" class="text">
+	<p>
+	  Tools that have more specific requirements will have these
+	  listed in the right area. Right now we will list every
+	  possible option inside its "tool" group, they will be
+	  "Text" and "Rectangle" groups. Running this example you will
+	  see both visible, but we will change this later to just show
+	  the group of the selected tool.
+	</p>
+
+	<dl>
+	  <dt>
+	    <code>
+	      <code class="type">Group</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"textgroup"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    Aggregates text drawing options. It have as children the
+	    text that will be used, the font and an option to make
+	    the text background transparent.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">Group</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"rectgroup"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    Aggregates rectangle drawing options. It have as child one
+	    option to select filling rectangles with background color.
+	  </dd>
+	</dl>
+
+
+	<h3 id="h-ui-textgroup" onclick="hToggle( 'ui-textgroup' )">
+	Text Group</h3>
+	<div id="ui-textgroup" class="text">
+
+	  <dl>
+	    <dt>
+	      <code>
+		<code class="type">Entry</code>(
+		<code class="var">id</code>=<code
+		class="string">"text"</code>,
+		... )
+	      </code>
+	    </dt>
+	    <dd>
+	      Holds what text to be displayed.
+	    </dd>
+	    <dt>
+	      <code>
+		<code class="type">Font</code>(
+		<code class="var">id</code>=<code
+		class="string">"font"</code>,
+		... )
+	      </code>
+	    </dt>
+	    <dd>
+	      Enable user to select font family, size, weight and style.
+	    </dd>
+	    <dt>
+	      <code>
+		<code class="type">CheckBox</code>(
+		<code class="var">id</code>=<code
+		class="string">"textbgtransp"</code>,
+		... )
+	      </code>
+	    </dt>
+	    <dd>
+	      If checked will make the text background transparent.
+	    </dd>
+	  </dl>
+	</div>
+
+	<h3 id="h-ui-rectgroup" onclick="hToggle( 'ui-rectgroup' )">
+	Rectangle Group</h3>
+	<div id="ui-rectgroup" class="text">
+
+	  <dl>
+	    <dt>
+	      <code>
+		<code class="type">CheckBox</code>(
+		<code class="var">id</code>=<code
+		class="string">"rectfill"</code>,
+		... )
+	      </code>
+	    </dt>
+	    <dd>
+	      If checked will fill rectangles with background color.
+	    </dd>
+	  </dl>
+	</div>
+      </div>
+
+
+      <h2 id="h-ui-top" onclick="hToggle( 'ui-top' )">Top Area</h2>
+      <div id="ui-top" class="text">
+	<p>
+	  Top area will hold some application functionality, like
+	  saving the drawing to a file, quit the application, clear
+	  the canvas and even the undo feature.
+	</p>
+	<dl>
+	  <dt>
+	    <code><code class="type">SaveFileButton</code>()</code>
+	  </dt>
+	  <dd>
+	    This pops up a dialog to select a file name to save
+	    to. Right now it have no parameters, since it just need a
+	    callback to be useful and we will add callbacks later.
+	  </dd>
+	  <dt>
+	    <code><code class="type">CloseButton</code>()</code>
+	  </dt>
+	  <dd>
+	    This button is useful on its own and don't need any parameter.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">Button</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"undo"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    This button will use stock (pre-defined) values for text
+	    and icon, it uses even internationalized text if
+	    available. When it get a callback, it will do the undo
+	    function, restoring previous drawings.
+	  </dd>
+	  <dt>
+	    <code>
+	      <code class="type">Button</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"clear"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    Similar to the undo button. When it get a callback, it
+	    will clear the image, making it "virgin" again.
+	  </dd>
+	</dl>
+      </div>
+
+      <h2 id="h-ui-center" onclick="hToggle( 'ui-center' )">Center Area</h2>
+      <div id="ui-center" class="text">
+	<p>
+	  The center area will hold the canvas, that is, the place
+	  where we draw.
+	</p>
+	<dl>
+	  <dt>
+	    <code>
+	      <code class="type">Canvas</code>(
+	      <code class="var">id</code>=<code
+	      class="string">"canvas"</code>,
+	      ... )
+	    </code>
+	  </dt>
+	  <dd>
+	    This drawing are will have a white background and will be
+	    400 by 400 pixels wide.
+	  </dd>
+	</dl>
+      </div>
+
+    </div>
+
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-line" onclick="hToggle( 'line' )">v02: Creating
+    The First Tool: Line</h1>
+
+    <div id="line" class="text">
+      <p>
+	Now lets start to make it functional by adding the line
+	drawing tool. Together with it we will create an extensible
+	architecture to add more tools later. The code is in <a
+	class="filename" href="02-line.py">02-line.py</a>. The
+	differences between the previous version and the current is
+	given at <a class="filename" href="01-02.diff">01-02.diff</a>.
+      </p>
+
+      <div class="listing">
+    <pre class="listing" id="code-02-line">
+<span class="comment">#!/usr/bin/env python2
+</span>
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+<span class="highlightadd">
+<span class="keyword">class</span> <span class="type">Tool</span>( <span class="py-builtins">object</span> ):
+    <span class="string">"""Interface to be implemented by tools."""</span>
+
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="string">"""This tool have a user feedback using mouse on canvas."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># mouse()
+# Tool
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Line</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                color = app[ <span class="string">"fg"</span> ]
+                size  = app[ <span class="string">"size"</span> ]
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+                canvas.draw_line( x0, y0, x, y, color, size )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Line
+</span>
+
+
+tools = {
+    <span class="string">"Line"</span>: Line(),
+    }
+def_tool=<span class="string">"Line"</span>
+
+
+<span class="keyword">def</span> <span class="function-name">canvas_action</span>( app, canvas, buttons, x, y ):
+    tool = app[ <span class="string">"tool"</span> ]
+    tools[ tool ].mouse( app, canvas, buttons, x, y )
+<span class="comment"># canvas_action()
+</span>
+</span>
+
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,<span class="highlightadd">
+                             options=tools.keys(),
+                             active=def_tool,</span>
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton(),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,<span class="highlightadd">
+                            callback=canvas_action,</span>
+                            ),
+                    )
+           )
+
+run()
+</pre>
+<p id="caption-code-02-line"
+	   onclick="listingToggle( 'code-02-line' )">
+	Newer version, with changes highlighted. Now we have the line tool.</p>
+      </div>
+
+      <p>
+	Let's start by creating an interface to guide our tool
+	behaviour, this is done with <code class="type">Tool</code>
+	and its method <code><code class="function">mouse</code>(
+	<code class="var">self</code>, <code class="var">app</code>,
+	<code class="var">canvas</code>, <code
+	class="var">buttons</code>, <code class="var">x</code>, <code
+	class="var">y</code> )</code>, that will be called when user
+	press, release or move the mouse with some button pressed,
+	this data came from <code class="type">Canvas</code> callback <code class="function-name">canvas_action</code>.
+      </p>
+
+
+      <p>
+	Then we implement this interface for the line drawing
+	tool. To draw a line we need two points, since we're called
+	just when user click or move the mouse, we need to remember
+	the last point and just draw when we have the second point.
+      </p>
+
+      <p>
+	Now we make it usable by the application, we will use a dict
+	to map tools and their names and then change the tools
+	component to make it use this information. Note that we alter the <code class="type">App</code> declaration, more specifically the <code class="type">Selection</code> declaration to make use of the options.
+      </p>
+
+      <p>
+	And to finish this step, create a canvas callback <code class="function-name">canvas_action</code> and alter <code class="type">App</code> definition to make use of it in the <code class="type">Canvas</code> definition.
+      </p>
+
+
+    </div>
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-tools" onclick="hToggle( 'tools' )">v03: Creating Other
+    Tools</h1>
+
+    <div id="tools" class="text">
+      <p>
+	Following the ideas in the last section we add the remaining
+	tools <code class="type">Pencil</code>, <code
+	class="type">Rectangle</code> and <code
+	class="type">Text</code> drawing. This should be no problem if
+	you understood the previous section.
+	The code is in <a class="filename"
+	href="03-tools.py">03-tools.py</a>. The differences between
+	the previous version and the current is given at <a
+	class="filename" href="02-03.diff">02-03.diff</a>.
+      </p>
+
+      <div class="listing">
+	<pre class="listing" id="code-03-tools">
+<span class="comment">#!/usr/bin/env python2
+</span>
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+<span class="keyword">class</span> <span class="type">Tool</span>( <span class="py-builtins">object</span> ):
+    <span class="string">"""Interface to be implemented by tools."""</span>
+
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="string">"""This tool have a user feedback using mouse on canvas."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># mouse()
+# Tool
+</span>
+
+<span class="keyword">class</span> <span class="type">Line</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                color = app[ <span class="string">"fg"</span> ]
+                size  = app[ <span class="string">"size"</span> ]
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+                canvas.draw_line( x0, y0, x, y, color, size )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Line
+</span>
+
+<span class="highlightadd">
+<span class="keyword">class</span> <span class="type">Pencil</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            color = app[ <span class="string">"fg"</span> ]
+            size  = app[ <span class="string">"size"</span> ]
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_point <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.last_point
+            <span class="keyword">else:</span>
+                x0 = x + 1
+                y0 = y
+
+            <span class="keyword">if</span> size == 1:
+                canvas.draw_point( x, y, color )
+            <span class="keyword">else:</span>
+                half = size / 2
+                canvas.draw_rectangle( x-half, y-half, size, size, color, 1,
+                                       color, <span class="py-pseudo-keyword">True</span> )
+            canvas.draw_line( x0, y0, x, y, color, size )
+            <span class="py-pseudo-keyword">self</span>.last_point = ( x, y )
+        <span class="keyword">else:</span>
+            <span class="comment"># Button 1 was released, reset last point
+</span>            <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Pencil
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                fg   = app[ <span class="string">"fg"</span> ]
+                bg   = app[ <span class="string">"bg"</span> ]
+                size = app[ <span class="string">"size"</span> ]
+                fill = app[ <span class="string">"rectfill"</span> ]
+
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+
+                <span class="keyword">if</span> x0 &gt; x:
+                    x0, x = x, x0
+                <span class="keyword">if</span> y0 &gt; y:
+                    y0, y = y, y0
+
+                w = x - x0
+                h = y - y0
+
+                canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Rectangle
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Text</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1 <span class="keyword">and</span> app[ <span class="string">"text"</span> ]:
+            text  = app[ <span class="string">"text"</span> ]
+            fg    = app[ <span class="string">"fg"</span> ]
+            bg    = app[ <span class="string">"bg"</span> ]
+            font  = app[ <span class="string">"font"</span> ]
+
+            <span class="keyword">if</span> app[ <span class="string">"textbgtransp"</span> ]:
+                bg = <span class="py-pseudo-keyword">None</span>
+
+            canvas.draw_text( text, x, y, fg, bg, font )
+    <span class="comment"># mouse()
+# Text
+</span>
+</span>
+
+tools = {
+    <span class="string">"Line"</span>: Line(),<span class="highlightadd">
+    <span class="string">"Pencil"</span>: Pencil(),
+    <span class="string">"Rectangle"</span>: Rectangle(),
+    <span class="string">"Text"</span>: Text(),</span>
+    }
+def_tool=<span class="string">"Line"</span>
+
+
+<span class="keyword">def</span> <span class="function-name">canvas_action</span>( app, canvas, buttons, x, y ):
+    tool = app[ <span class="string">"tool"</span> ]
+    tools[ tool ].mouse( app, canvas, buttons, x, y )
+<span class="comment"># canvas_action()
+</span>
+
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             options=tools.keys(),
+                             active=def_tool,
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton(),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            callback=canvas_action,
+                            ),
+                    )
+           )
+
+run()
+</pre>
+<p id="caption-code-03-tools"
+	   onclick="listingToggle( 'code-03-tools' )">
+	Third version, with changes highlighted. Every tool is in place.</p>
+      </div>
+
+      <p>
+	You may find <code class="type">Pencil</code>'s <code
+	class="function-name">mouse</code> method a bit weird. Why not
+	just paint the point if the mouse button is pressed? Well,
+	here comes a limitation of the underlying system: it's almost
+	impossible to get all response from user, so you may have
+	skipped points and if just draw points, there may be holes in
+	the drawing. Then we remember the last point and draw a line
+	from it to the current point, avoiding holes. Also, since we
+	just draw when mouse button is clicked, we forget the last
+	point as soon as user releases the mouse button.
+      </p>
+    </div>
+
+
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-undo" onclick="hToggle( 'undo' )">v04: Implementing The
+    Undo Function</h1>
+
+    <div id="undo" class="text">
+      <p>
+	In this section we will implement <code
+	class="type">Undo</code> the trivial way: by remembering
+	entire images between drawing steps. This wastes memory, but
+	it's really easy to implement. It's done using a stack where
+	we push images before we draw. If user want to undo, we pop
+	the topmost image and paint the canvas with it.
+	The code is in <a class="filename"
+	href="04-undo.py">04-undo.py</a>. The differences between
+	the previous version and the current is given at <a
+	class="filename" href="03-04.diff">03-04.diff</a>.
+      </p>
+
+      <div class="listing">
+	<pre class="listing" id="code-04-undo">
+<span class="comment">#!/usr/bin/env python2
+</span>
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+<span class="highlightadd">
+<span class="keyword">class</span> <span class="type">Undo</span>( <span class="py-builtins">object</span> ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="py-pseudo-keyword">self</span>.last_images = []
+        <span class="py-pseudo-keyword">self</span>.app = app
+        app.undo = <span class="py-pseudo-keyword">self</span>
+        <span class="py-pseudo-keyword">self</span>.canvas = app[ <span class="string">"canvas"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button = app[ <span class="string">"undo"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">push</span>( <span class="py-pseudo-keyword">self</span> ):
+        img = <span class="py-pseudo-keyword">self</span>.canvas.get_image()
+        <span class="py-pseudo-keyword">self</span>.last_images.append( img )
+        <span class="py-pseudo-keyword">self</span>.button.set_active()
+    <span class="comment"># push()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">pop</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            img = <span class="py-pseudo-keyword">self</span>.last_images.pop()
+            <span class="py-pseudo-keyword">self</span>.canvas.draw_image( img )
+
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># pop()
+# Undo
+</span></span>
+
+
+<span class="keyword">class</span> <span class="type">Tool</span>( <span class="py-builtins">object</span> ):
+    <span class="string">"""Interface to be implemented by tools."""</span>
+
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="string">"""This tool have a user feedback using mouse on canvas."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># mouse()
+# Tool
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Line</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                color = app[ <span class="string">"fg"</span> ]
+                size  = app[ <span class="string">"size"</span> ]
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point<span class="highlightadd">
+                app.undo.push()</span>
+                canvas.draw_line( x0, y0, x, y, color, size )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Line
+</span>
+
+<span class="keyword">class</span> <span class="type">Pencil</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+        <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span></span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:<span class="highlightadd">
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.changed:
+                app.undo.push()
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">True</span></span>
+
+            color = app[ <span class="string">"fg"</span> ]
+            size  = app[ <span class="string">"size"</span> ]
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_point <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.last_point
+            <span class="keyword">else:</span>
+                x0 = x + 1
+                y0 = y
+
+            <span class="keyword">if</span> size == 1:
+                canvas.draw_point( x, y, color )
+            <span class="keyword">else:</span>
+                half = size / 2
+                canvas.draw_rectangle( x-half, y-half, size, size, color, 1,
+                                       color, <span class="py-pseudo-keyword">True</span> )
+            canvas.draw_line( x0, y0, x, y, color, size )
+            <span class="py-pseudo-keyword">self</span>.last_point = ( x, y )
+        <span class="keyword">else:</span>
+            <span class="comment"># Button 1 was released, reset last point
+</span>            <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span></span>
+    <span class="comment"># mouse()
+# Pencil
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                fg   = app[ <span class="string">"fg"</span> ]
+                bg   = app[ <span class="string">"bg"</span> ]
+                size = app[ <span class="string">"size"</span> ]
+                fill = app[ <span class="string">"rectfill"</span> ]
+
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+
+                <span class="keyword">if</span> x0 &gt; x:
+                    x0, x = x, x0
+                <span class="keyword">if</span> y0 &gt; y:
+                    y0, y = y, y0
+
+                w = x - x0
+                h = y - y0
+<span class="highlightadd">
+                app.undo.push()</span>
+                canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Rectangle
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Text</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1 <span class="keyword">and</span> app[ <span class="string">"text"</span> ]:
+            text  = app[ <span class="string">"text"</span> ]
+            fg    = app[ <span class="string">"fg"</span> ]
+            bg    = app[ <span class="string">"bg"</span> ]
+            font  = app[ <span class="string">"font"</span> ]
+
+            <span class="keyword">if</span> app[ <span class="string">"textbgtransp"</span> ]:
+                bg = <span class="py-pseudo-keyword">None</span>
+<span class="highlightadd">
+            app.undo.push()</span>
+            canvas.draw_text( text, x, y, fg, bg, font )
+    <span class="comment"># mouse()
+# Text
+</span>
+
+
+tools = {
+    <span class="string">"Line"</span>: Line(),
+    <span class="string">"Pencil"</span>: Pencil(),
+    <span class="string">"Rectangle"</span>: Rectangle(),
+    <span class="string">"Text"</span>: Text(),
+    }
+def_tool=<span class="string">"Line"</span>
+
+
+
+<span class="keyword">def</span> <span class="function-name">canvas_action</span>( app, canvas, buttons, x, y ):
+    tool = app[ <span class="string">"tool"</span> ]
+    tools[ tool ].mouse( app, canvas, buttons, x, y )
+<span class="comment"># canvas_action()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">do_undo</span>( app, button ):
+    app.undo.pop()
+<span class="comment"># do_undo()
+</span>
+
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             options=tools.keys(),
+                             active=def_tool,
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton(),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         callback=do_undo,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            callback=canvas_action,
+                            ),
+                    )
+           )
+<span class="highlightadd">
+Undo( app )</span>
+
+run()
+	</pre>
+<p id="caption-code-04-undo"
+	   onclick="listingToggle( 'code-04-undo' )">
+	Fourth version, with changes highlighted. Now we can undo.</p>
+      </div>
+      <p>
+	<code class="type">Pencil</code>, again, is a bit different
+	from other tools. Why? Because we need to discover when it
+	changed a image, but the draw step is not the small line
+	between current and last point, but from the moment user
+	pressed the mouse and when it releases it. So we use the state
+	variable <code class="var">changed</code>.
+      </p>
+      <p>
+	As you may note, we create the <code
+	class="function-name">do_undo</code> callback and associate it
+	with the <code><code class="type">Button</code>( <code
+	class="var">id</code>=<code class="string">"undo"</code>,
+	... )</code>. Also, don't remember to instantiate the <code
+	class="type">Undo</code> class! We don't need to remember any
+	references to it, since it registers itself with the <code
+	class="type">App</code> and <code class="type">Tool</code>s
+	will use this member.
+      </p>
+    </div>
+
+
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-extra" onclick="hToggle( 'extra' )">v05: Extra
+    functionality</h1>
+
+    <div id="extra" class="text">
+      <p>
+	Now we already have a working paint program, we may add some
+	extra functionality, like to clear (reset) the canvas to
+	original state or even save the canvas to a file. Also, we
+	will add a confirmation dialog before quit the application,
+	avoiding mistakes.
+	The code is in <a class="filename"
+	href="05-extra.py">05-extra.py</a>. The differences between
+	the previous version and the current is given at <a
+	class="filename" href="04-05.diff">04-05.diff</a>.
+      </p>
+
+      <div class="listing">
+	<pre class="listing" id="code-05-extra">
+<span class="comment">#!/usr/bin/env python2
+</span>
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+<span class="keyword">class</span> <span class="type">Undo</span>( <span class="py-builtins">object</span> ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="py-pseudo-keyword">self</span>.last_images = []
+        <span class="py-pseudo-keyword">self</span>.app = app
+        app.undo = <span class="py-pseudo-keyword">self</span>
+        <span class="py-pseudo-keyword">self</span>.canvas = app[ <span class="string">"canvas"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button = app[ <span class="string">"undo"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">push</span>( <span class="py-pseudo-keyword">self</span> ):
+        img = <span class="py-pseudo-keyword">self</span>.canvas.get_image()
+        <span class="py-pseudo-keyword">self</span>.last_images.append( img )
+        <span class="py-pseudo-keyword">self</span>.button.set_active()
+    <span class="comment"># push()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">pop</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            img = <span class="py-pseudo-keyword">self</span>.last_images.pop()
+            <span class="py-pseudo-keyword">self</span>.canvas.draw_image( img )
+
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># pop()
+# Undo
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Tool</span>( <span class="py-builtins">object</span> ):
+    <span class="string">"""Interface to be implemented by tools."""</span>
+
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="string">"""This tool have a user feedback using mouse on canvas."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># mouse()
+# Tool
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Line</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                color = app[ <span class="string">"fg"</span> ]
+                size  = app[ <span class="string">"size"</span> ]
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+                app.undo.push()
+                canvas.draw_line( x0, y0, x, y, color, size )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Line
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Pencil</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span>
+        <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.changed:
+                app.undo.push()
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">True</span>
+
+            color = app[ <span class="string">"fg"</span> ]
+            size  = app[ <span class="string">"size"</span> ]
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_point <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.last_point
+            <span class="keyword">else:</span>
+                x0 = x + 1
+                y0 = y
+
+            <span class="keyword">if</span> size == 1:
+                canvas.draw_point( x, y, color )
+            <span class="keyword">else:</span>
+                half = size / 2
+                canvas.draw_rectangle( x-half, y-half, size, size, color, 1,
+                                       color, <span class="py-pseudo-keyword">True</span> )
+            canvas.draw_line( x0, y0, x, y, color, size )
+            <span class="py-pseudo-keyword">self</span>.last_point = ( x, y )
+        <span class="keyword">else:</span>
+            <span class="comment"># Button 1 was released, reset last point
+</span>            <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span>
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span>
+    <span class="comment"># mouse()
+# Pencil
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )
+            <span class="keyword">else:</span>
+                fg   = app[ <span class="string">"fg"</span> ]
+                bg   = app[ <span class="string">"bg"</span> ]
+                size = app[ <span class="string">"size"</span> ]
+                fill = app[ <span class="string">"rectfill"</span> ]
+
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+
+                <span class="keyword">if</span> x0 &gt; x:
+                    x0, x = x, x0
+                <span class="keyword">if</span> y0 &gt; y:
+                    y0, y = y, y0
+
+                w = x - x0
+                h = y - y0
+
+                app.undo.push()
+                canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># mouse()
+# Rectangle
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Text</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1 <span class="keyword">and</span> app[ <span class="string">"text"</span> ]:
+            text  = app[ <span class="string">"text"</span> ]
+            fg    = app[ <span class="string">"fg"</span> ]
+            bg    = app[ <span class="string">"bg"</span> ]
+            font  = app[ <span class="string">"font"</span> ]
+
+            <span class="keyword">if</span> app[ <span class="string">"textbgtransp"</span> ]:
+                bg = <span class="py-pseudo-keyword">None</span>
+
+            app.undo.push()
+            canvas.draw_text( text, x, y, fg, bg, font )
+    <span class="comment"># mouse()
+# Text
+</span>
+
+
+tools = {
+    <span class="string">"Line"</span>: Line(),
+    <span class="string">"Pencil"</span>: Pencil(),
+    <span class="string">"Rectangle"</span>: Rectangle(),
+    <span class="string">"Text"</span>: Text(),
+    }
+def_tool=<span class="string">"Line"</span>
+
+
+
+<span class="keyword">def</span> <span class="function-name">canvas_action</span>( app, canvas, buttons, x, y ):
+    tool = app[ <span class="string">"tool"</span> ]
+    tools[ tool ].mouse( app, canvas, buttons, x, y )
+<span class="comment"># canvas_action()
+</span>
+<span class="highlightadd">
+<span class="keyword">def</span> <span class="function-name">save</span>( app, button, filename ):
+    canvas = app[ <span class="string">"canvas"</span> ]
+    img = canvas.get_image()
+    <span class="keyword">try:</span>
+        img.save( filename )
+    <span class="keyword">except</span> <span class="py-builtins">Exception</span>, e:
+        error( <span class="py-builtins">str</span>( e ) )
+<span class="comment"># save()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">clear</span>( app, button ):
+    app.undo.push()
+    app[ <span class="string">"canvas"</span> ].clear()
+<span class="comment"># clear()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">confirm_quit</span>( app ):
+    <span class="keyword">return</span> yesno( <span class="string">"Are you sure you want to close '%s'?"</span> % app.title )
+<span class="comment"># confirm_quit()
+</span>
+</span>
+<span class="keyword">def</span> <span class="function-name">do_undo</span>( app, button ):
+    app.undo.pop()
+<span class="comment"># do_undo()
+</span>
+
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,<span class="highlightadd">
+           quit_callback=confirm_quit,</span>
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             options=tools.keys(),
+                             active=def_tool,
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton( <span class="highlightadd">callback=save</span> ),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         callback=do_undo,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,<span class="highlightadd">
+                         callback=clear,</span>
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            callback=canvas_action,
+                            ),
+                    )
+           )
+
+Undo( app )
+
+run()
+	</pre>
+<p id="caption-code-05-extra"
+	   onclick="listingToggle( 'code-05-extra' )">
+	Fifth version, with changes highlighted. Now we can clear and
+save.</p>
+      </div>
+
+      <p>
+	Changes are really simple, just 3 callbacks more. The First
+	callback, <code class="function-name">save</code>, get the
+	<code class="type">Image</code> from <code
+	class="type">Canvas</code> and save it to a file, being
+	carefully with exceptions raised by this process (mainly
+	invalid formats, given by wrong file extensions), if an
+	exception is raised, it uses the Eagle's <code
+	class="function-name">error</code> dialog box. Other callbacks
+	are even more straightforward, just note that <code
+	class="function-name">clear</code> also collaborates with
+	<code class="type">Undo</code> and that <code
+	class="function-name">confirm_quit</code> uses Eagle's <code
+	class="function-name">yesno</code> question to return to <code
+	class="type">code</code> if it may exit or not.
+      </p>
+    </div>
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-polishing" onclick="hToggle( 'polishing' )">v06: Polish it!</h1>
+
+    <div id="polishing" class="text">
+      <p>
+	The last section finished every feature we want in our
+	example application, but it's not that polished. Users have no
+	feedback on actions and may be confused "What do I need to do
+	now?", then we will use the status bar to show these kind of
+	information to them. Also, having Text and Rectangle
+	properties shown while drawing a Line is a bid odd! We fix
+	this with the introduction of <code
+	class="function-name">set_active</code> and <code
+	class="function-name">set_inactive</code> methods, that will
+	be called when tools turn active or inactive. There we will
+	show and remove messages from status bar, together with other
+	relevant places. We also use these methods to hide and show
+	groups from the right area.
+	The code is in <a class="filename"
+	href="06-polishing.py">06-polishing.py</a>. The differences between
+	the previous version and the current is given at <a
+	class="filename" href="05-06.diff">05-06.diff</a>.
+      </p>
+
+      <div class="listing">
+	<pre class="listing" id="code-06-polishing">
+<span class="comment">#!/usr/bin/env python2
+</span>
+<span class="keyword">from</span> eagle <span class="keyword">import</span> *
+
+<span class="keyword">class</span> <span class="type">Undo</span>( <span class="py-builtins">object</span> ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="py-pseudo-keyword">self</span>.last_images = []
+        <span class="py-pseudo-keyword">self</span>.app = app
+        app.undo = <span class="py-pseudo-keyword">self</span>
+        <span class="py-pseudo-keyword">self</span>.canvas = app[ <span class="string">"canvas"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button = app[ <span class="string">"undo"</span> ]
+        <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">push</span>( <span class="py-pseudo-keyword">self</span> ):
+        img = <span class="py-pseudo-keyword">self</span>.canvas.get_image()
+        <span class="py-pseudo-keyword">self</span>.last_images.append( img )
+        <span class="py-pseudo-keyword">self</span>.button.set_active()
+    <span class="comment"># push()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">pop</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            img = <span class="py-pseudo-keyword">self</span>.last_images.pop()
+            <span class="py-pseudo-keyword">self</span>.canvas.draw_image( img )
+
+        <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.last_images:
+            <span class="py-pseudo-keyword">self</span>.button.set_inactive()
+    <span class="comment"># pop()
+# Undo
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Tool</span>( <span class="py-builtins">object</span> ):
+    <span class="string">"""Interface to be implemented by tools."""</span>
+<span class="highlightadd">
+    <span class="keyword">def</span> <span class="function-name">set_active</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="string">"""This tool is now active."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># set_active()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_inactive</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="string">"""This tool is now inactive. """</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># set_inactive()
+</span>
+</span>
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="string">"""This tool have a user feedback using mouse on canvas."""</span>
+        <span class="keyword">pass</span>
+    <span class="comment"># mouse()
+# Tool
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Line</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+        <span class="py-pseudo-keyword">self</span>.message_id = <span class="py-pseudo-keyword">None</span></span>
+    <span class="comment"># __init__()
+</span>
+<span class="highlightadd">
+    <span class="keyword">def</span> <span class="function-name">set_active</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="py-pseudo-keyword">self</span>.message_id = app.status_message(
+            <span class="string">"Press the left mouse button to mark the first point."</span> )
+    <span class="comment"># set_active()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_inactive</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.message_id <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+            app.remove_status_message( <span class="py-pseudo-keyword">self</span>.message_id )
+    <span class="comment"># set_inactive()
+</span>
+</span>
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )<span class="highlightadd">
+                <span class="py-pseudo-keyword">self</span>.inner_message_id = app.status_message(
+                    ( <span class="string">"First poit at ( %d, %d ). Now mark the second."</span> ) %
+                    ( x, y ) )</span>
+            <span class="keyword">else:</span>
+                color = app[ <span class="string">"fg"</span> ]
+                size  = app[ <span class="string">"size"</span> ]
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+                app.undo.push()
+                canvas.draw_line( x0, y0, x, y, color, size )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+                app.remove_status_message( <span class="py-pseudo-keyword">self</span>.inner_message_id )</span>
+    <span class="comment"># mouse()
+# Line
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Pencil</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+        <span class="py-pseudo-keyword">self</span>.message_id = <span class="py-pseudo-keyword">None</span></span>
+        <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span>
+    <span class="comment"># __init__()
+</span>
+<span class="highlightadd">
+    <span class="keyword">def</span> <span class="function-name">set_active</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="py-pseudo-keyword">self</span>.message_id = app.status_message(
+            <span class="string">"Press the left mouse button and move your mouse."</span> )
+    <span class="comment"># set_active()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_inactive</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.message_id <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+            app.remove_status_message( <span class="py-pseudo-keyword">self</span>.message_id )
+    <span class="comment"># set_inactive()
+</span>
+</span>
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">self</span>.changed:
+                app.undo.push()
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">True</span>
+
+            color = app[ <span class="string">"fg"</span> ]
+            size  = app[ <span class="string">"size"</span> ]
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.last_point <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.last_point
+            <span class="keyword">else:</span>
+                x0 = x + 1
+                y0 = y
+
+            <span class="keyword">if</span> size == 1:
+                canvas.draw_point( x, y, color )
+            <span class="keyword">else:</span>
+                half = size / 2
+                canvas.draw_rectangle( x-half, y-half, size, size, color, 1,
+                                       color, <span class="py-pseudo-keyword">True</span> )
+            canvas.draw_line( x0, y0, x, y, color, size )
+            <span class="py-pseudo-keyword">self</span>.last_point = ( x, y )
+        <span class="keyword">else:</span>
+            <span class="comment"># Button 1 was released, reset last point
+</span>            <span class="py-pseudo-keyword">self</span>.last_point = <span class="py-pseudo-keyword">None</span>
+            <span class="py-pseudo-keyword">self</span>.changed = <span class="py-pseudo-keyword">False</span>
+    <span class="comment"># mouse()
+# Pencil
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Rectangle</span>( Tool ):
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+        <span class="py-pseudo-keyword">self</span>.message_id = <span class="py-pseudo-keyword">None</span></span>
+    <span class="comment"># __init__()
+</span>
+<span class="highlightadd">
+    <span class="keyword">def</span> <span class="function-name">set_active</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        app[ <span class="string">"rectgroup"</span> ].show()
+        <span class="py-pseudo-keyword">self</span>.message_id = app.status_message(
+            <span class="string">"Press the left mouse button to mark first point."</span> )
+    <span class="comment"># set_active()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_inactive</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        app[ <span class="string">"rectgroup"</span> ].hide()
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.message_id <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+            app.remove_status_message( <span class="py-pseudo-keyword">self</span>.message_id )
+    <span class="comment"># set_inactive()
+</span>
+</span>
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1:
+            <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.first_point <span class="keyword">is</span> <span class="py-pseudo-keyword">None</span>:
+                <span class="py-pseudo-keyword">self</span>.first_point = ( x, y )<span class="highlightadd">
+                <span class="py-pseudo-keyword">self</span>.inner_message_id = app.status_message(
+                    ( <span class="string">"First poit at ( %d, %d ). Now mark the second."</span> ) %
+                    ( x, y ) )</span>
+            <span class="keyword">else:</span>
+                fg   = app[ <span class="string">"fg"</span> ]
+                bg   = app[ <span class="string">"bg"</span> ]
+                size = app[ <span class="string">"size"</span> ]
+                fill = app[ <span class="string">"rectfill"</span> ]
+
+                x0, y0 = <span class="py-pseudo-keyword">self</span>.first_point
+
+                <span class="keyword">if</span> x0 &gt; x:
+                    x0, x = x, x0
+                <span class="keyword">if</span> y0 &gt; y:
+                    y0, y = y, y0
+
+                w = x - x0
+                h = y - y0
+
+                app.undo.push()
+                canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                <span class="py-pseudo-keyword">self</span>.first_point = <span class="py-pseudo-keyword">None</span><span class="highlightadd">
+                app.remove_status_message( <span class="py-pseudo-keyword">self</span>.inner_message_id )</span>
+    <span class="comment"># mouse()
+# Rectangle
+</span>
+
+
+<span class="keyword">class</span> <span class="type">Text</span>( Tool ):<span class="highlightadd">
+    <span class="keyword">def</span> <span class="function-name">__init__</span>( <span class="py-pseudo-keyword">self</span> ):
+        <span class="py-pseudo-keyword">self</span>.message_id = <span class="py-pseudo-keyword">None</span>
+    <span class="comment"># __init__()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_active</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        app[ <span class="string">"textgroup"</span> ].show()
+        <span class="py-pseudo-keyword">self</span>.message_id = app.status_message(
+            <span class="string">"Type your text in 'Contents' and press the left button "</span> \
+            <span class="string">"to place it."</span> )
+    <span class="comment"># set_active()
+</span>
+
+    <span class="keyword">def</span> <span class="function-name">set_inactive</span>( <span class="py-pseudo-keyword">self</span>, app ):
+        app[ <span class="string">"textgroup"</span> ].hide()
+        <span class="keyword">if</span> <span class="py-pseudo-keyword">self</span>.message_id <span class="keyword">is</span> <span class="keyword">not</span> <span class="py-pseudo-keyword">None</span>:
+            app.remove_status_message( <span class="py-pseudo-keyword">self</span>.message_id )
+    <span class="comment"># set_inactive()
+</span>
+</span>
+    <span class="keyword">def</span> <span class="function-name">mouse</span>( <span class="py-pseudo-keyword">self</span>, app, canvas, buttons, x, y ):
+        <span class="keyword">if</span> buttons &amp; Canvas.MOUSE_BUTTON_1 <span class="keyword">and</span> app[ <span class="string">"text"</span> ]:
+            text  = app[ <span class="string">"text"</span> ]
+            fg    = app[ <span class="string">"fg"</span> ]
+            bg    = app[ <span class="string">"bg"</span> ]
+            font  = app[ <span class="string">"font"</span> ]
+
+            <span class="keyword">if</span> app[ <span class="string">"textbgtransp"</span> ]:
+                bg = <span class="py-pseudo-keyword">None</span>
+
+            app.undo.push()
+            canvas.draw_text( text, x, y, fg, bg, font )
+    <span class="comment"># mouse()
+# Text
+</span>
+
+
+tools = {
+    <span class="string">"Line"</span>: Line(),
+    <span class="string">"Pencil"</span>: Pencil(),
+    <span class="string">"Rectangle"</span>: Rectangle(),
+    <span class="string">"Text"</span>: Text(),
+    }
+def_tool=<span class="string">"Line"</span>
+
+<span class="highlightadd">
+<span class="keyword">def</span> <span class="function-name">tool_changed</span>( app, tool, value ):
+    <span class="keyword">if</span> tool_changed.last_tool:
+        tool_changed.last_tool.set_inactive( app )
+
+    t = tools[ value ]
+    tool_changed.last_tool = t
+    t.set_active( app )
+<span class="comment"># tool_changed()
+</span>tool_changed.last_tool = <span class="py-pseudo-keyword">None</span>
+</span>
+
+<span class="keyword">def</span> <span class="function-name">canvas_action</span>( app, canvas, buttons, x, y ):
+    tool = app[ <span class="string">"tool"</span> ]
+    tools[ tool ].mouse( app, canvas, buttons, x, y )
+<span class="comment"># canvas_action()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">save</span>( app, button, filename ):
+    canvas = app[ <span class="string">"canvas"</span> ]
+    img = canvas.get_image()
+    <span class="keyword">try:</span>
+        img.save( filename )
+    <span class="keyword">except</span> <span class="py-builtins">Exception</span>, e:
+        error( <span class="py-builtins">str</span>( e ) )
+<span class="comment"># save()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">clear</span>( app, button ):
+    app.undo.push()
+    app[ <span class="string">"canvas"</span> ].clear()
+<span class="comment"># clear()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">confirm_quit</span>( app ):
+    <span class="keyword">return</span> yesno( <span class="string">"Are you sure you want to close '%s'?"</span> % app.title )
+<span class="comment"># confirm_quit()
+</span>
+
+<span class="keyword">def</span> <span class="function-name">do_undo</span>( app, button ):
+    app.undo.pop()
+<span class="comment"># do_undo()
+</span>
+
+
+app = App( title=<span class="string">"Paint"</span>,
+           id=<span class="string">"paint"</span>,
+           statusbar=<span class="py-pseudo-keyword">True</span>,
+           quit_callback=confirm_quit,
+           left=( Color( id=<span class="string">"fg"</span>,
+                         label=<span class="string">"Foreground:"</span>,
+                         color=<span class="string">"black"</span>,
+                         ),
+                  Color( id=<span class="string">"bg"</span>,
+                         label=<span class="string">"Background:"</span>,
+                         color=( 255, 0, 0 ),
+                         ),
+                  Selection( id=<span class="string">"tool"</span>,
+                             label=<span class="string">"Tool:"</span>,
+                             options=tools.keys(),
+                             active=def_tool,<span class="highlightadd">
+                             callback=tool_changed,</span>
+                             ),
+                  UIntSpin( id=<span class="string">"size"</span>,
+                            label=<span class="string">"Line Size:"</span>,
+                            min=1,
+                            value=1,
+                            ),
+                  ),
+           right=( Group( id=<span class="string">"textgroup"</span>,
+                          label=<span class="string">"Text Properties:"</span>,
+                          children=( Entry( id=<span class="string">"text"</span>,
+                                            label=<span class="string">"Contents:"</span>,
+                                            ),
+                                     Font( id=<span class="string">"font"</span>,
+                                           label=<span class="string">"Font:"</span>,
+                                           ),
+                                     CheckBox( id=<span class="string">"textbgtransp"</span>,
+                                               label=<span class="string">"Transparent background?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   Group( id=<span class="string">"rectgroup"</span>,
+                          label=<span class="string">"Rectangle Properties:"</span>,
+                          children=( CheckBox( id=<span class="string">"rectfill"</span>,
+                                               label=<span class="string">"Fill?"</span>,
+                                               ),
+                                     ),
+                          ),
+                   ),
+           top=( SaveFileButton( callback=save ),
+                 CloseButton(),
+                 Button( id=<span class="string">"undo"</span>,
+                         stock=<span class="string">"undo"</span>,
+                         callback=do_undo,
+                         ),
+                 Button( id=<span class="string">"clear"</span>,
+                         stock=<span class="string">"clear"</span>,
+                         callback=clear,
+                         ),
+                 ),
+           center=( Canvas( id=<span class="string">"canvas"</span>,
+                            label=<span class="string">"Draw Here:"</span>,
+                            width=400,
+                            height=400,
+                            bgcolor=<span class="string">"white"</span>,
+                            callback=canvas_action,
+                            ),
+                    )
+           )
+
+<span class="highlightadd">
+<span class="keyword">for</span> tool <span class="keyword">in</span> tools.itervalues():
+    tool.set_inactive( app )
+
+tool_changed( app, app.get_widget_by_id( <span class="string">"tool"</span> ), def_tool )
+</span>
+Undo( app )
+
+run()
+	</pre>
+<p id="caption-code-06-polishing"
+	   onclick="listingToggle( 'code-06-polishing' )">
+	Sixth version, with changes highlighted. Now we have messages
+in status bar and just relevant info in the right.</p>
+      </div>
+
+      <p>
+	That's it folks! Now you should try to implement more tools
+	and more options to the current tools.
+      </div>
+
+    </div>
+
+
+
+    <a href="#index" class="indexlink" title="Back to index at the top of the page">Index</a>
+    <h1 id="h-about" onclick="hToggle( 'about' )">About This Document</h1>
+
+    <div id="about" class="text">
+      <p>
+	This document was written by <a
+	href="http://www.gustavobarbieri.com.br">Gustavo Sverzut
+	Barbieri</a> and is licensed under <a
+	href="http://creativecommons.org/licenses/by-sa/2.5">Creative
+	Commons - Attribution/Share Alike</a>.
+      </p>
+      <p>
+	Grab most recent version at:
+      </p>
+      <a
+	  href="http://www.gustavobarbieri.com.br/eagle/docs/tutorials/paint/">http://www.gustavobarbieri.com.br/eagle/docs/tutorials/paint/</a>
+    </div>
+
+  </body>
+</html>

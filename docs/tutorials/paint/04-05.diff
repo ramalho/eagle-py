@@ -1,0 +1,55 @@
+--- 04-undo.py	2006-01-03 17:29:10.000000000 -0200
++++ 05-extra.py	2006-01-03 17:43:12.000000000 -0200
+@@ -172,6 +172,27 @@
+ # canvas_action()
+ 
+ 
++def save( app, button, filename ):
++    canvas = app[ "canvas" ]
++    img = canvas.get_image()
++    try:
++        img.save( filename )
++    except Exception, e:
++        error( str( e ) )
++# save()
++
++
++def clear( app, button ):
++    app.undo.push()
++    app[ "canvas" ].clear()
++# clear()
++
++
++def confirm_quit( app ):
++    return yesno( "Are you sure you want to close '%s'?" % app.title )
++# confirm_quit()
++
++
+ def do_undo( app, button ):
+     app.undo.pop()
+ # do_undo()
+@@ -181,6 +202,7 @@
+ app = App( title="Paint",
+            id="paint",
+            statusbar=True,
++           quit_callback=confirm_quit,
+            left=( Color( id="fg",
+                          label="Foreground:",
+                          color="black",
+@@ -221,7 +243,7 @@
+                                      ),
+                           ),
+                    ),
+-           top=( SaveFileButton(),
++           top=( SaveFileButton( callback=save ),
+                  CloseButton(),
+                  Button( id="undo",
+                          stock="undo",
+@@ -229,6 +251,7 @@
+                          ),
+                  Button( id="clear",
+                          stock="clear",
++                         callback=clear,
+                          ),
+                  ),
+            center=( Canvas( id="canvas",
