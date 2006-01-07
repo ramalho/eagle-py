@@ -23,7 +23,7 @@ __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
 __url__ = "http://code.gustavobarbieri.com.br/eagle/"
-__version__ = "0.1"
+__version__ = "0.2"
 __revision__ = "$Rev$"
 __description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
@@ -107,6 +107,7 @@ if m:
             ) )
     sys.exit( -1 )
 
+gtk.gdk.threads_init() # enable threads
 
 _apps = {}
 
@@ -234,6 +235,7 @@ class _Table( gtk.Table ):
         for idx, c in enumerate( self.children ):
             w = c.__get_widgets__()
             xrm, yrm = c.__get_resize_mode__()
+
             if len( w ) == 1:
                 if self.horizontal:
                     row0 = 0
@@ -251,7 +253,13 @@ class _Table( gtk.Table ):
                              yoptions=yrm,
                              xpadding=self.padding,
                              ypadding=self.padding )
+
             elif len( w ) == 2:
+                if isinstance( xrm, int ):
+                    xrm = ( xrm, xrm )
+                if isinstance( yrm, int ):
+                    yrm = ( yrm, yrm )
+
                 if self.horizontal:
                     row0 = 0
                     row1 = 1
@@ -271,13 +279,13 @@ class _Table( gtk.Table ):
                     col2 = 1
                     col3 = 2
                 self.attach( w[ 0 ], col0, col1, row0, row1,
-                             xoptions=xrm,
-                             yoptions=yrm,
+                             xoptions=xrm[ 0 ],
+                             yoptions=yrm[ 0 ],
                              xpadding=self.padding,
                              ypadding=self.padding )
                 self.attach( w[ 1 ], col2, col3, row2, row3,
-                             xoptions=xrm,
-                             yoptions=yrm,
+                             xoptions=xrm[ 1 ],
+                             yoptions=yrm[ 1 ],
                              xpadding=self.padding,
                              ypadding=self.padding )
     # __setup_gui__()
@@ -1233,7 +1241,6 @@ class DebugDialog( _EGObject, AutoGenId ):
 
         lines = traceback.format_exception_only( exctype, value )
         msg = lines[ 0 ]
-        print repr( msg )
         result = msg.split( ' ', 1 )
         if len( result ) == 1:
             msg = result[ 0 ]
@@ -1266,6 +1273,7 @@ class DebugDialog( _EGObject, AutoGenId ):
             f.write( e )
         f.close()
         self._save_name.set_text( filename )
+        sys.stderr.write( "Traceback saved to '%s'.\n" % filename )
     # save_exception()
 
 
@@ -1681,15 +1689,18 @@ class App( _EGObject, AutoGenId ):
 
         if self._left.__get_widgets__():
             self._hbox.pack_start( self._left,  expand=False, fill=True )
-            if self._center.__get_widgets__() or self._top.__get_widgets__ or \
-               self._bottom.__get_widgets__() or self._right.__get_widgets__():
+            if self._center.__get_widgets__() or \
+               self._top.__get_widgets__() or \
+               self._bottom.__get_widgets__() or \
+               self._right.__get_widgets__():
                 self._hbox.pack_start( gtk.VSeparator(),
                                        expand=False, fill=False )
 
         self._hbox.pack_start( self._vbox,  expand=True, fill=True )
 
         if self._right.__get_widgets__():
-            if self._center.__get_widgets__() or self._top.__get_widgets__ or \
+            if self._center.__get_widgets__() or \
+               self._top.__get_widgets__() or \
                self._bottom.__get_widgets__():
                 self._hbox.pack_start( gtk.VSeparator(),
                                        expand=False, fill=False )
@@ -1853,6 +1864,101 @@ class App( _EGObject, AutoGenId ):
         else:
             raise ValueError( "App '%s' doesn't use statusbar!" % self.id )
     # remove_status_message()
+
+
+    def timeout_add( self, interval, callback ):
+        """Register a function to be called after a given timeout/interval.
+
+        @param interval: milliseconds between calls.
+        @param callback: function to call back. This function gets as
+               argument the app reference and must return C{True} to
+               keep running, if C{False} is returned, it will not be
+               called anymore.
+        @return: id number to be used in L{remove_event_source}
+        """
+        def wrap( *args ):
+            return callback( self )
+        # wrap()
+        return gobject.timeout_add( interval, wrap )
+    # timeout_add()
+
+
+    def idle_add( self, callback ):
+        """Register a function to be called when system is idle.
+
+        System is idle if there is no other event pending.
+
+        @param callback: function to call back. This function gets as
+               argument the app reference and must return C{True} to
+               keep running, if C{False} is returned, it will not be
+               called anymore.
+        @return: id number to be used in L{remove_event_source}
+        """
+        def wrap( *args ):
+            return callback( self )
+        # wrap()
+        return gobject.idle_add( wrap )
+    # idle_add()
+
+
+
+    def io_watch( self, file, callback,
+                  on_in=False, on_out=False, on_urgent=False, on_error=False,
+                  on_hungup=False ):
+        """Register a function to be called after an Input/Output event.
+
+        @param file: any file object or file descriptor (integer).
+        @param callback: function to be called back, parameters will be the
+               application that generated the event, the file that triggered
+               it and on_in, on_out, on_urgent, on_error or on_hungup,
+               being True those that triggered the event.
+               The function must return C{True} to be called back again,
+               otherwise it is automatically removed.
+        @param on_in: there is data to read.
+        @param on_out: data can be written without blocking.
+        @param on_urgent: there is urgent data to read.
+        @param on_error: error condition.
+        @param on_hungup: hung up (the connection has been broken, usually for
+               pipes and sockets).
+        @return: id number to be used in L{remove_event_source}
+        """
+        def wrap( source, cb_condition ):
+            on_in     = bool( cb_condition & gobject.IO_IN )
+            on_out    = bool( cb_condition & gobject.IO_OUT )
+            on_urgent = bool( cb_condition & gobject.IO_PRI )
+            on_error  = bool( cb_condition & gobject.IO_ERR )
+            on_hungup = bool( cb_condition & gobject.IO_HUP )
+            return callback( self, source, on_in=on_in,
+                             on_out=on_out, on_urgent=on_urgent,
+                             on_error=on_error, on_hungup=on_hungup )
+        # wrap()
+
+        condition = 0
+        if on_in:
+            condition |= gobject.IO_IN
+        if on_out:
+            condition |= gobject.IO_OUT
+        if on_urgent:
+            condition |= gobject.IO_PRI
+        if on_error:
+            condition |= gobject.IO_ERR
+        if on_hungup:
+            condition |= gobject.IO_HUP
+        return gobject.io_add_watch( file, condition, wrap )
+    # io_watch()
+
+
+    def remove_event_source( self, event_id ):
+        """Remove an event generator like those created by L{timeout_add},
+        L{idle_add} or L{io_watch}.
+
+        @param event_id: value returned from L{timeout_add},
+        L{idle_add} or L{io_watch}.
+
+        @return: C{True} if it was removed.
+        """
+        return gobject.source_remove( event_id )
+    # remove_event_source()
 # App
 
 
@@ -2459,6 +2565,46 @@ class Canvas( _EGWidget ):
 # Canvas
 
 
+class _MultiLineEntry( gtk.ScrolledWindow ):
+    def __init__( self ):
+        gtk.ScrolledWindow.__init__( self )
+        self.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
+                         vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        self.set_shadow_type( gtk.SHADOW_IN )
+
+        self.textview = gtk.TextView()
+        self.add( self.textview )
+
+        self.textview.set_editable( True )
+        self.textview.set_cursor_visible( True )
+        self.textview.set_left_margin( 2 )
+        self.textview.set_right_margin( 2 )
+        self.textview.get_buffer().connect( "changed", self.__emit_changed__ )
+    # __init__()
+
+
+    def __emit_changed__( self, *args ):
+        self.emit( "changed" )
+    # __emit_changed__
+
+
+    def set_text( self, value ):
+        self.textview.get_buffer().set_text( value )
+    # set_text()
+
+
+    def get_text( self ):
+        b = self.textview.get_buffer()
+        return b.get_text( b.get_start_iter(), b.get_end_iter() )
+    # get_text()
+# _MultiLineEntry
+gobject.signal_new( "changed",
+                    _MultiLineEntry,
+                    gobject.SIGNAL_RUN_LAST,
+                    gobject.TYPE_NONE,
+                    tuple() )
+
+
 class Entry( _EGWidLabelEntry ):
     """Text entry.
 
@@ -2467,9 +2613,10 @@ class Entry( _EGWidLabelEntry ):
     """
     value = _gen_ro_property( "value" )
     callback = _gen_ro_property( "callback" )
+    multiline = _gen_ro_property( "multiline" )
 
     def __init__( self, id, label="", value="", callback=None,
-                  persistent=False ):
+                  persistent=False, multiline=False ):
         """Entry constructor.
 
         @param label: what to show on a label on the left side of the widget.
@@ -2482,9 +2629,11 @@ class Entry( _EGWidLabelEntry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param multiline: if this entry can be multi-line.
         """
         self.value = value
         self.callback = _callback_tuple( callback )
+        self.multiline = bool( multiline )
 
         _EGWidLabelEntry.__init__( self, id, persistent, label )
 
@@ -2494,7 +2643,11 @@ class Entry( _EGWidLabelEntry ):
 
 
     def __setup_gui__( self ):
-        self._entry = gtk.Entry()
+        if self.multiline:
+            self._entry = _MultiLineEntry()
+        else:
+            self._entry = gtk.Entry()
+
         self._entry.set_name( self.id )
         self._entry.set_text( self.value )
 
@@ -2521,6 +2674,21 @@ class Entry( _EGWidLabelEntry ):
     def set_value( self, value ):
         self._entry.set_text( str( value ) )
     # set_value()
+
+
+    def __get_resize_mode__( self ):
+        """Resize mode.
+
+        First tuple of tuple is about horizontal mode for label and entry.
+        Second tuple of tuple is about vertical mode for label and entry.
+        """
+        if self.multiline:
+            return ( ( gtk.FILL, gtk.FILL | gtk.EXPAND ),
+                     ( gtk.FILL, gtk.FILL | gtk.EXPAND ) )
+        else:
+            return ( ( gtk.FILL, gtk.FILL | gtk.EXPAND ),
+                     ( gtk.FILL, gtk.FILL ) )
+    # __get_resize_mode__()
 # Entry
 
 
@@ -2998,6 +3166,99 @@ class Selection( _EGWidLabelEntry ):
             if o[ 0 ] == value:
                 self._entry.set_active( i )
     # set_value()
+
+
+    def append( self, value, set_active=False ):
+        """Append new value to available options.
+
+        @param value: string that is not already an option.
+
+        @raise: ValueError: if value is already an option.
+        """
+        if value not in self.items():
+            self._entry.append_text( value )
+            if set_active:
+                self.set_value( value )
+        else:
+            raise ValueError( "value already in selection" )
+    # append()
+
+
+    def prepend( self, value ):
+        """Prepend new value to available options.
+
+        @param value: string that is not already an option.
+
+        @raise: ValueError: if value is already an option.
+        """
+        if value not in self.items():
+            self._entry.prepend_text( value )
+            if set_active:
+                self.set_value( value )
+        else:
+            raise ValueError( "value already in selection" )
+    # prepend()
+
+
+    def insert( self, position, value ):
+        """Insert new option at position.
+
+        @param value: string that is not already an option.
+
+        @raise: ValueError: if value is already an option.
+        """
+        if value not in self.items():
+            self._entry.insert_text( position, value )
+            if set_active:
+                self.set_value( value )
+        else:
+            raise ValueError( "value already in selection" )
+    # insert()
+
+
+    def remove( self, value ):
+        """Remove given value from available options.
+
+        @param value: string that is an option.
+
+        @raise ValueError: if value is not already an option.
+        """
+        for i, o in enumerate( self._entry.get_model() ):
+            if o[ 0 ] == value:
+                self._entry.remove_text( i )
+                return
+
+        raise ValueError( "value not in selection" )
+    # remove()
+
+
+    def items( self ):
+        """Returns every item/option in this selection."""
+        return [ str( x[ 0 ] ) for x in  self._entry.get_model() ]
+    # items()
+    options = items
+
+
+    def __len__( self ):
+        return len( self._entry.get_model() )
+    # __len__()
+
+
+    def __contains__( self, value ):
+        return value in self.items()
+    # __contains__()
+
+
+    def __iadd__( self, value ):
+        """Same as L{append}"""
+        self.append( value )
+    # __iadd__()
+
+
+    def __isub__( self, value ):
+        """Same as L{remove}"""
+        self.remove( value )
+    # __isub__()
 # Selection
 
 
@@ -3510,7 +3771,7 @@ class Label( _EGDataWidget, AutoGenId ):
 
 
     def get_value( self ):
-        self._wid.get_text()
+        return self._wid.get_text()
     # get_value()
 
 

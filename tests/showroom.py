@@ -134,12 +134,12 @@ I have nothing to help you.
                     CheckBox( id="active",
                               label="Active?",
                               state=True,
-                              callback=changed
+                              callback=changed,
                               ),
                     Entry( id="name",
                            label="Name:",
                            value="Something",
-                           callback=changed
+                           callback=changed,
                            ),
                     )
            ),
