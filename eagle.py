@@ -22,7 +22,7 @@
 __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
-__url__ = "http://code.gustavobarbieri.com.br/eagle/"
+__url__ = "http://www.gustavobarbieri.com.br/eagle/"
 __version__ = "0.2"
 __revision__ = "$Rev$"
 __description__ = """\
@@ -69,7 +69,7 @@ __all__ = [
     "OpenFileButton", "SelectFolderButton", "SaveFileButton",
     "PreferencesButton",
     "Selection",
-    "Group",
+    "Group", "Table",
     "HSeparator", "VSeparator",
     "Label",
     "Canvas", "Image",
@@ -2619,6 +2619,7 @@ class Entry( _EGWidLabelEntry ):
                   persistent=False, multiline=False ):
         """Entry constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param callback: function (or list of functions) that will
@@ -2701,6 +2702,7 @@ class Password( Entry ):
                   persistent=False ):
         """Password constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param callback: function (or list of functions) that will
@@ -2741,6 +2743,7 @@ class Spin( _EGWidLabelEntry ):
                   callback=None, persistent=False ):
         """Spin constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param min: minimum value. If None, L{default_min} will be used.
@@ -2834,6 +2837,7 @@ class IntSpin( Spin ):
                   callback=None, persistent=False ):
         """Integer Spin constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param min: minimum value. If None, L{default_min} will be used.
@@ -2885,6 +2889,7 @@ class UIntSpin( IntSpin ):
                   callback=None, persistent=False ):
         """Unsigned Integer Spin constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
         @param min: minimum value, must be greater or equal zero.
@@ -2922,6 +2927,7 @@ class Color( _EGWidLabelEntry ):
                   persistent=False ):
         """Color selector constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param color: initial content. May be a triple with elements within
                the range 0-255, an string with color in HTML format or even
@@ -3050,6 +3056,7 @@ class Font( _EGWidLabelEntry ):
                   persistent=False ):
         """Font selector constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param font: initial content.
         @param callback: function (or list of functions) that will
@@ -3112,6 +3119,7 @@ class Selection( _EGWidLabelEntry ):
                   callback=None, persistent=False ):
         """Selection constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param options: list of possible values.
         @param active: selected element.
@@ -3270,6 +3278,10 @@ class Progress( _EGWidLabelEntry ):
         """Progress bar constructor.
 
         0 <= value <= 1.0
+
+        @param id: unique identifier.
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content ( 0.0 <= value <= 1.0 )
         """
         self.value = value
         _EGWidLabelEntry.__init__( self, id, False, label )
@@ -3318,6 +3330,7 @@ class CheckBox( _EGDataWidget ):
                   persistent=False ):
         """Check box constructor.
 
+        @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param state: initial state.
         @param callback: function (or list of functions) that will
@@ -3429,6 +3442,704 @@ class Group( _EGWidget ):
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
 # Group
+
+
+class Table( _EGWidget ):
+    """Data table.
+
+    Each column should have only one type, it will be checked.
+    Can be accessed as a python list:
+
+    >>> t = Table( 't', 'table', [ 1, 2, 3 ] )
+    >>> t[ 0 ]
+    [ 1 ]
+    >>> del t[ 1 ]
+    >>> t[ : ]
+    [ 1, 3 ]
+    """
+    spacing = 3
+
+
+    class Row( object ):
+        # Used to hide gtk.ListStore
+        def __init__( self, items ):
+            self.__items = items
+        # __init__()
+
+
+        def __str__( self ):
+            return "[" + ", ".join( str( x ) for x in self.__items ) + "]"
+        # __str__()
+        __repr__ = __str__
+
+
+        def __len__( self ):
+            return len( self.__items )
+        # __len__()
+
+
+        def __nonzero__( self ):
+            return self.__items.__nonzero__()
+        # __nonzero__()
+
+
+        def __getitem__( self, index ):
+            return self.__items[ index ]
+        # __getitem__()
+
+
+        def __setitem__( self, index, value ):
+            self.__items[ index ] = value
+        # __setitem__()
+
+
+        def __delitem__( self, index ):
+            del self.__items[ index ]
+        # __delitem__()
+
+
+        def __contains__( self, element ):
+            return element in self.__items
+        # __contains__()
+
+
+        def __getslice__( self, start, end ):
+            slice = []
+
+            l = len( self.__items )
+            while start < 0:
+                start += l
+            while end < 0:
+                end += l
+
+            start = min( start, l )
+            end = min( end, l ) # l[ : ] -> l[ 0 : maxlistindex ]
+
+            for i in xrange( start, end ):
+                slice.append( self.__items[ i ] )
+            return slice
+        # __getslice__()
+
+
+        def __setslice__( self, start, end, items ):
+            l = len( self.__items )
+            while start < 0:
+                start += l
+            while end < 0:
+                end += l
+
+            start = min( start, l )
+            end = min( end, l ) # l[ : ] -> l[ 0 : maxlistindex ]
+
+            l2 = len( items )
+            if end - start > l2:
+                end = start + l2
+
+            j = 0
+            for i in xrange( start, end ):
+                self.__items[ i ] = items[ j ]
+                j += 1
+        # __setslice__()
+    # Row
+
+
+
+    def __init__( self, id, label, items=None, types=None,
+                  headers=None, show_headers=True, editable=False,
+                  expand_columns_indexes=None,
+                  selection_callback=None, data_changed_callback=None ):
+        """Table constructor.
+
+        @param id: unique identifier.
+        @param label: what to show on table frame
+        @param items: a list (single column) or list of lists (multiple
+               columns)
+        @param types: a list of types (str, int, long, float, unicode, bool)
+               for columns, if omitted, will be guessed from items.
+        @param headers: what to use as table header.
+        @param show_headers: whenever to show table headers
+        @param editable: if table is editable. If editable, user can change
+               values inline or double-clicking, also edit buttons will
+               show after the table.
+        @param expand_columns_indexes: list of indexes that can expand size
+        @param selection_callback: the function (or list of functions) to
+               call when selection changes. Function will get as parameters:
+                - App reference
+                - Table reference
+                - List of pairs ( index, row_contents )
+        @param data_changed_callback: the function (or list of functions) to
+               call when data changes. Function will get as parameters:
+                - App reference
+                - Table reference
+                - Pair ( index, row_contents )
+
+        @warning: although this widget contains data, it's not a
+                  _EGDataWidget and thus will not notify application that
+                  data changed, also it cannot persist it's data
+                  automatically, if you wish, do it manually. This behavior
+                  may change in future if Table show to be useful as
+                  _EGDataWidget.
+        """
+        _EGWidget.__init__( self, id )
+        self.editable = editable or False
+        self.label = str( label or "" )
+        self.headers = headers or tuple()
+        self.show_headers = bool( show_headers )
+
+        if isinstance( expand_columns_indexes, ( int, long ) ):
+            expand_columns_indexes = ( expand_columns_indexes, )
+        elif isinstance( expand_columns_indexes, ( tuple, list ) ):
+            expand_columns_indexes = tuple( expand_columns_indexes )
+        elif expand_columns_indexes is None:
+            expand_columns_indexes = tuple()
+        else:
+            raise ValueError( \
+                "expand_columns_indexes must be a sequence of integers" )
+        self.expand_columns_indexes = expand_columns_indexes
+
+
+        if not ( types or items ):
+            raise ValueError( "Must provide items or types!" )
+        elif not types:
+            items = items or []
+            if not isinstance( items[ 0 ], ( list, tuple ) ):
+                # just one column, convert to generic representation
+                items = [ [ i ] for i in items ]
+
+            types = [ type( i ) for i in items[ 0 ] ]
+        self.types = types
+        self.items = items
+
+        self.selection_callback = _callback_tuple( selection_callback )
+        self.data_changed_callback = _callback_tuple( data_changed_callback )
+
+        self.__setup_gui__()
+        self.__setup_connections__()
+    # __init__()
+
+
+    def __setup_gui__( self ):
+        self._frame = gtk.Frame( self.label )
+        self._frame.set_name( self.id )
+
+        self._vbox = gtk.VBox( False, self.spacing )
+        self._vbox.set_border_width( self.spacing )
+        self._vbox.set_name( "vbox-%s" % self.id )
+
+        self._frame.add( self._vbox )
+        self._widgets = ( self._frame, )
+
+        self.__setup_table__()
+
+        if self.editable:
+            self._hbox = gtk.HBox( False, self.spacing )
+            self._vbox.pack_start( self._hbox, expand=False, fill=True )
+
+            self._btn_add  = gtk.Button( stock=gtk.STOCK_ADD )
+            self._btn_del  = gtk.Button( stock=gtk.STOCK_REMOVE )
+            self._btn_edit = gtk.Button( stock=gtk.STOCK_EDIT )
+
+            self._hbox.pack_start( self._btn_add )
+            self._hbox.pack_start( self._btn_del )
+            self._hbox.pack_start( self._btn_edit )
+    # __setup_gui__()
+
+
+    def __setup_connections__( self ):
+        if self.data_changed_callback:
+            self.__setup_connections_changed__()
+
+        if self.editable:
+            self.__setup_connections_editable__()
+
+        if self.selection_callback:
+            self.__setup_connections_selection__()
+    # __setup_connections__()
+
+
+    def __setup_connections_changed__( self ):
+        def row_changed( model, path, itr ):
+            index = path[ 0 ]
+            v = ( index, Table.Row( model[ path ] ) )
+            for c in self.data_changed_callback:
+                c( self.app, self, v )
+        # row_changed()
+
+
+        def row_deleted( model, path ):
+            index = path[ 0 ]
+            v = ( index, None )
+            for c in self.data_changed_callback:
+                c( self.app, self, v )
+        # row_deleted()
+
+        self._model.connect( "row-changed", row_changed )
+        self._model.connect( "row-deleted", row_deleted )
+        self._model.connect( "row-inserted", row_changed)
+    # __setup_connections_changed__()
+
+
+    def __setup_connections_editable__( self ):
+        def edit_dialog( data ):
+            title = "Edit data from table %s" % self.label
+            buttons = ( gtk.STOCK_OK, gtk.RESPONSE_ACCEPT,
+                        gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT )
+            d = gtk.Dialog( title=title,
+                            flags=gtk.DIALOG_MODAL,
+                            buttons=buttons )
+            d.set_default_response( gtk.RESPONSE_ACCEPT )
+
+            l = len( data )
+            t = gtk.Table( l, 2 )
+            t.set_border_width( 0 )
+            w = []
+            for i, v in enumerate( data ):
+                title = self._table.get_column( i ).get_title()
+                label = gtk.Label( title )
+                label.set_justify( gtk.JUSTIFY_RIGHT )
+                label.set_alignment( xalign=1.0, yalign=0.5 )
+
+                tp = self.types[ i ]
+                if   tp == bool:
+                    entry = gtk.CheckButton()
+                    entry.set_active( data[ i ] )
+                elif tp in ( int, long ):
+                    entry = gtk.SpinButton( digits=0 )
+                    adj = entry.get_adjustment()
+                    adj.lower = Spin.default_min
+                    adj.upper = Spin.default_max
+                    adj.step_increment = 1
+                    adj.page_increment = 5
+                    entry.set_value( data[ i ] )
+                elif tp == float:
+                    entry = gtk.SpinButton( digits=6 )
+                    adj = entry.get_adjustment()
+                    adj.lower = Spin.default_min
+                    adj.upper = Spin.default_max
+                    adj.step_increment = 1
+                    adj.page_increment = 5
+                    entry.set_value( data[ i ] )
+                elif tp in ( str, unicode ):
+                    entry = gtk.Entry()
+                    entry.set_text( data[ i ] )
+                else:
+                    try:
+                        name = tp.__name__
+                    except:
+                        name = tp
+                    raise ValueError( "Unsuported column (%d) type: %s" %
+                                      ( i, name ) )
+
+                t.attach( label, 0, 1, i, i + 1,
+                          xoptions=gtk.FILL,
+                          xpadding=self.spacing, ypadding=self.spacing )
+                t.attach( entry, 1, 2, i, i + 1,
+                          xoptions=gtk.EXPAND|gtk.FILL,
+                          xpadding=self.spacing, ypadding=self.spacing )
+                w.append( entry )
+
+            t.show_all()
+
+            sw = gtk.ScrolledWindow()
+            sw.add_with_viewport( t )
+            sw.get_child().set_shadow_type( gtk.SHADOW_NONE )
+            d.vbox.pack_start( sw )
+            # Hack, disable scrollbars so we get the window to the
+            # best size
+            sw.set_policy( hscrollbar_policy=gtk.POLICY_NEVER,
+                           vscrollbar_policy=gtk.POLICY_NEVER )
+            d.show_all()
+            # Scrollbars are automatic
+            sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
+                           vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+
+            r = d.run()
+            d.destroy()
+            if r in ( gtk.RESPONSE_REJECT, gtk.RESPONSE_DELETE_EVENT ) :
+                return None
+            else:
+                result = []
+                for i in xrange( len( data ) ):
+                    tp = self.types[ i ]
+                    wid = w[ i ]
+                    if   tp == bool:
+                        r = bool( wid.get_active() )
+                    elif tp in ( int, long ):
+                        r = tp( wid.get_value() )
+                    elif tp == float:
+                        r = float( wid.get_value() )
+                    elif tp in ( str, unicode ):
+                        r = tp( wid.get_text() )
+                    else:
+                        try:
+                            name = tp.__name__
+                        except:
+                            name = tp
+                            raise ValueError( \
+                                "Unsuported column (%d) type: %s" %
+                                ( i, name ) )
+                    result.append( r )
+
+                return result
+        # edit_dialog()
+
+
+        def clicked_add( button ):
+            entry = []
+            for i, t in enumerate( self.types ):
+                if   t == bool:
+                    v = False
+                elif t in ( int, long, float ):
+                    v = 0
+                elif t in ( str, unicode ):
+                    v = ''
+                else:
+                    try:
+                        name = t.__name__
+                    except:
+                        name = t
+                    raise ValueError( "Unsuported column (%d) type: %s" %
+                                      ( i, name ) )
+                entry.append( v )
+            result = edit_dialog( entry )
+            if result:
+                self.append( result )
+        # clicked_add()
+
+
+        def clicked_edit( button ):
+            selected = self.selected()
+            if not selected:
+                return
+
+            for index, data in selected:
+                print data
+                result = edit_dialog( data )
+                if result:
+                    self[ index ] = result
+        # clicked_edit()
+
+
+        def clicked_del( button ):
+            selected = self.selected()
+            if not selected:
+                return
+
+            for index, data in selected:
+                del self[ index ]
+        # clicked_del()
+
+        self._btn_add.connect( "clicked", clicked_add )
+        self._btn_del.connect( "clicked", clicked_del )
+        self._btn_edit.connect( "clicked", clicked_edit )
+
+        def row_activated( treeview, path, column ):
+            data = treeview.get_model()[ path ]
+            result = edit_dialog( data )
+            if result:
+                self[ path[ 0 ] ] = result
+        # row_activated()
+
+
+        self._table.connect( "row-activated", row_activated )
+    # __setup_connections_editable__()
+
+
+    def __setup_connections_selection__( self ):
+        def selection_changed( selection ):
+            result = self.selected()
+            for c in self.selection_callback:
+                c( self.app, self, result )
+        # selection_changed()
+
+        selection = self._table.get_selection()
+        selection.connect( "changed", selection_changed )
+    # __setup_connections_selection__()
+
+
+    def __setup_table__( self ):
+        self.__setup_model__()
+        self._table = gtk.TreeView( self._model )
+        self._table.set_name( "table-%s" % self.id )
+        self._table.get_selection().set_mode( gtk.SELECTION_MULTIPLE )
+
+        def column_clicked( column ):
+            cid, order = self._model.get_sort_column_id()
+            self._model.set_sort_column_id( cid, order )
+        # column_clicked()
+
+        def toggled( cell_render, path, col ):
+            self._model[ path ][ col ] = not self._model[ path ][ col ]
+        # toggled()
+
+
+        def edited( cell_render, path, text, col ):
+            t = self.types[ col ]
+            try:
+                value = t( text )
+            except ValueError, e:
+                name = t.__name__
+                error( "Invalid contents for column of type '%s': %s" %
+                       ( name, text ) )
+            else:
+                self._model[ path ][ col ] = value
+        # edited()
+
+
+        for i, t in enumerate( self.types ):
+            if   t == bool:
+                cell_rend = gtk.CellRendererToggle()
+                props = { "active": i }
+                if self.editable:
+                    cell_rend.set_property( "activatable", True)
+                    cell_rend.connect( "toggled", toggled, i )
+
+            elif t in ( int, long, float, str, unicode ):
+                cell_rend = gtk.CellRendererText()
+                if self.editable:
+                    cell_rend.set_property( "editable", True )
+                    cell_rend.connect( "edited", edited, i )
+
+                props = { "text": i }
+                if t in ( int, long, float ):
+                    cell_rend.set_property( "xalign", 1.0 )
+            else:
+                try:
+                    name = t.__name__
+                except:
+                    name = t
+                raise ValueError( "Unsuported column (%d) type: %s" %
+                                  ( i, name ) )
+
+            try:
+                title = self.headers[ i ]
+            except IndexError:
+                title = "Col-%d (%s)" % ( i, t.__name__ )
+
+            col = gtk.TreeViewColumn( title, cell_rend, **props )
+            col.set_resizable( True )
+            col.set_sort_column_id( i )
+            col.connect( "clicked", column_clicked )
+            if i in self.expand_columns_indexes:
+                col.set_expand( True )
+            else:
+                col.set_expand( False )
+            self._table.append_column( col )
+
+
+        self._table.set_headers_visible( self.show_headers )
+        self._table.set_headers_clickable( True )
+        self._table.set_reorderable( True )
+        self._table.set_enable_search( True )
+
+
+        if self.items:
+            for row in self.items:
+                self.append( row, select=False, autosize=False )
+            self.columns_autosize()
+
+        self._sw = gtk.ScrolledWindow()
+        self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
+                             vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        self._sw.set_shadow_type( gtk.SHADOW_IN )
+        self._sw.add( self._table )
+        self._vbox.pack_start( self._sw )
+    # __setup_table__()
+
+
+    def __setup_model__( self ):
+        gtk_types = []
+        for i, t in enumerate( self.types ):
+            if   t == bool:
+                gtk_types.append( gobject.TYPE_BOOLEAN )
+            elif t == int:
+                gtk_types.append( gobject.TYPE_INT )
+            elif t == long:
+                gtk_types.append( gobject.TYPE_LONG )
+            elif t == float:
+                gtk_types.append( gobject.TYPE_FLOAT )
+            elif t in ( str, unicode ):
+                gtk_types.append( gobject.TYPE_STRING )
+            else:
+                try:
+                    name = t.__name__
+                except:
+                    name = t
+                raise ValueError( "Unsuported column (%d) type: %s" %
+                                  ( i, name ) )
+        self._model = gtk.ListStore( *gtk_types )
+
+        def sort_fn( model, itr1, itr2, id ):
+            return cmp( model[ itr1 ][ id ], model[ itr2 ][ id ] )
+        # sort_fn()
+
+        for i in xrange( len( self.types ) ):
+            self._model.set_sort_func( i, sort_fn, i )
+    # __setup_model__()
+
+
+    def __get_resize_mode__( self ):
+        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
+    # __get_resize_mode__()
+
+
+    def columns_autosize( self ):
+        self._table.columns_autosize()
+    # columns_autosize()
+
+
+    def selected( self ):
+        model, paths = self._table.get_selection().get_selected_rows()
+        if paths:
+            result = []
+            for p in paths:
+                result.append( ( p[ 0 ], Table.Row( model[ p ] ) ) )
+            return result
+        else:
+            return None
+    # selected()
+
+
+    def append( self, row, select=True, autosize=True ):
+        if not isinstance( row, ( list, tuple ) ):
+            row = ( row, )
+
+        itr = self._model.append( row )
+
+        if autosize:
+            self._table.columns_autosize()
+        if select:
+            self._table.set_cursor( self._model[ itr ].path )
+    # append()
+
+
+    def insert( self, index, row, select=True, autosize=True ):
+        if not isinstance( row, ( list, tuple ) ):
+            row = ( row, )
+
+        itr = self._model.insert( index, row )
+        self._table.columns_autosize()
+
+        if autosize:
+            self._table.columns_autosize()
+        if select:
+            self._table.set_cursor( self._model[ itr ].path )
+    # insert()
+
+
+    def __nonzero__( self ):
+        return self._model.__nonzero__()
+    # __nonzero__()
+
+    def __len__( self ):
+        return len( self._model )
+    # __len__()
+
+
+    def __iadd__( self, other ):
+        self.append( other )
+        return self
+    # __iadd__()
+
+
+    def __setitem__( self, index, other ):
+        if not isinstance( other, ( list, tuple ) ):
+            other = ( other, )
+        try:
+            self._model[ index ] = other
+        except TypeError, e:
+            raise IndexError( "index out of range" )
+    # __setitem__()
+
+
+    def __getitem__( self, index ):
+        try:
+            items = self._model[ index ]
+        except TypeError, e:
+            raise IndexError( "index out of range" )
+
+        return Table.Row( items )
+    # __getitem__()
+
+
+    def __delitem__( self, index ):
+        try:
+            del self._model[ index ]
+        except TypeError, e:
+            raise IndexError( "index out of range" )
+    # __delitem__()
+
+
+    def __contains__( self, row ):
+        for r in self._model:
+            if row in r:
+                return True
+        return False
+    # __contains__()
+
+
+    def __getslice__( self, start, end ):
+        slice = []
+
+        l = len( self._model )
+        while start < 0:
+            start += l
+        while end < 0:
+            end += l
+
+        start = min( start, l )
+        end = min( end, l ) # l[ : ] -> l[ 0 : maxlistindex ]
+
+        for i in xrange( start, end ):
+            slice.append( Table.Row( self._model[ i ] ) )
+        return slice
+    # __getslice__()
+
+
+    def __setslice__( self, start, end, slice ):
+        l = len( self._model )
+        while start < 0:
+            start += l
+        while end < 0:
+            end += l
+
+        del self[ start : end ]
+
+        # just insert len( slice ) items
+        l2 = len( slice )
+        if end - start > l2:
+            end = start + l2
+        for j, i in enumerate( xrange( start, end ) ):
+            row = list( slice[ j ] )
+
+
+            # extend row if necessary
+            lr = len( row )
+            lt = len( self.types )
+            if lr < lt:
+                for i in xrange( lr, lt ):
+                    t = self.types[ i ]
+                    row.append( t() )
+
+            self.insert( i, row, select=False, autosize=False )
+    # __setslice__()
+
+
+    def __delslice__( self, start, end ):
+        l = len( self._model )
+        while start < 0:
+            start += l
+        while end < 0:
+            end += l
+
+        start = min( start, l )
+        end = min( end, l ) # l[ : ] -> l[ 0 : maxlistindex ]
+
+        while end > start:
+            end -= 1
+            del self._model[ end ]
+    # __delslice__()
+# Table
 
 
 class Button( _EGWidget ):
