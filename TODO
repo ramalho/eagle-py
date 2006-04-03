@@ -5,5 +5,5 @@ in this file, please contact barbieri@gmail.com and explain your needs.
 
  * Menubar
  * Toolbar
- * Data Table (also know as: Grid, Table, ListView, TreeView, ...)
+ * Data Table (also know as: Grid, Table, ListView, TreeView, ...) [partially done, needs render support]
  * Automatic thread handling

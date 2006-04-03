@@ -6,3 +6,6 @@ eagle.py
 setup.py
 tests/showroom.py
 tests/test.png
+qt/*
+gtk/*
+maemo/*

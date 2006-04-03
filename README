@@ -18,3 +18,6 @@ center.
 
 It provides useful widgets like: Color selector, Font selector, Quit button,
 Preferences button and bialog, About dialog and Help dialog.
+
+Eagle now supports multiple platforms: gtk, qt and maemo, please refer to each
+directory for specific information.

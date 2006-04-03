@@ -3,7 +3,7 @@
 echo "This requires Epydoc (http://epydoc.sf.net) and DocUtils (http://docutils.sf.net)"
 
 API_DIR=./docs/api/
-MODULES="eagle"
+MODULES="gtk.eagle qt.eagle maemo.eagle"
 
 export PYTHONPATH=$PYTHONPATH:.
 
