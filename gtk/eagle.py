@@ -75,6 +75,7 @@ __all__ = [
     "Canvas", "Image",
     "information", "info", "error", "err", "warning", "warn",
     "yesno", "confirm",
+    "AboutDialog", "HelpDialog", "FileChooser",
     ]
 
 import os

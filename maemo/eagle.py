@@ -75,6 +75,7 @@ __all__ = [
     "Canvas", "Image",
     "information", "info", "error", "err", "warning", "warn",
     "yesno", "confirm",
+    "AboutDialog", "HelpDialog", "FileChooser",
     ]
 
 import os
@@ -1005,6 +1006,9 @@ class FileChooser( _EGWidget, AutoGenId ):
         self.filename = filename
         self.title = title  or self.__gen_title__()
 
+        if self.multiple:
+            warn( "Maemo doesn't support multiple file selection!" )
+
         self.__setup_gui__()
     # __init__()
 
@@ -1033,14 +1037,9 @@ class FileChooser( _EGWidget, AutoGenId ):
               self.ACTION_CREATE_FOLDER: gtk.FILE_CHOOSER_ACTION_CREATE_FOLDER,
               }.get( self.action, gtk.FILE_CHOOSER_ACTION_OPEN )
 
-        b = ( gtk.STOCK_OPEN, gtk.RESPONSE_ACCEPT,
-              gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL )
-        self._diag = gtk.FileChooserDialog( title=self.title,
-                                            parent=win,
-                                            action=a,
-                                            buttons=b )
+        self._diag = hildon.FileChooserDialog( parent=win,
+                                               action=a )
         _set_icon_list( self._diag, gtk.STOCK_OPEN )
-        self._diag.set_select_multiple( self.multiple )
         if self.filter:
             if isinstance( self.filter, ( tuple, list ) ):
                 for f in self.filter:
@@ -1081,7 +1080,7 @@ class FileChooser( _EGWidget, AutoGenId ):
         self._diag.show_all()
         r = self._diag.run()
         self._diag.hide()
-        if r == gtk.RESPONSE_ACCEPT:
+        if r == gtk.RESPONSE_OK:
             return self._diag.get_filename()
         else:
             return None
