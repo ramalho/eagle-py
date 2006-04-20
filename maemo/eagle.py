@@ -2837,13 +2837,13 @@ class Spin( _EGWidLabelEntry ):
 
 
     def __setup_connections__( self ):
-        def callback( obj ):
+        def callback( obj, *args ):
             v = self.get_value()
             self.app.data_changed( self, v )
             for c in self.callback:
                 c( self.app, self, v )
         # callback()
-        self._entry.connect( "value-changed", callback )
+        self._entry.connect( "notify::value", callback )
     # __setup_connections__()
 
 
@@ -2896,13 +2896,47 @@ class IntSpin( Spin ):
     # __init__()
 
 
+    def __setup_gui__( self ):
+        if self.min is not None:
+            vmin = self.min
+        else:
+            vmin = self.default_min
+
+        if self.max is not None:
+            vmax = self.max
+        else:
+            vmax = self.default_max
+
+        if self.step is not None:
+            sys.stderr.write( "Maemo HildonNumberEditor doesn't support step\n" )
+
+        self._entry = hildon.NumberEditor( vmin, vmax )
+        self._entry.set_name( self.id )
+        if self.value:
+            self._entry.set_value( self.value )
+
+        _EGWidLabelEntry.__setup_gui__( self )
+    # __setup_gui__()
+
+
+    def __setup_connections__( self ):
+        def callback( obj, *args ):
+            v = self.get_value()
+            self.app.data_changed( self, v )
+            for c in self.callback:
+                c( self.app, self, v )
+        # callback()
+        self._entry.connect( "notify::value", callback )
+    # __setup_connections__()
+
+
     def get_value( self ):
         return int( Spin.get_value( self ) )
     # get_value()
 
 
     def set_value( self, value ):
-        Spin.set_value( self, int( value ) )
+        self._entry.set_value( int( value ) )
     # set_value()
 # IntSpin
 
@@ -2950,10 +2984,9 @@ class Color( _EGWidLabelEntry ):
     select a new one.
     """
     color = _gen_ro_property( "color" )
-    use_alpha = _gen_ro_property( "use_alpha" )
     callback = _gen_ro_property( "callback" )
 
-    def __init__( self, id, label="", color=0, use_alpha=False,
+    def __init__( self, id, label="", color=0,
                   callback=None,
                   persistent=False ):
         """Color selector constructor.
@@ -2963,8 +2996,6 @@ class Color( _EGWidLabelEntry ):
         @param color: initial content. May be a triple with elements within
                the range 0-255, an string with color in HTML format or even
                a color present in X11's rgb.txt.
-        @param use_alpha: if the alpha channel should be used, it will be
-               the first value in the tuple representing the color.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
                Function will receive as parameters:
@@ -2975,7 +3006,6 @@ class Color( _EGWidLabelEntry ):
                sessions.
         """
         self.color = self.color_from( color )
-        self.use_alpha = use_alpha
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label )
 
@@ -3016,41 +3046,34 @@ class Color( _EGWidLabelEntry ):
 
         c = gtk.gdk.Color( r, g, b )
 
-        self._entry = gtk.ColorButton( c )
+        self._entry = hildon.ColorButton()
+        self._entry.set_color( c )
         self._entry.set_name( self.id )
-        self._entry.set_use_alpha( self.use_alpha )
-        if self.use_alpha:
-            alpha = int( self.color[ 0 ] / 255.0 * 65535 )
-            self._entry.set_alpha( alpha )
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
 
 
     def __setup_connections__( self ):
-        def callback( obj ):
+        def callback( obj, *args ):
             v = self.get_value()
             self.app.data_changed( self, v )
             for c in self.callback:
                 c( self.app, self, v )
         # callback()
-        self._entry.connect( "color-set", callback )
+        self._entry.connect( "notify::color", callback )
     # __setup_connections__()
 
 
     def get_value( self ):
         """Return a tuple with ( alpha, red, green, blue )
-          ( alpha, red, green, blue ) (use_alpha=True), each in 0-255 range.
+        each in 0-255 range.
         """
         c = self._entry.get_color()
         r = int( c.red   / 65535.0 * 255 )
         g = int( c.green / 65535.0 * 255 )
         b = int( c.blue  / 65535.0 * 255 )
 
-        if self.use_alpha:
-            a = int( self._entry.get_alpha() / 65535.0 * 255 )
-            return ( a, r, g, b )
-        else:
-            return ( r, g, b )
+        return ( r, g, b )
     # get_value()
 
 
@@ -3061,8 +3084,6 @@ class Color( _EGWidLabelEntry ):
                a color present in X11's rgb.txt.
         """
         a, r, g, b = self.color_from( value )
-        if self.use_alpha:
-            self._entry.set_alpha( int( a / 255.0 * 65535.0 ) )
 
         r = int( r / 255.0 * 65535 )
         g = int( g / 255.0 * 65535 )
