@@ -1654,6 +1654,9 @@ class App( _EGObject, AutoGenId ):
         self._win.set_name( self.id )
         self._win.set_title( self.title )
 
+	settings = self._win.get_settings()
+	settings.set_property( "gtk-button-images", False )
+
         self._mv = hildon.AppView( self.title )
         self._win.set_appview( self._mv )
         self._mv.set_fullscreen_key_allowed( True )
@@ -3520,7 +3523,7 @@ class Table( _EGWidget ):
 
 
         def __str__( self ):
-            return "[" + ", ".join( str( x ) for x in self.__items ) + "]"
+            return "[" + ", ".join( [ str( x ) for x in self.__items ] ) + "]"
         # __str__()
         __repr__ = __str__
 
