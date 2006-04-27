@@ -19,7 +19,7 @@ except ImportError, e:
 
 from eagle_setup import recursive_data_files
 
-eagle_setup.setup( "gtk",
+eagle_setup.setup( "maemo",
                    install_requires=[ "pygtk>=2.6" ],
                    data_files=recursive_data_files( "share", "*" ),
                    )

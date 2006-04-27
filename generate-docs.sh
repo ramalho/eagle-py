@@ -2,16 +2,25 @@
 
 echo "This requires Epydoc (http://epydoc.sf.net) and DocUtils (http://docutils.sf.net)"
 
-API_DIR=./docs/api/
-MODULES="gtk.eagle qt.eagle maemo.eagle"
+API_DIR=./share/docs/api/
 
-export PYTHONPATH=$PYTHONPATH:.
+MODULES="$@"
+if [ x$MODULES = x ]; then
+    MODULES="gtk maemo"
+fi
 
-rm -fr $API_DIR
-mkdir -p $API_DIR
-epydoc --html \
-    -o $API_DIR \
-    -n "Eagle" \
-    -u "http://code.gustavobarbieri.com.br/eagle/" \
-    $MODULES
+export ORIGPYTHONPATH=$PYTHONPATH
 
+for m in $MODULES; do
+    cd $m
+    export PYTHONPATH=$ORIGPYTHONPATH:$PWD
+    echo $PWD >> /tmp/pythonpaths
+    rm -fr $API_DIR
+    mkdir -p $API_DIR
+    epydoc --html \
+	-o $API_DIR \
+	--name="Eagle" \
+	--url="http://code.gustavobarbieri.com.br/eagle/" \
+	eagle
+    cd ..
+done

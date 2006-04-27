@@ -88,12 +88,22 @@ try:
     pygtk.require( "2.0" )
     import gtk
     import pango
-    import hildon
     import gobject
 except ImportError, e:
     sys.stderr.writelines(
         ( "Missing module: ", str( e ), "\n",
           "This module is part of pygtk (http://pygtk.org).\n",
+          ) )
+    sys.exit( -1 )
+
+try:
+    import hildon
+except ImportError, e:
+    sys.stderr.writelines(
+        ( "Missing module: ", str( e ), "\n",
+          "This module is part of pymaemo (http://pymaemo.sf.net).\n",
+          "HINT: Are you trying to use this on your desktop? If so use"
+          "eagle-gtk instead!\n"
           ) )
     sys.exit( -1 )
 

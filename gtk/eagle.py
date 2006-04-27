@@ -3469,7 +3469,7 @@ class Table( _EGWidget ):
 
 
         def __str__( self ):
-            return "[" + ", ".join( str( x ) for x in self.__items ) + "]"
+            return "[" + ", ".join( [ str( x ) for x in self.__items ] ) + "]"
         # __str__()
         __repr__ = __str__
 

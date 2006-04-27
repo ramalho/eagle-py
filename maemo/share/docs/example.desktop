@@ -1,0 +1,26 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Terminal=false
+Type=Application
+Categories=Application;
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Type=application/x-executable
+
+# You may wish to change icon to some in:
+#   /usr/share/pixmaps/
+#   /usr/share/icons/
+Icon=python2.4-16
+
+# What to show in Maemo menu
+## Name=Eagle Example
+Name=<YOUR APPLICATION NAME>
+
+# Complete path to your application, it should receive no arguments
+# and should be executable (chmod +x)
+## Exec=/var/lib/install/usr/bin/example.py
+Exec=<YOUR APPLICATION PATH>
+
+# Application's filename
+## StartupWMClass=example.py
+StartupWMClass=<YOUR APPLICATION FILENAME, WITHOUT PATH>
