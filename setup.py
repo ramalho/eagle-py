@@ -140,11 +140,12 @@ else:
     module = None
 
 
-## Enable module based on directory name:
-# eagle-MODULE[-version] will build just MODULE
-# if MODULE is missing, build everything
-if not module or module == "gtk":
-    setup( "gtk", [ "python>=2.6" ] )
+if __name__ == "__main__":
+    ## Enable module based on directory name:
+    # eagle-MODULE[-version] will build just MODULE
+    # if MODULE is missing, build everything
+    if not module or module == "gtk":
+        setup( "gtk", [ "python>=2.6" ] )
 
-if not module or module == "maemo":
-    setup( "maemo", [ "python>=2.6" ] )
+    if not module or module == "maemo":
+        setup( "maemo", [ "python>=2.6" ] )
