@@ -4,7 +4,7 @@ __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
 __url__ = "http://www.gustavobarbieri.com.br/eagle/"
-__version__ = "0.3"
+__version__ = "0.4"
 __revision__ = "$Rev: 20 $"
 __description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
@@ -34,8 +34,6 @@ It provides useful widgets like: Color selector, Font selector,
 Quit button, Preferences button and bialog, About dialog and Help
 dialog.
 """
-
-__all__ = ( "pjoin", "listfiles", "eagle_setup", "recursive_data_files" )
 
 import os
 import sys
@@ -78,7 +76,12 @@ def recursive_data_files( *args ):
 
     ret = [ ( d, files ) ]
 
-    for f in os.listdir( d ):
+    try:
+        l = os.listdir( d )
+    except OSError, e:
+        return []
+
+    for f in l:
         if f.startswith( "." ):
             continue
 
@@ -93,26 +96,21 @@ def recursive_data_files( *args ):
 def setup( module, install_requires=None, data_files=None ):
     data_files = list( data_files or [] )
     data_files += [
-        ( pjoin( "share", "tests" ), listfiles( "..", "tests", "*" ) ),
-        ( pjoin( "share", "examples" ), listfiles( "..", "examples", "*" ) ),
+        ( pjoin( "share", "tests" ), listfiles( "tests", "*" ) ),
+        ( pjoin( "share", "examples" ), listfiles( "examples", "*" ) ),
         ]
+    data_files += recursive_data_files( module, "share", "*" )
 
-    myname_py  = __name__ + ".py"
-    myname_pyc = __name__ + ".pyc"
-    myname_pyo = __name__ + ".pyo"
-    curdirfiles = os.listdir( "." )
-    if myname_py in curdirfiles or myname_pyc in curdirfiles or \
-       myname_pyo in curdirfiles:
-        sys.stderr.writelines( (
-            "You should not run from main directory.\n",
-            "Run from the module subdirectory instead!\n" ) )
-        sys.exit( -1 )
+    docs = recursive_data_files( "docs", "*" )
+    for i, ( d, f ) in enumerate( docs ):
+        docs[ i ] = ( os.path.join( "share", d ), f )
 
+    data_files += docs
 
     return setuptools \
            .setup( name=("eagle-%s" % module),
                    py_modules=[ "eagle" ],
-                   package_dir = { '': "." },
+                   package_dir = { '': module },
                    include_package_data=True,
                    data_files=data_files,
                    install_requires=install_requires,
@@ -133,3 +131,20 @@ def setup( module, install_requires=None, data_files=None ):
         "Programming Language :: Python",
         ]
                    )
+
+cwd = os.path.basename( os.getcwd() ).split( '-' )
+
+if len( cwd ) > 1:
+    module = cwd[ 1 ]
+else:
+    module = None
+
+
+## Enable module based on directory name:
+# eagle-MODULE[-version] will build just MODULE
+# if MODULE is missing, build everything
+if not module or module == "gtk":
+    setup( "gtk", [ "python>=2.6" ] )
+
+if not module or module == "maemo":
+    setup( "maemo", [ "python>=2.6" ] )
