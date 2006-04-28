@@ -238,6 +238,12 @@ class _Table( gtk.Table ):
             xrm, yrm = c.__get_resize_mode__()
 
             if len( w ) == 1:
+                # use last one, in case of LabelEntry without label
+                if isinstance( xrm, ( tuple, list ) ):
+                    xrm = xrm[ -1 ]
+                if isinstance( yrm, ( tuple, list ) ):
+                    yrm = yrm[ -1 ]
+
                 if self.horizontal:
                     row0 = 0
                     row1 = 2
@@ -689,7 +695,7 @@ class _EGWidget( _EGObject ):
 
     def __get_resize_mode__( self ):
         "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, gtk.FILL )
+        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
     # __get_resize_mode__()
 
 
@@ -1308,7 +1314,7 @@ class DebugDialog( _EGObject, AutoGenId ):
 
     def _print_file( self, filename, lineno, name ):
         if filename.startswith( os.getcwd() ):
-            filename = filename.replace( self._pwd, '' )[ 1 : ]
+            filename = filename.replace( os.getcwd(), '' )[ 1 : ]
 
         self._insert_text( "File: ", "label" )
         self._insert_text( filename )
@@ -1360,21 +1366,22 @@ class _EGWidLabelEntry( _EGDataWidget ):
     C{_entry} before using it, since this will be set as mnemonic for this
     label and also returned in L{__get_widgets__}().
     """
-    label = _gen_ro_property( "label" )
-
     def __init__( self, id, persistent, label="" ):
         _EGDataWidget.__init__( self, id, persistent )
-        self.label = label or id
+        self.__label = label
         self.__setup_gui__()
     # __init__()
 
 
     def __setup_gui__( self ):
-        self._label = gtk.Label( self.label )
-        self._label.set_justify( gtk.JUSTIFY_RIGHT )
-        self._label.set_alignment( xalign=1.0, yalign=0.5 )
-        self._label.set_mnemonic_widget( self._entry )
-        self._widgets = ( self._label, self._entry )
+        if self.__label is not None:
+            self._label = gtk.Label( self.__label )
+            self._label.set_justify( gtk.JUSTIFY_RIGHT )
+            self._label.set_alignment( xalign=1.0, yalign=0.5 )
+            self._label.set_mnemonic_widget( self._entry )
+            self._widgets = ( self._label, self._entry )
+        else:
+            self._widgets = ( self._entry, )
     # __setup_gui__()
 
 
@@ -1388,12 +1395,40 @@ class _EGWidLabelEntry( _EGDataWidget ):
     # set_value()
 
 
+    def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
+        self.__label = label
+        self._label.set_text( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
+
+
     def __str__( self ):
         return "%s( id=%r, label=%r, value=%r )" % \
                ( self.__class__.__name__, self.id, self.label,
                  self.get_value() )
     # __str__()
     __repr__ = __str__
+
+
+    def __get_resize_mode__( self ):
+        """Resize mode.
+
+        First tuple of tuple is about horizontal mode for label and entry.
+        Second tuple of tuple is about vertical mode for label and entry.
+        """
+        return ( ( 0, gtk.FILL | gtk.EXPAND ),
+                 ( 0, 0 ) )
+    # __get_resize_mode__()
 # _EGWidLabelEntry
 
 
@@ -3343,7 +3378,7 @@ class CheckBox( _EGDataWidget ):
         @param persistent: if this widget should save its data between
                sessions.
         """
-        self.label = label
+        self.__label = label
         self.state = state
         self.callback = _callback_tuple( callback )
 
@@ -3355,7 +3390,7 @@ class CheckBox( _EGDataWidget ):
 
 
     def __setup_gui__( self ):
-        self._wid = gtk.CheckButton( self.label )
+        self._wid = gtk.CheckButton( self.__label )
         self._wid.set_name( self.id )
         self._wid.set_active( self.state )
         self._widgets = ( self._wid, )
@@ -3373,9 +3408,32 @@ class CheckBox( _EGDataWidget ):
     # __setup_connections__()
 
 
+    def __get_resize_mode__( self ):
+        "Return a tuple with ( horizontal, vertical ) resize mode"
+        return ( gtk.FILL, 0 )
+    # __get_resize_mode__()
+
+
     def get_value( self ):
         return self._wid.get_active()
     # get_value()
+
+
+    def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
+        self.__label = label
+        self._wid.set_label( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
 # CheckBox
 
 
@@ -3421,7 +3479,7 @@ class Group( _EGWidget ):
                They're presented in vertical layout.
         """
         _EGWidget.__init__( self, id )
-        self.label = label
+        self.__label = label
         self.children = children or tuple()
 
         self.__setup_gui__()
@@ -3429,7 +3487,7 @@ class Group( _EGWidget ):
 
 
     def __setup_gui__( self ):
-        self._frame = gtk.Frame( self.label )
+        self._frame = gtk.Frame( self.__label )
         self._frame.set_name( self.id )
         self._contents = _Table( id=( "%s-contents" % self.id ),
                                  children=self.children )
@@ -3442,6 +3500,29 @@ class Group( _EGWidget ):
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
+
+
+    def __get_resize_mode__( self ):
+        "Return a tuple with ( horizontal, vertical ) resize mode"
+        return ( gtk.FILL, 0 )
+    # __get_resize_mode__()
+
+
+    def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
+        self.__label = label
+        self._frame.set_label( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
 # Group
 
 
@@ -3583,7 +3664,7 @@ class Table( _EGWidget ):
         """
         _EGWidget.__init__( self, id )
         self.editable = editable or False
-        self.label = str( label or "" )
+        self.__label = str( label or "" )
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
 
@@ -3984,6 +4065,19 @@ class Table( _EGWidget ):
     # __get_resize_mode__()
 
 
+    def set_label( self, label ):
+        self.__label = label
+        self._frame.set_label( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
+
+
     def columns_autosize( self ):
         self._table.columns_autosize()
     # columns_autosize()
@@ -4273,6 +4367,12 @@ class Button( _EGWidget ):
         # callback()
         self._button.connect( "clicked", callback )
     # __setup_connections__()
+
+
+    def __get_resize_mode__( self ):
+        "Return a tuple with ( horizontal, vertical ) resize mode"
+        return ( gtk.FILL, 0 )
+    # __get_resize_mode__()
 # Button
 
 
@@ -4496,6 +4596,12 @@ class Label( _EGDataWidget, AutoGenId ):
         return "%s( id=%r, label=%r )" % \
                ( self.__class__.__name__, self.id, self.label )
     # __str__()
+
+
+    def __get_resize_mode__( self ):
+        "Return a tuple with ( horizontal, vertical ) resize mode"
+        return ( gtk.FILL, 0 )
+    # __get_resize_mode__()
 # Label
 
 
