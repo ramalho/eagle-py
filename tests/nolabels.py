@@ -224,16 +224,6 @@ App( title="Test use of widgets without associate labels",
                               callback=change_entry_label_placeholder ),
                       ),
            ),
-    Group( id="gb",
-           label="Button",
-           children=( Button( id="b0",
-                              label="Label to Label",
-                              callback=change_bt_label ),
-                      Button( id="b1",
-                              stock="add",
-                              callback=change_bt_label ),
-                      ),
-           ),
     )
     )
 

@@ -1707,40 +1707,61 @@ class App( _EGObject, AutoGenId ):
 
         self._vbox = gtk.VBox( False, self.spacing )
 
-        if self._top.__get_widgets__():
-            self._vbox.pack_start( self._top, expand=False, fill=True )
-            if self._center.__get_widgets__() or \
-               self._bottom.__get_widgets__():
-                self._vbox.pack_start( gtk.HSeparator(), expand=False,
-                                       fill=True )
+        has_top = bool( self._top.__get_widgets__() )
+        has_bottom = bool( self._bottom.__get_widgets__() )
+        has_left = bool( self._left.__get_widgets__() )
+        has_right = bool( self._right.__get_widgets__() )
+        has_center = bool( self._center.__get_widgets__() )
 
-        if self._center.__get_widgets__():
-            self._vbox.pack_start( self._center, expand=True, fill=True )
+        expand_top = False
+        expand_bottom = False
+        expand_left = False
+        expand_right = False
+        expand_center = has_center
 
-        if self._bottom.__get_widgets__():
-            if self._center.__get_widgets__():
-                self._vbox.pack_start( gtk.HSeparator(), expand=False,
-                                       fill=True )
-            self._vbox.pack_start( self._bottom, expand=False, fill=True )
+        # Left and Right just expand if there is no center
+        if has_left and not has_center:
+            expand_left = True
+        if has_right and not has_center:
+            expand_right = True
 
-        if self._left.__get_widgets__():
-            self._hbox.pack_start( self._left,  expand=False, fill=True )
-            if self._center.__get_widgets__() or \
-               self._top.__get_widgets__() or \
-               self._bottom.__get_widgets__() or \
-               self._right.__get_widgets__():
-                self._hbox.pack_start( gtk.VSeparator(),
-                                       expand=False, fill=False )
+        # Top and Bottom just expand if there is no center
+        if has_top and not has_center:
+            expand_top = True
+        if has_bottom and not has_center:
+            expand_bottom = True
 
-        self._hbox.pack_start( self._vbox,  expand=True, fill=True )
+        # Create Vertical layout with ( Top | Center | Bottom )
+        has_vl = has_top or has_center or has_bottom
+        if has_vl:
+            if has_top:
+                self._vbox.pack_start( self._top, expand_top, True )
+                if has_center or has_bottom:
+                    self._vbox.pack_start( gtk.HSeparator(), False, True )
 
-        if self._right.__get_widgets__():
-            if self._center.__get_widgets__() or \
-               self._top.__get_widgets__() or \
-               self._bottom.__get_widgets__():
-                self._hbox.pack_start( gtk.VSeparator(),
-                                       expand=False, fill=False )
-            self._hbox.pack_end( self._right, expand=False, fill=True )
+            if has_center:
+                self._vbox.pack_start( self._center, expand_center, True )
+                if has_bottom:
+                    self._vbox.pack_start( gtk.HSeparator(), False, True )
+
+            if has_bottom:
+                self._vbox.pack_start( self._bottom, expand_bottom, True )
+
+        # Create Horizontal layout with ( Left | VL | Right )
+        # where VL is Vertical layout created before
+        if has_left:
+            self._hbox.pack_start( self._left, expand_left, True )
+            if has_vl or has_right:
+                self._hbox.pack_start( gtk.VSeparator(), False, True )
+
+        if has_vl:
+            self._hbox.pack_start( self._vbox, True, True )
+            if has_right:
+                self._hbox.pack_start( gtk.VSeparator(), False, True )
+
+        if has_right:
+            self._hbox.pack_start( self._right, expand_right, True )
+
 
         if self.statusbar:
             self._statusbar = gtk.Statusbar()
@@ -3504,7 +3525,7 @@ class Group( _EGWidget ):
 
     def __get_resize_mode__( self ):
         "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, 0 )
+        return ( gtk.FILL | gtk.EXPAND, 0 )
     # __get_resize_mode__()
 
 

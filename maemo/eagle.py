@@ -787,11 +787,11 @@ class AboutDialog( _EGWidget, AutoGenId ):
 
     @attention: avoid using this directly, use L{AboutButton} instead.
     """
-    border = 12
+    border = 3
     spacing = 6
     width = 600
     height = 400
-    margin = 6
+    margin = 3
 
     def __init__( self, app,
                   title, author=None, description=None, help=None,
@@ -821,6 +821,12 @@ class AboutDialog( _EGWidget, AutoGenId ):
         self._diag = gtk.Dialog( title=( "About: %s" % self.title ),
                                  parent=win,
                                  flags=flags, buttons=btns )
+
+        settings = self._diag.get_settings()
+        try:
+            settings.set_property( "gtk-button-images", False )
+        except:
+            pass
 
         self._diag.set_border_width( self.border )
         self._diag.set_default_size( self.width, self.height )
@@ -915,11 +921,11 @@ class HelpDialog( _EGWidget, AutoGenId ):
 
     @attention: avoid using this directly, use L{HelpButton} instead.
     """
-    border = 12
+    border = 3
     spacing = 6
     width = 600
     height = 400
-    margin = 6
+    margin = 3
 
     def __init__( self, app, title, help=None ):
         _EGWidget.__init__( self, self.__get_id__(), app )
@@ -941,6 +947,13 @@ class HelpDialog( _EGWidget, AutoGenId ):
         self._diag = gtk.Dialog( title=( "Help: %s" % self.title ),
                                  parent=win,
                                  flags=flags, buttons=btns )
+
+        settings = self._diag.get_settings()
+        try:
+            settings.set_property( "gtk-button-images", False )
+        except:
+            pass
+
         self._diag.set_border_width( self.border )
         self._diag.set_default_size( self.width, self.height )
         self._diag.set_has_separator( False )
@@ -1057,36 +1070,8 @@ class FileChooser( _EGWidget, AutoGenId ):
                                                action=a )
         _set_icon_list( self._diag, gtk.STOCK_OPEN )
         if self.filter:
-            if isinstance( self.filter, ( tuple, list ) ):
-                for f in self.filter:
-                    filter = gtk.FileFilter()
-                    if isinstance( f, ( tuple, list ) ):
-                        filter.set_name( f[ 0 ] )
-                        for e in f[ 1 : ]:
-                            if '/' in e:
-                                filter.add_mime_type( e )
-                            else:
-                                filter.add_pattern( e )
-                    elif isinstance( f, ( str, unicode ) ):
-                        filter.set_name( f )
-                        if '/' in f:
-                            filter.add_mime_type( f )
-                        else:
-                            filter.add_pattern( f )
-                    else:
-                        raise ValueError( "invalid filter!" )
-                    self._diag.add_filter( filter )
-
-            elif isinstance( self.filter, ( str, unicode ) ):
-                filter = gtk.FileFilter()
-                filter.set_name( self.filter )
-                if '/' in self.filter:
-                    filter.add_mime_type( self.filter )
-                else:
-                    filter.add_pattern( self.filter )
-                self._diag.set_filter( filter )
-            else:
-                raise ValueError( "invalid filter!" )
+            sys.stderr.write( "Maemo HildonFileChooserDialog doesn't support "
+                              "filters" )
         if self.filename:
             self._diag.set_filename( self.filename )
     # __setup_gui__()
@@ -1132,6 +1117,13 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
         self._diag = gtk.Dialog( title=( "Preferences: %s" % self.app.title ),
                                  parent=win,
                                  flags=flags, buttons=btns )
+
+        settings = self._diag.get_settings()
+        try:
+            settings.set_property( "gtk-button-images", False )
+        except:
+            pass
+
         self._diag.set_default_size( 400, 300 )
         _set_icon_list( self._diag, gtk.STOCK_PREFERENCES )
 
@@ -1171,11 +1163,11 @@ class DebugDialog( _EGObject, AutoGenId ):
     the traceback to a file.
     """
     # Most of DebugDialog code came from Gazpacho code! Thanks!
-    border = 12
+    border = 3
     spacing = 6
     width = 600
     height = 400
-    margin = 6
+    margin = 3
 
     def __init__( self ):
         _EGObject.__init__( self, self.__get_id__() )
@@ -1189,6 +1181,13 @@ class DebugDialog( _EGObject, AutoGenId ):
                                  parent=None,
                                  flags=gtk.DIALOG_MODAL,
                                  buttons=b )
+
+        settings = self._diag.get_settings()
+        try:
+            settings.set_property( "gtk-button-images", False )
+        except:
+            pass
+
         self._diag.set_border_width( self.border )
         self._diag.set_default_size( self.width, self.height )
         self._diag.set_has_separator( False )
@@ -1490,7 +1489,7 @@ class App( _EGObject, AutoGenId ):
        >>> app[ "entry" ].get_value() # will fail, since it's a data widget
 
     """
-    border_width = 10
+    border_width = 0
     spacing = 3
 
     title = _gen_ro_property( "title" )
@@ -1699,9 +1698,6 @@ class App( _EGObject, AutoGenId ):
         self._win.set_name( self.id )
         self._win.set_title( self.title )
 
-	settings = self._win.get_settings()
-	settings.set_property( "gtk-button-images", False )
-
         self._mv = hildon.AppView( self.title )
         self._win.set_appview( self._mv )
         self._mv.set_fullscreen_key_allowed( True )
@@ -1723,40 +1719,61 @@ class App( _EGObject, AutoGenId ):
 
         self._vbox = gtk.VBox( False, self.spacing )
 
-        if self._top.__get_widgets__():
-            self._vbox.pack_start( self._top, expand=False, fill=True )
-            if self._center.__get_widgets__() or \
-               self._bottom.__get_widgets__():
-                self._vbox.pack_start( gtk.HSeparator(), expand=False,
-                                       fill=True )
+        has_top = bool( self._top.__get_widgets__() )
+        has_bottom = bool( self._bottom.__get_widgets__() )
+        has_left = bool( self._left.__get_widgets__() )
+        has_right = bool( self._right.__get_widgets__() )
+        has_center = bool( self._center.__get_widgets__() )
 
-        if self._center.__get_widgets__():
-            self._vbox.pack_start( self._center, expand=True, fill=True )
+        expand_top = False
+        expand_bottom = False
+        expand_left = False
+        expand_right = False
+        expand_center = has_center
 
-        if self._bottom.__get_widgets__():
-            if self._center.__get_widgets__():
-                self._vbox.pack_start( gtk.HSeparator(), expand=False,
-                                       fill=True )
-            self._vbox.pack_start( self._bottom, expand=False, fill=True )
+        # Left and Right just expand if there is no center
+        if has_left and not has_center:
+            expand_left = True
+        if has_right and not has_center:
+            expand_right = True
 
-        if self._left.__get_widgets__():
-            self._hbox.pack_start( self._left,  expand=False, fill=True )
-            if self._center.__get_widgets__() or \
-               self._top.__get_widgets__() or \
-               self._bottom.__get_widgets__() or \
-               self._right.__get_widgets__():
-                self._hbox.pack_start( gtk.VSeparator(),
-                                       expand=False, fill=False )
+        # Top and Bottom just expand if there is no center
+        if has_top and not has_center:
+            expand_top = True
+        if has_bottom and not has_center:
+            expand_bottom = True
 
-        self._hbox.pack_start( self._vbox,  expand=True, fill=True )
+        # Create Vertical layout with ( Top | Center | Bottom )
+        has_vl = has_top or has_center or has_bottom
+        if has_vl:
+            if has_top:
+                self._vbox.pack_start( self._top, expand_top, True )
+                if has_center or has_bottom:
+                    self._vbox.pack_start( gtk.HSeparator(), False, True )
 
-        if self._right.__get_widgets__():
-            if self._center.__get_widgets__() or \
-               self._top.__get_widgets__() or \
-               self._bottom.__get_widgets__():
-                self._hbox.pack_start( gtk.VSeparator(),
-                                       expand=False, fill=False )
-            self._hbox.pack_end( self._right, expand=False, fill=True )
+            if has_center:
+                self._vbox.pack_start( self._center, expand_center, True )
+                if has_bottom:
+                    self._vbox.pack_start( gtk.HSeparator(), False, True )
+
+            if has_bottom:
+                self._vbox.pack_start( self._bottom, expand_bottom, True )
+
+        # Create Horizontal layout with ( Left | VL | Right )
+        # where VL is Vertical layout created before
+        if has_left:
+            self._hbox.pack_start( self._left, expand_left, True )
+            if has_vl or has_right:
+                self._hbox.pack_start( gtk.VSeparator(), False, True )
+
+        if has_vl:
+            self._hbox.pack_start( self._vbox, True, True )
+            if has_right:
+                self._hbox.pack_start( gtk.VSeparator(), False, True )
+
+        if has_right:
+            self._hbox.pack_start( self._right, expand_right, True )
+
 
         if self.statusbar:
             self._statusbar = gtk.Statusbar()
@@ -1765,6 +1782,11 @@ class App( _EGObject, AutoGenId ):
             self._top_layout.pack_end( self._statusbar,
                                        expand=False, fill=True )
 
+        settings = self._win.get_settings()
+        try:
+            settings.set_property( "gtk-button-images", False )
+        except:
+            pass
         self._win.show_all()
     # __setup_gui__()
 
@@ -3568,7 +3590,7 @@ class Group( _EGWidget ):
 
     def __get_resize_mode__( self ):
         "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, 0 )
+        return ( gtk.FILL | gtk.EXPAND, 0 )
     # __get_resize_mode__()
 
 
@@ -3833,6 +3855,13 @@ class Table( _EGWidget ):
             d = gtk.Dialog( title=title,
                             flags=gtk.DIALOG_MODAL,
                             buttons=buttons )
+
+            settings = d.get_settings()
+            try:
+                settings.set_property( "gtk-button-images", False )
+            except:
+                pass
+
             d.set_default_response( gtk.RESPONSE_ACCEPT )
 
             l = len( data )
@@ -4676,6 +4705,13 @@ def information( message ):
     d = gtk.MessageDialog( type=gtk.MESSAGE_INFO,
                            message_format=message,
                            buttons=gtk.BUTTONS_CLOSE )
+
+    settings = d.get_settings()
+    try:
+        settings.set_property( "gtk-button-images", False )
+    except:
+        pass
+
     d.run()
     d.destroy()
     return
@@ -4689,6 +4725,13 @@ def warning( message ):
     d = gtk.MessageDialog( type=gtk.MESSAGE_WARNING,
                            message_format=message,
                            buttons=gtk.BUTTONS_CLOSE )
+
+    settings = d.get_settings()
+    try:
+        settings.set_property( "gtk-button-images", False )
+    except:
+        pass
+
     d.run()
     d.destroy()
     return
@@ -4702,6 +4745,13 @@ def error( message ):
     d = gtk.MessageDialog( type=gtk.MESSAGE_ERROR,
                            message_format=message,
                            buttons=gtk.BUTTONS_CLOSE )
+
+    settings = d.get_settings()
+    try:
+        settings.set_property( "gtk-button-images", False )
+    except:
+        pass
+
     d.run()
     d.destroy()
     return
@@ -4718,6 +4768,13 @@ def yesno( message, yesdefault=False ):
     d = gtk.MessageDialog( type=gtk.MESSAGE_QUESTION,
                            message_format=message,
                            buttons=gtk.BUTTONS_YES_NO )
+
+    settings = d.get_settings()
+    try:
+        settings.set_property( "gtk-button-images", False )
+    except:
+        pass
+
     if yesdefault:
         d.set_default_response( gtk.RESPONSE_YES )
     else:
@@ -4745,6 +4802,13 @@ def confirm( message, okdefault=False ):
     d = gtk.MessageDialog( type=gtk.MESSAGE_QUESTION,
                            message_format=message,
                            buttons=gtk.BUTTONS_OK_CANCEL )
+
+    settings = d.get_settings()
+    try:
+        settings.set_property( "gtk-button-images", False )
+    except:
+        pass
+
     if okdefault:
         d.set_default_response( gtk.RESPONSE_OK )
     else:
