@@ -1889,7 +1889,20 @@ class App( _EGObject, AutoGenId ):
 
 
     def __persistence_filename__( self ):
-        return "%s.save_data" % self.id
+        def mkdir( d ):
+            if not os.path.exists( d ):
+                mkdir( os.path.dirname( d ) )
+                os.mkdir( d )
+        # mkdir()
+
+        fname = "%s.save_data" % self.id
+        home = os.environ.get( "HOME", "." )
+        binname = os.path.realpath( sys.argv[ 0 ] )[ 1 : ]
+        d = os.path.join( home, ".eagle", binname )
+
+        mkdir( d )
+
+        return os.path.join( d, fname )
     # __persistence_filename__()
 
 
