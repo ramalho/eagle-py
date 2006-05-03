@@ -2108,7 +2108,7 @@ class Canvas( _EGWidget ):
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, width, height, label="", bgcolor=None,
-                  callback=None ):
+                  scrollbars=True, callback=None ):
         """Canvas Constructor.
 
         @param id: unique identifier.
@@ -2117,8 +2117,10 @@ class Canvas( _EGWidget ):
         @param height: height of the drawing area in pixels, widget can be
                larger or smaller because and will use scrollbars if need.
         @param label: label to display in the widget frame around the
-               drawing area.
+               drawing area. If None, no label or frame will be shown.
         @param bgcolor: color to paint background.
+        @param scrollbars: whenever to use scrollbars and make canvas
+               fit small places.
         @param callback: function (or list of functions) to call when
                mouse state changed in the drawing area. Function will get
                as parameters:
@@ -2131,9 +2133,10 @@ class Canvas( _EGWidget ):
         @todo: honor the alpha value while drawing colors.
         """
         _EGWidget.__init__( self, id )
-        self.label = label
+        self.__label = label
         self.width = width
         self.height = height
+        self.scrollbars = scrollbars
 
         self._pixmap = None
         self._callback = _callback_tuple( callback )
@@ -2154,22 +2157,34 @@ class Canvas( _EGWidget ):
 
 
     def __setup_gui__( self, width, height ):
-        self._frame = gtk.Frame( self.label )
         self._sw = gtk.ScrolledWindow()
         self._area = gtk.DrawingArea()
 
         self._sw.set_border_width( self.padding )
 
-        self._frame.add( self._sw )
-        self._frame.set_shadow_type( gtk.SHADOW_OUT )
+        if self.label is not None:
+            self._frame = gtk.Frame( self.label )
+            self._frame.add( self._sw )
+            self._frame.set_shadow_type( gtk.SHADOW_OUT )
+            root = self._frame
+        else:
+            root = self._sw
 
         self._area.set_size_request( width, height )
         self._sw.add_with_viewport( self._area )
-        self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
-                             vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        if self.scrollbars:
+            policy = gtk.POLICY_AUTOMATIC
+            border = gtk.SHADOW_IN
+        else:
+            policy = gtk.POLICY_NEVER
+            border = gtk.SHADOW_NONE
+
+        self._sw.set_policy( hscrollbar_policy=policy,
+                             vscrollbar_policy=policy )
+        self._sw.child.set_shadow_type( border )
         self._sw.show_all()
 
-        self._widgets = ( self._frame, )
+        self._widgets = ( root, )
     # __setup_gui__()
 
 
@@ -2668,6 +2683,23 @@ class Canvas( _EGWidget ):
                                0, 0, 0, 0, w, h )
         return Image( __int_image__=img )
     # get_image()
+
+
+    def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
+        self.__label = label
+        self._frame.set_label( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
 
 
     def __str__( self ):
