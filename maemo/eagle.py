@@ -3748,10 +3748,22 @@ class Table( _EGWidget ):
             if end - start > l2:
                 end = start + l2
 
+            if self.__items.model._hid_row_changed is not None:
+                hid_changed = self.__items.model._hid_row_changed
+                self.__items.model.handler_block( hid_changed )
+
             j = 0
             for i in xrange( start, end ):
                 self.__items[ i ] = items[ j ]
                 j += 1
+
+            if self.__items.model._hid_row_changed is not None:
+                hid_changed = self.__items.model._hid_row_changed
+                self.__items.model.handler_unblock( hid_changed )
+                i = self.__items.iter
+                p = self.__items.path
+                self.__items.model.row_changed( p, i )
+
         # __setslice__()
     # Row
 
@@ -3827,7 +3839,12 @@ class Table( _EGWidget ):
         self.data_changed_callback = _callback_tuple( data_changed_callback )
 
         self.__setup_gui__()
+
+        self._model._hid_row_changed = None
+        self._model._hid_row_deleted = None
+        self._model._hid_row_inserted = None
         self.__setup_connections__()
+        self.__setup_items__()
     # __init__()
 
 
@@ -3886,9 +3903,10 @@ class Table( _EGWidget ):
                 c( self.app, self, v )
         # row_deleted()
 
-        self._model.connect( "row-changed", row_changed )
-        self._model.connect( "row-deleted", row_deleted )
-        self._model.connect( "row-inserted", row_changed)
+        c = self._model.connect
+        self._model._hid_row_changed = c( "row-changed", row_changed )
+        self._model._hid_row_deleted = c( "row-deleted", row_deleted )
+        self._model._hid_row_inserted = c( "row-inserted", row_changed)
     # __setup_connections_changed__()
 
 
@@ -4153,12 +4171,6 @@ class Table( _EGWidget ):
         self._table.set_reorderable( True )
         self._table.set_enable_search( True )
 
-
-        if self.items:
-            for row in self.items:
-                self.append( row, select=False, autosize=False )
-            self.columns_autosize()
-
         self._sw = gtk.ScrolledWindow()
         self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
                              vscrollbar_policy=gtk.POLICY_AUTOMATIC )
@@ -4166,6 +4178,15 @@ class Table( _EGWidget ):
         self._sw.add( self._table )
         self._vbox.pack_start( self._sw )
     # __setup_table__()
+
+
+    def __setup_items__( self ):
+        if self.items:
+            for row in self.items:
+                self.append( row, select=False, autosize=False )
+            self.columns_autosize()
+    # __setup_items__()
+
 
 
     def __setup_model__( self ):
@@ -4238,7 +4259,17 @@ class Table( _EGWidget ):
         if not isinstance( row, ( list, tuple ) ):
             row = ( row, )
 
+        if self._model._hid_row_inserted is not None:
+            self._model.handler_block( self._model._hid_row_inserted )
+        if self._model._hid_row_changed is not None:
+            self._model.handler_block( self._model._hid_row_changed )
         itr = self._model.append( row )
+        if self._model._hid_row_changed is not None:
+            self._model.handler_unblock( self._model._hid_row_changed )
+        if self._model._hid_row_inserted is not None:
+            self._model.handler_unblock( self._model._hid_row_inserted )
+
+        self._model.row_changed( self._model.get_path( itr ), itr )
 
         if autosize:
             self._table.columns_autosize()
@@ -4251,8 +4282,17 @@ class Table( _EGWidget ):
         if not isinstance( row, ( list, tuple ) ):
             row = ( row, )
 
+        if self._model._hid_row_inserted is not None:
+            self._model.handler_block( self._model._hid_row_inserted )
+        if self._model._hid_row_changed is not None:
+            self._model.handler_block( self._model._hid_row_changed )
         itr = self._model.insert( index, row )
-        self._table.columns_autosize()
+        if self._model._hid_row_changed is not None:
+            self._model.handler_unblock( self._model._hid_row_changed )
+        if self._model._hid_row_inserted is not None:
+            self._model.handler_unblock( self._model._hid_row_inserted )
+
+        self._model.row_changed( self._model.get_path( itr ), itr )
 
         if autosize:
             self._table.columns_autosize()
@@ -4280,7 +4320,19 @@ class Table( _EGWidget ):
         if not isinstance( other, ( list, tuple ) ):
             other = ( other, )
         try:
+            if self._model._hid_row_inserted is not None:
+                self._model.handler_block( self._model._hid_row_inserted )
+            if self._model._hid_row_changed is not None:
+                self._model.handler_block( self._model._hid_row_changed )
             self._model[ index ] = other
+            if self._model._hid_row_changed is not None:
+                self._model.handler_unblock( self._model._hid_row_changed )
+            if self._model._hid_row_inserted is not None:
+                self._model.handler_unblock( self._model._hid_row_inserted )
+
+            p = ( index, )
+            self._model.row_changed( p, self._model.get_iter( p ) )
+
         except TypeError, e:
             raise IndexError( "index out of range" )
     # __setitem__()
