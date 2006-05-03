@@ -3,11 +3,11 @@
 from eagle import *
 
 def data_changed( app, widget, value ):
-    print app, widget, value
+    print "changed:", app, widget, value
 # data_changed()
 
 def selection_changed( app, widget, selected ):
-    print app, widget, selected
+    print "seletion:", app, widget, selected
 # selection_changed()
 
 
@@ -39,7 +39,10 @@ print t[ -2 : -1 ]
 print t[ : ]
 
 t = app[ "t2" ]
+t[ 0 ] = [ 123, False, "ABC", 12.34 ]
+print "111111111"
 t[ 0 ][ 0 : 4 ] = [ False, "BLA", "NADA", 0.1 ]
+print "222222222"
 
 print t
 del t[ 0 : 100 ]
