@@ -3771,7 +3771,7 @@ class Table( _EGWidget ):
 
     def __init__( self, id, label, items=None, types=None,
                   headers=None, show_headers=True, editable=False,
-                  expand_columns_indexes=None,
+                  repositioning=False, expand_columns_indexes=None,
                   selection_callback=None, data_changed_callback=None ):
         """Table constructor.
 
@@ -3786,6 +3786,7 @@ class Table( _EGWidget ):
         @param editable: if table is editable. If editable, user can change
                values inline or double-clicking, also edit buttons will
                show after the table.
+        @param repositioning: allow items to be moved up and down.
         @param expand_columns_indexes: list of indexes that can expand size
         @param selection_callback: the function (or list of functions) to
                call when selection changes. Function will get as parameters:
@@ -3807,6 +3808,7 @@ class Table( _EGWidget ):
         """
         _EGWidget.__init__( self, id )
         self.editable = editable or False
+        self.repositioning = repositioning or False
         self.__label = str( label or "" )
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
@@ -3861,10 +3863,11 @@ class Table( _EGWidget ):
 
         self.__setup_table__()
 
-        if self.editable:
+        if self.editable or self.repositioning:
             self._hbox = gtk.HBox( False, self.spacing )
             self._vbox.pack_start( self._hbox, expand=False, fill=True )
 
+        if self.editable:
             self._btn_add  = gtk.Button( stock=gtk.STOCK_ADD )
             self._btn_del  = gtk.Button( stock=gtk.STOCK_REMOVE )
             self._btn_edit = gtk.Button( stock=gtk.STOCK_EDIT )
@@ -3872,6 +3875,19 @@ class Table( _EGWidget ):
             self._hbox.pack_start( self._btn_add )
             self._hbox.pack_start( self._btn_del )
             self._hbox.pack_start( self._btn_edit )
+
+        if self.repositioning:
+            if self.editable:
+                self._hbox.pack_start( gtk.VSeparator() )
+
+            self._btn_up   = gtk.Button( stock=gtk.STOCK_GO_UP )
+            self._btn_down = gtk.Button( stock=gtk.STOCK_GO_DOWN )
+
+            self._btn_up.set_sensitive( False )
+            self._btn_down.set_sensitive( False )
+
+            self._hbox.pack_start( self._btn_up )
+            self._hbox.pack_start( self._btn_down )
     # __setup_gui__()
 
 
@@ -3881,6 +3897,9 @@ class Table( _EGWidget ):
 
         if self.editable:
             self.__setup_connections_editable__()
+
+        if self.repositioning:
+            self.__setup_connections_repositioning__()
 
         if self.selection_callback:
             self.__setup_connections_selection__()
@@ -4083,6 +4102,59 @@ class Table( _EGWidget ):
     # __setup_connections_editable__()
 
 
+    def __setup_connections_repositioning__( self ):
+        def selection_changed( selection ):
+            result = self.selected()
+            if not result:
+                self._btn_up.set_sensitive( False )
+                self._btn_down.set_sensitive( False )
+            else:
+                path = result[ 0 ][ 0 ]
+                if path > 0:
+                    self._btn_up.set_sensitive( True )
+                else:
+                    self._btn_up.set_sensitive( False )
+                if path < len( self ) - 1:
+                    self._btn_down.set_sensitive( True )
+                else:
+                    self._btn_down.set_sensitive( False )
+        # selection_changed()
+
+        def move_up( button ):
+            result = self.selected()
+            a = result[ 0 ][ 0 ]
+            if a <= 0:
+                return
+
+            b = a - 1
+            la = list( self[ a ] )
+            lb = list( self[ b ] )
+            self[ a ] = lb
+            self[ b ] = la
+            self.select( b )
+        # move_up()
+
+        def move_down( button ):
+            result = self.selected()
+            a = result[ 0 ][ 0 ]
+            if a >= len( self ) - 1:
+                return
+
+            b = a + 1
+            la = list( self[ a ] )
+            lb = list( self[ b ] )
+            self[ a ] = lb
+            self[ b ] = la
+            self.select( b )
+        # move_down()
+
+        selection = self._table.get_selection()
+        selection.connect( "changed", selection_changed )
+        self._btn_up.connect( "clicked", move_up )
+        self._btn_down.connect( "clicked", move_down )
+    # __setup_connections_repositioning__()
+
+
     def __setup_connections_selection__( self ):
         def selection_changed( selection ):
             result = self.selected()
@@ -4243,6 +4315,13 @@ class Table( _EGWidget ):
     # columns_autosize()
 
 
+    def select( self, index ):
+        selection = self._table.get_selection()
+        selection.unselect_all()
+        selection.select_path( index )
+    # select()
+
+
     def selected( self ):
         model, paths = self._table.get_selection().get_selected_rows()
         if paths:
@@ -4317,7 +4396,7 @@ class Table( _EGWidget ):
 
 
     def __setitem__( self, index, other ):
-        if not isinstance( other, ( list, tuple ) ):
+        if not isinstance( other, ( list, tuple, Table.Row ) ):
             other = ( other, )
         try:
             if self._model._hid_row_inserted is not None:
