@@ -3803,7 +3803,9 @@ class Table( _EGWidget ):
         @param expand_columns_indexes: list of indexes that can expand size
         @param cell_format_func: if define, should return a CellFormat with
                properties to be applied to cell. Only non-None properties will
-               be used.
+               be used. Function should have the following signature:
+                  def func( app, table, row, col, value ):
+               where row and col are indexes in table.
         @param selection_callback: the function (or list of functions) to
                call when selection changes. Function will get as parameters:
                 - App reference
