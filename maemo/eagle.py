@@ -3770,7 +3770,7 @@ class Table( _EGWidget ):
 
 
     class CellFormat( object ):
-        __slots__ = ( "fgcolor", "bgcolor", "size", "font", "bold",
+        __slots__ = ( "fgcolor", "bgcolor", "font", "bold",
                       "italic", "underline", "strike" )
         def __init__( self, **kargs ):
             for a in self.__slots__:
@@ -4253,9 +4253,6 @@ class Table( _EGWidget ):
                 def get_color( c ):
                     return Canvas.__to_gtk_color__( Canvas.__color_from__( c ))
                 # get_color()
-                def_fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
-                def_bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
-                def_font = self._table.style.font_desc
 
                 def func( column, cell_renderer, model, itr, col_idx ):
                     row_idx = model.get_path( itr )[ 0 ]
@@ -4269,21 +4266,21 @@ class Table( _EGWidget ):
                     if font is not None:
                         font = pango.FontDescription( font )
                     else:
-                        font = def_font
+                        font = self.app._win.style.font_desc
                     cell_renderer.set_property( "font-desc", font )
 
                     bgcolor = cf.bgcolor
                     if bgcolor is not None:
                         bgcolor = get_color( bgcolor )
                     else:
-                        bgcolor = def_bgcolor
+                        bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
                     cell_renderer.set_property( "background-gdk", bgcolor )
 
                     fgcolor = cf.fgcolor
                     if fgcolor is not None:
                         fgcolor = get_color( fgcolor )
                     else:
-                        fgcolor = def_fgcolor
+                        fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
                     cell_renderer.set_property( "foreground-gdk", fgcolor )
 
                     if cf.underline:
