@@ -2304,12 +2304,13 @@ class Canvas( _EGWidget ):
     __color_from__ = staticmethod( __color_from__ )
 
 
-    def __to_gtk_color__( self, color ):
+    def __to_gtk_color__( color ):
         r = int( color[ 1 ] / 255.0 * 65535 )
         g = int( color[ 2 ] / 255.0 * 65535 )
         b = int( color[ 3 ] / 255.0 * 65535 )
         return gtk.gdk.Color( r, g, b )
     # __to_gtk_color__()
+    __to_gtk_color__ = staticmethod( __to_gtk_color__ )
 
 
     def __configure_gc__( self, fgcolor=None, bgcolor=None, fill=None,
@@ -3703,10 +3704,22 @@ class Table( _EGWidget ):
     # Row
 
 
+    class CellFormat( object ):
+        __slots__ = ( "fgcolor", "bgcolor", "size", "font", "bold",
+                      "italic", "underline", "strike" )
+        def __init__( self, **kargs ):
+            for a in self.__slots__:
+                v = kargs.get( a, None )
+                setattr( self, a, v )
+        # __init__()
+    # CellFormat()
+
+
 
     def __init__( self, id, label, items=None, types=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
+                  cell_format_func=None,
                   selection_callback=None, data_changed_callback=None ):
         """Table constructor.
 
@@ -3723,6 +3736,9 @@ class Table( _EGWidget ):
                show after the table.
         @param repositioning: allow items to be moved up and down.
         @param expand_columns_indexes: list of indexes that can expand size
+        @param cell_format_func: if define, should return a CellFormat with
+               properties to be applied to cell. Only non-None properties will
+               be used.
         @param selection_callback: the function (or list of functions) to
                call when selection changes. Function will get as parameters:
                 - App reference
@@ -3747,6 +3763,7 @@ class Table( _EGWidget ):
         self.__label = str( label or "" )
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
+        self.cell_format_func = cell_format_func
 
         if isinstance( expand_columns_indexes, ( int, long ) ):
             expand_columns_indexes = ( expand_columns_indexes, )
@@ -3758,7 +3775,6 @@ class Table( _EGWidget ):
             raise ValueError( \
                 "expand_columns_indexes must be a sequence of integers" )
         self.expand_columns_indexes = expand_columns_indexes
-
 
         if not ( types or items ):
             raise ValueError( "Must provide items or types!" )
@@ -4158,6 +4174,67 @@ class Table( _EGWidget ):
             col.set_resizable( True )
             col.set_sort_column_id( i )
             col.connect( "clicked", column_clicked )
+            if self.cell_format_func:
+                def get_color( c ):
+                    return Canvas.__to_gtk_color__( Canvas.__color_from__( c ))
+                # get_color()
+                def_fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
+                def_bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
+                def_font = self._table.style.font_desc
+
+                def func( column, cell_renderer, model, itr, col_idx ):
+                    row_idx = model.get_path( itr )[ 0 ]
+                    value = model.get_value( itr, col_idx )
+                    cf = self.cell_format_func( self.app, self,
+                                                row_idx, col_idx, value )
+                    if cf is None:
+                        return
+
+                    font = cf.font
+                    if font is not None:
+                        font = pango.FontDescription( font )
+                    else:
+                        font = def_font
+                    cell_renderer.set_property( "font-desc", font )
+
+                    bgcolor = cf.bgcolor
+                    if bgcolor is not None:
+                        bgcolor = get_color( bgcolor )
+                    else:
+                        bgcolor = def_bgcolor
+                    cell_renderer.set_property( "background-gdk", bgcolor )
+
+                    fgcolor = cf.fgcolor
+                    if fgcolor is not None:
+                        fgcolor = get_color( fgcolor )
+                    else:
+                        fgcolor = def_fgcolor
+                    cell_renderer.set_property( "foreground-gdk", fgcolor )
+
+                    if cf.underline:
+                        underline = pango.UNDERLINE_SINGLE
+                    else:
+                        underline = pango.UNDERLINE_NONE
+                    cell_renderer.set_property( "underline", underline )
+
+                    if cf.bold:
+                        bold = pango.WEIGHT_BOLD
+                    else:
+                        bold = pango.WEIGHT_NORMAL
+                    cell_renderer.set_property( "weight", bold )
+
+                    if cf.italic:
+                        italic = pango.STYLE_ITALIC
+                    else:
+                        italic = pango.STYLE_NORMAL
+                    cell_renderer.set_property( "style", italic )
+
+                    cell_renderer.set_property( "strikethrough",
+                                                bool( cf.strike ) )
+                # func()
+                col.set_cell_data_func( cell_rend, func, i )
+            # endif cell_format_func
+
             if i in self.expand_columns_indexes:
                 col.set_expand( True )
             else:

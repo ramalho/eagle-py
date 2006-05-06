@@ -57,6 +57,18 @@ def clear_results( app, button ):
         row[ 2 ] = ""
 # clear_results()
 
+def cell_format( idx ):
+    def f( app, table, row, col, value ):
+        if col == idx:
+            if value == "Slow":
+                return Table.CellFormat( fgcolor="orange" )
+            elif value == "Failed":
+                return Table.CellFormat( fgcolor="reid" )
+            elif value == "Ok":
+                return Table.CellFormat( fgcolor="#009900", bold=True )
+    # f()
+    return f
+# cell_format()
 
 def run_tests( app, button ):
     app[ "progress" ] = 0.0
@@ -162,12 +174,14 @@ app = App( title="Network Tester",
                            headers=( "Test", "IP Address", "Port",
                                      "Time (seg)", "Status" ),
                            expand_columns_indexes=0,
+                           cell_format_func=cell_format( 4 ),
                            editable=True,
                            ),
                     Table( "table-name", "Name Resolution Tests",
                            types=( str, float, str ),
                            headers=( "Name", "Time (seg)", "Status" ),
                            expand_columns_indexes=0,
+                           cell_format_func=cell_format( 2 ),
                            editable=True,
                            ),
                     )
