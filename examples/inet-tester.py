@@ -63,7 +63,7 @@ def cell_format( idx ):
             if value == "Slow":
                 return Table.CellFormat( fgcolor="orange" )
             elif value == "Failed":
-                return Table.CellFormat( fgcolor="reid" )
+                return Table.CellFormat( fgcolor="red" )
             elif value == "Ok":
                 return Table.CellFormat( fgcolor="#009900", bold=True )
     # f()

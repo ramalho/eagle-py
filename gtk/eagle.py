@@ -3740,6 +3740,7 @@ class Table( _EGWidget ):
                properties to be applied to cell. Only non-None properties will
                be used. Function should have the following signature:
                   def func( app, table, row, col, value ):
+                      return Table.CellFormat( ... )
                where row and col are indexes in table.
         @param selection_callback: the function (or list of functions) to
                call when selection changes. Function will get as parameters:
