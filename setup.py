@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # eagle-MODULE[-version] will build just MODULE
     # if MODULE is missing, build everything
     if not module or module == "gtk":
-        setup( "gtk", [ "python>=2.6" ] )
+        setup( "gtk", [ "pygtk>=2.6" ] )
 
     if not module or module == "maemo":
-        setup( "maemo", [ "python>=2.6" ] )
+        setup( "maemo", [ "pygtk>=2.6" ] )
