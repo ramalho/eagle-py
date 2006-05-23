@@ -4496,6 +4496,7 @@ class RichText( _EGWidget ):
         """
         bullet = None
         margin = 2
+        signal_created = False
 
         def __init__( self, link_color="#0000ff",
                       foreground=None, background=None,
@@ -4578,11 +4579,14 @@ class RichText( _EGWidget ):
             K_Home = gtk.gdk.keyval_from_name( "Home" )
             K_End = gtk.gdk.keyval_from_name( "End" )
 
-            gobject.signal_new( "follow-link", RichText.Renderer,
-                                gobject.SIGNAL_RUN_LAST,
-                                gobject.TYPE_NONE,
-                                ( gobject.TYPE_STRING,
-                                  gobject.TYPE_ULONG ) )
+            if not self.__class__.signal_created:
+                gobject.signal_new( "follow-link", RichText.Renderer,
+                                    gobject.SIGNAL_RUN_LAST,
+                                    gobject.TYPE_NONE,
+                                    ( gobject.TYPE_STRING,
+                                      gobject.TYPE_ULONG ) )
+                self.__class__.signal_created = True
+
 
             def get_link( itr ):
                 tags = itr.get_tags()
