@@ -76,12 +76,16 @@ __all__ = [
     "information", "info", "error", "err", "warning", "warn",
     "yesno", "confirm",
     "AboutDialog", "HelpDialog", "FileChooser",
+    "RichText",
     ]
 
 import os
 import sys
 import gc
 import cPickle as pickle
+import htmllib
+import formatter
+import weakref
 
 try:
     import pygtk
@@ -419,6 +423,7 @@ class Image( _EGObject, AutoGenId ):
     """
     An image that can be loaded from files or binary data and saved to files.
     """
+    _id2obj_ = weakref.WeakValueDictionary()
 
     def __init__( self, **kargs ):
         """Image constructor.
@@ -438,7 +443,8 @@ class Image( _EGObject, AutoGenId ):
         @see: L{load_data()}
         @see: L{load_file()}
         """
-        _EGObject.__init__( self, self.__get_id__() )
+        id = kargs.get( "id" ) or self.__get_id__()
+        _EGObject.__init__( self, id )
 
         self._img = None
 
@@ -464,12 +470,20 @@ class Image( _EGObject, AutoGenId ):
         elif len( kargs ) > 0:
             params = [ "%s=%r" % kv for kv in kargs.iteritems() ]
             raise ValueError( "Unknow parameters: %s" % params )
+
+        Image._id2obj_[ self.id ] = self
     # __init__()
 
 
     def __get_gtk_pixbuf__( self ):
         return self._img
     # __get_gtk_pixbuf__()
+
+
+    def __get_by_id__( klass, id ):
+        return klass._id2obj_[ id ]
+    # __get_by_id__()
+    __get_by_id__ = classmethod( __get_by_id__ )
 
 
     def __del__( self ):
@@ -4509,6 +4523,618 @@ class Table( _EGWidget ):
             del self._model[ end ]
     # __delslice__()
 # Table
+
+
+class RichText( _EGWidget ):
+    """A Rich Text viewer
+
+    Display text with basic formatting instructions. Formatting is
+    done using a HTML subset.
+    """
+
+    class Renderer( gtk.TextView ):
+        """Specialized TextView to render formatted texts.
+
+        This class emits "follow-link" when user clicks somewhere.
+
+        It implements Writer interface as specified in standard library
+        "formatter" module.
+        """
+        bullet = None
+        margin = 2
+
+        def __init__( self, link_color="#0000ff",
+                      foreground=None, background=None,
+                      resource_provider=None ):
+            """RichText.Renderer constructor.
+
+            @param link_color: color to use with links. String with color name
+                   or in internet format (3 pairs of RGB, in hexa, prefixed by
+                   #).
+            @param foreground: default foreground color. Same spec as
+                   link_color.
+            @param background: default background color. Same spec as
+                   link_color.
+            @param resource_provider: function to provide unresolved resources.
+                   If some image could not be handled as a file, this function
+                   will be called and it should return an gtk.gdk.Pixbuf.
+                   Since http://url.com/file will always be unresolved, you
+                   may use this to provide remote file access to this class.
+            """
+            self.link_color = link_color or "#0000ff"
+            self.foreground = foreground
+            self.background = background
+            self.resource_provider = resource_provider
+            self.hovering_over_link = False
+
+            b = gtk.TextBuffer()
+            gtk.TextView.__init__( self, b )
+
+            self.set_cursor_visible( False )
+            self.set_editable( False )
+            self.set_wrap_mode( gtk.WRAP_WORD )
+            self.set_left_margin( self.margin )
+            self.set_right_margin( self.margin )
+
+            self.__setup_connections__()
+            self.__setup_render__()
+            self.__create_bullets__()
+        # __init__()
+
+
+        def __create_bullets__( self ):
+            klass = RichText.Renderer
+            if klass.bullet is None:
+                width = height = 16
+                dx = dy = 4
+
+                colormap = gtk.gdk.colormap_get_system()
+                visual = colormap.get_visual()
+
+                white = colormap.alloc_color( "#ffffff", True, True )
+                black = colormap.alloc_color( "#000000", True, True )
+
+                pixmap = gtk.gdk.Pixmap( None, width, height, visual.depth )
+                white_gc = pixmap.new_gc( foreground=white, background=black,
+                                          fill=gtk.gdk.SOLID, line_width=1,
+                                          line_style=gtk.gdk.LINE_SOLID )
+                black_gc = pixmap.new_gc( foreground=black, background=white,
+                                          fill=gtk.gdk.SOLID, line_width=1,
+                                          line_style=gtk.gdk.LINE_SOLID )
+                pixmap.draw_rectangle( white_gc, True, 0, 0, width, height )
+                pixmap.draw_arc( black_gc, True, dx, dy,
+                                 width - dx * 2, height - dy * 2,
+                                 0, 23040 )
+
+
+                pixbuf = gtk.gdk.Pixbuf( gtk.gdk.COLORSPACE_RGB, True, 8,
+                                         width, height )
+                pixbuf = pixbuf.get_from_drawable( pixmap, colormap, 0, 0, 0, 0,
+                                                   width, height )
+                pixbuf = pixbuf.add_alpha( True, chr(255), chr(255), chr(255) )
+                klass.bullet = pixbuf
+        # __create_bullets__()
+
+
+        def __setup_connections__( self ):
+            hand_cursor = gtk.gdk.Cursor( gtk.gdk.HAND2 )
+            regular_cursor = gtk.gdk.Cursor( gtk.gdk.XTERM )
+            K_Return = gtk.gdk.keyval_from_name( "Return" )
+            K_KP_Enter = gtk.gdk.keyval_from_name( "KP_Enter" )
+            K_Home = gtk.gdk.keyval_from_name( "Home" )
+            K_End = gtk.gdk.keyval_from_name( "End" )
+
+            gobject.signal_new( "follow-link", RichText.Renderer,
+                                gobject.SIGNAL_RUN_LAST,
+                                gobject.TYPE_NONE,
+                                ( gobject.TYPE_STRING,
+                                  gobject.TYPE_ULONG ) )
+
+            def get_link( itr ):
+                tags = itr.get_tags()
+                for tag in tags:
+                    href = tag.get_data( "href" )
+                    if href is not None:
+                        return href
+                return None
+            # get_link()
+
+            def follow_if_link( text_view, itr ):
+                href = get_link( itr )
+                if href:
+                    self.emit( "follow-link", href, itr.get_offset() )
+            # follow_if_link()
+
+            def key_press_event( text_view, event ):
+                if event.keyval in ( K_Return, K_KP_Enter ):
+                    b = text_view.get_buffer()
+                    itr = b.get_iter_at_mark( b.get_insert() )
+                    follow_if_link( text_view, itr )
+                elif event.keyval == K_Home:
+                    itr = text_view.get_buffer().get_start_iter()
+                    text_view.scroll_to_iter( itr, 0.0, False )
+                elif event.keyval == K_End:
+                    itr = text_view.get_buffer().get_end_iter()
+                    text_view.scroll_to_iter( itr, 0.0, False )
+            # key_press_event()
+            self.connect( "key-press-event", key_press_event )
+
+            def event_after( text_view, event ):
+                if event.type != gtk.gdk.BUTTON_RELEASE:
+                    return False
+
+                if event.button != 1:
+                    return False
+
+                b = text_view.get_buffer()
+
+                # we shouldn't follow a link if the user has selected something
+                try:
+                    start, end = b.get_selection_bounds()
+                except ValueError:
+                    pass
+                else:
+                    if start.get_offset() != end.get_offset():
+                        return False
+
+                x, y = text_view.window_to_buffer_coords( gtk.TEXT_WINDOW_WIDGET,
+                                                          int( event.x ),
+                                                          int( event.y ) )
+                itr = text_view.get_iter_at_location( x, y )
+                follow_if_link( text_view, itr )
+                return False
+            # event_after()
+            self.connect( "event-after", event_after )
+
+            def set_cursor_if_appropriate( text_view, x, y ):
+                b = text_view.get_buffer()
+                itr = text_view.get_iter_at_location( x, y )
+
+                self.hovering_over_link = get_link( itr )
+                if self.hovering_over_link:
+                    cursor = hand_cursor
+                else:
+                    cursor = regular_cursor
+
+                win = text_view.get_window( gtk.TEXT_WINDOW_TEXT )
+                win.set_cursor( cursor )
+            # set_cursor_if_appropriate()
+
+            def motion_notify_event( text_view, event ):
+                x, y = text_view.window_to_buffer_coords( gtk.TEXT_WINDOW_WIDGET,
+                                                          int( event.x ),
+                                                          int( event.y ) )
+                set_cursor_if_appropriate( text_view, x, y )
+                text_view.window.get_pointer()
+                return False
+            # motion_notify_event()
+            self.connect( "motion-notify-event", motion_notify_event )
+
+            def visibility_notify_event( text_view, event ):
+                wx, wy, mod = text_view.window.get_pointer()
+                x, y = text_view.window_to_buffer_coords( gtk.TEXT_WINDOW_WIDGET,
+                                                          wx, wy )
+                set_cursor_if_appropriate( text_view, x, y )
+                return False
+            # visibility_notify_event()
+            self.connect( "visibility-notify-event", visibility_notify_event )
+
+
+            def after_realize( text_view ):
+                colormap = self.get_colormap()
+                if self.background:
+                    bg = colormap.alloc_color( self.background, True, True )
+                    w = text_view.get_window( gtk.TEXT_WINDOW_TEXT )
+                    w.set_background( bg )
+                    w = text_view.get_window( gtk.TEXT_WINDOW_WIDGET )
+                    w.set_background( bg )
+            # after_realize()
+            self.connect_after( "realize", after_realize )
+        # __setup_connections__()
+
+
+        def __setup_render__( self ):
+            self.buffer = self.get_buffer()
+            itr = self.buffer.get_start_iter()
+
+            k = {}
+            if self.foreground:
+                k[ "foreground" ] = self.foreground
+
+            create_tag = self.buffer.create_tag
+            self.tags = {
+                "default": create_tag( "default", **k ),
+                "bold": create_tag( "bold", weight=pango.WEIGHT_BOLD ),
+                "italic": create_tag( "italic", style=pango.STYLE_ITALIC ),
+                "link": create_tag( "link", foreground=self.link_color,
+                                    underline=pango.UNDERLINE_SINGLE ),
+                "h1": create_tag( "h1", scale=pango.SCALE_XX_LARGE ),
+                "h2": create_tag( "h2", scale=pango.SCALE_X_LARGE ),
+                "h3": create_tag( "h3", scale=pango.SCALE_LARGE ),
+                "monospaced": create_tag( "monospaced", font="monospace" ),
+                }
+            self.tags[ "default" ].set_priority( 0 )
+
+            self.font = []
+            self.link = []
+            self.margin = []
+        # __setup_render__()
+
+
+        def send_paragraph( self, blankline ):
+            if blankline:
+                self.send_flowing_data( "\n" )
+        # send_paragraph()
+
+
+        def send_line_break( self ):
+            self.send_paragraph( 1 )
+        # send_line_break()
+
+
+        def send_flowing_data( self, data ):
+            itr = self.buffer.get_end_iter()
+            t = [ self.tags[ "default" ] ] + self.font + self.link
+            self.buffer.insert_with_tags( itr, data, *t )
+        # send_flowing_data()
+
+        def send_literal_data( self, data ):
+            itr = self.buffer.get_end_iter()
+            t = [ self.tags[ "default" ], self.tags[ "monospaced" ] ] + \
+                self.font + self.link
+            self.buffer.insert_with_tags( itr, data, *t )
+        # send_literal_data()
+
+
+        def send_hor_rule( self ):
+            itr = self.buffer.get_end_iter()
+            anchor = self.buffer.create_child_anchor( itr )
+            w = gtk.HSeparator()
+            def size_allocate( widget, rect ):
+                lm = self.get_left_margin()
+                rm = self.get_right_margin()
+                width = max( rect.width - lm - rm - 1, 0 )
+                w.set_size_request( width, -1 )
+            # size_allocate()
+
+            self.connect_after( "size-allocate", size_allocate )
+            self.add_child_at_anchor( w, anchor )
+        # send_hor_rule()
+
+
+        def new_margin( self, margin, level ):
+            itr = self.buffer.get_end_iter()
+            self.margin.append( ( margin, level ) )
+        # new_margin()
+
+
+        def send_label_data( self, data ):
+            itr = self.buffer.get_end_iter()
+            t = self.font + self.link + [ self.tags[ "bold" ] ]
+
+            margin, level = self.margin[ -1 ]
+            self.buffer.insert_with_tags( itr, '\t' * level, *t )
+            if data == '*' and self.bullet:
+                self.buffer.insert_pixbuf( itr, self.bullet )
+            else:
+                self.buffer.insert_with_tags( itr, data, *t )
+            self.buffer.insert_with_tags( itr, ' ', *t )
+        # send_label_data()
+
+
+        def add_image( self, filename, width, height ):
+            try:
+                pixbuf = gtk.gdk.pixbuf_new_from_file( filename )
+            except gobject.GError:
+                if self.resource_provider:
+                    pixbuf = self.resource_provider( filename )
+                else:
+                    raise ValueError( "No resource provider for %r" % filename)
+
+            if not pixbuf:
+                self.send_flowing_data( "[%s]" % filename )
+                return
+
+            ow = pixbuf.get_width()
+            oh = pixbuf.get_height()
+            p = float( ow ) / float( oh )
+
+            if width > 0 and height < 1:
+                height = int( width / p )
+            elif height > 0 and width < 1:
+                width = int( height * p )
+            if width > 0 and height > 0:
+                pixbuf = pixbuf.scale_simple( width, height,
+                                              gtk.gdk.INTERP_BILINEAR )
+            itr = self.buffer.get_end_iter()
+            self.buffer.insert_pixbuf( itr, pixbuf )
+        # add_image()
+
+
+        def start_link( self, url, name=None ):
+            t = self.buffer.create_tag()
+            t.set_data( "href", url )
+            if name:
+                self.buffer.create_mark( name,
+                                         self.buffer.get_end_iter(), True )
+            self.link = [ self.tags[ "link" ], t ]
+        # new_link()
+
+
+        def end_link( self ):
+            self.link = []
+        # end_link()
+
+
+        def new_font( self, font ):
+            if isinstance( font, ( tuple, list ) ):
+                def append_unique( v ):
+                    f = self.font
+                    if v not in f:
+                        f.append( v )
+                # append
+
+                size, is_italic, is_bold, is_tt = font
+                if   size == "h1":
+                    append_unique( self.tags[ "h1" ] )
+                elif size == "h2":
+                    append_unique( self.tags[ "h2" ] )
+                elif size == "h3":
+                    append_unique( self.tags[ "h3" ] )
+
+                if is_italic:
+                    append_unique( self.tags[ "italic" ] )
+                if is_bold:
+                    append_unique( self.tags[ "bold" ] )
+
+            elif isinstance( font, dict ):
+                t = {}
+                family = font.get( "family" )
+                size = font.get( "size" )
+                color = font.get( "color" )
+                background = font.get( "bgcolor" )
+                if family:
+                    t[ "family" ] = family
+                if size:
+                    t[ "size-points" ] = int( size )
+                if color:
+                    t[ "foreground" ] = color
+                if background:
+                    t[ "background" ] = background
+                self.font.append( self.buffer.create_tag( None, **t ) )
+            else:
+                self.font = []
+        # new_font()
+
+
+        def goto( self, anchor ):
+            mark = self.buffer.get_mark( anchor )
+            if mark is not None:
+                self.scroll_mark_onscreen( mark )
+            else:
+                raise ValueError( "Inexistent anchor: %r" % anchor )
+        # goto()
+
+
+        def reset( self ):
+            a = self.buffer.get_start_iter()
+            b = self.buffer.get_end_iter()
+            self.buffer.delete( a, b )
+        # reset()
+    # Renderer
+
+
+    class Parser( htmllib.HTMLParser ):
+        """HTML subset parser"""
+        def anchor_bgn( self, href, name, type ):
+            htmllib.HTMLParser.anchor_bgn( self, href, name, type )
+            self.formatter.push_link( href, name )
+        # anchor_bgn()
+
+
+        def anchor_end( self ):
+            self.formatter.pop_link()
+        # anchor_end()
+
+
+        def handle_image( self, source, alt, ismap, align, width, height ):
+            self.formatter.add_image( source, width, height )
+        # handle_image()
+
+
+        def start_font( self, attrs ):
+            k = dict( attrs )
+            self.formatter.push_font( k )
+        # start_font()
+
+
+        def end_font( self ):
+            self.formatter.pop_font()
+        # end_font()
+    # Parser
+
+
+    class Formatter( formatter.AbstractFormatter ):
+        """HTML subset formatter"""
+        def add_image( self, filename, width, height ):
+            self.writer.add_image( filename, width, height )
+        # add_image()
+
+        def push_link( self, url, name ):
+            self.writer.start_link( url, name )
+        # push_link()
+
+        def pop_link( self ):
+            self.writer.end_link()
+        # pop_link()
+
+
+        def push_font( self, font ):
+            if isinstance( font, dict ):
+                self.writer.new_font( font )
+            else:
+                formatter.AbstractFormatter.push_font( self, font )
+        # push_font()
+    # Formatter
+
+    bgcolor = _gen_ro_property( "bgcolor" )
+    fgcolor = _gen_ro_property( "fgcolor" )
+    link_color = _gen_ro_property( "link_color" )
+    padding = 5
+
+    def __init__( self, id, text="", label=None, link_color="blue",
+                  fgcolor=None, bgcolor=None, callback=None,
+                  img_provider=None ):
+        """RichText constructor.
+
+        @param id: unique identifier.
+        @param text: text to use in this viewer.
+        @param label: label to display in the widget frame around the viewer.
+               If None, no label or frame will be shown.
+        @param link_color: color to use for links.
+        @param fgcolor: color to use for foreground (text)
+        @param bgcolor: color to use for background.
+        @param callback: function (or list of functions) to call when
+               user clicks a link. Links to anchor will automatically make
+               the anchor/mark visible and then callback. Function will get
+               as parameters:
+                - App reference
+                - RichText reference
+                - href contents (string)
+                - offset from buffer begin (integer)
+        @param img_provider: if images could not be resolved, call this
+               function. It should get an address (string) and return an
+               eagle.Image. Eagle already provides a handle to addresses
+               prefixed with "eagle://", the following part should be an
+               eagle.Image id, and the image should be live (not garbage
+               collected) when displaying it, so remember to keep a
+               reference to it! You may use img_provider to download
+               files from webservers and stuff like that.
+               Function signature:
+                  def img_provider( filename ):
+                      return eagle.Image( ... )
+        """
+        _EGWidget.__init__( self, id )
+        self.__label = label
+        self._callback = _callback_tuple( callback )
+        self.link_color = link_color
+        self.foreground = fgcolor
+        self.background = bgcolor
+        self.img_provider = img_provider
+
+        self.__setup_gui__()
+        self.__setup_parser__()
+        self.__setup_connections__()
+        self.set_text( text )
+    # __init__()
+
+
+    def __setup_gui__( self ):
+        def img_provider( filename ):
+            img = None
+            if filename.startswith( "eagle://" ):
+                id = filename[ len( "eagle://" ) : ]
+                img = Image.__get_by_id__( id )
+            elif self.img_provider:
+                img = self.img_provider( filename )
+
+            if img:
+                return img.__get_gtk_pixbuf__()
+            else:
+                error( "Could not find image %r" % filename )
+        # img_provider()
+
+        self._sw = gtk.ScrolledWindow()
+        self._renderer = RichText.Renderer( link_color=self.link_color,
+                                            foreground=self.fgcolor,
+                                            background=self.bgcolor,
+                                            resource_provider=img_provider )
+
+        self._sw.set_border_width( self.padding )
+        self._sw.set_shadow_type( gtk.SHADOW_IN )
+        if self.label is not None:
+            self._frame = gtk.Frame( self.label )
+            self._frame.add( self._sw )
+            root = self._frame
+            self._frame.set_shadow_type( gtk.SHADOW_OUT )
+        else:
+            root = self._sw
+
+        self._sw.add( self._renderer )
+        self._sw.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
+        self._sw.show_all()
+        self._widgets = ( root, )
+    # __setup_gui__()
+
+
+    def __setup_parser__( self ):
+        self._formatter = RichText.Formatter( self._renderer )
+        self._parser = RichText.Parser( self._formatter )
+    # __setup_parser__()
+
+
+    def __setup_connections__( self ):
+        def callback( text_view, href, offset ):
+            if href.startswith( "#" ):
+                try:
+                    text_view.goto( href[ 1 : ] )
+                except ValueError, e:
+                    error( str( e ) )
+
+            for c in self._callback:
+                c( self.app, self, href, offset )
+        # callback()
+        self._renderer.connect( "follow-link", callback )
+    # __setup_connections__()
+
+
+    def set_text( self, text ):
+        """Replace current text"""
+        self._text = text
+        self._renderer.reset()
+        self.__setup_parser__()
+        self._parser.feed( self.text )
+    # set_text()
+
+
+    def get_text( self ):
+        """Return current text, with formatting tags"""
+        return self._text
+    # get_text()
+
+    text = property( get_text, set_text )
+
+
+    def append( self, text ):
+        self._text += text
+        self._parser.feed( text )
+    # append()
+
+
+    def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
+        self.__label = label
+        self._frame.set_label( self.__label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
+
+
+    def __str__( self ):
+        return "%s( id=%r, label=%r, link_color=%r, fgcolor=%r, bgcolor=%r )"%\
+               ( self.__class__.__name__, self.id, self.label, self.link_color,
+                 self.fgcolor, self.bgcolor )
+    # __str__()
+    __repr__ = __str__
+# RichText
 
 
 class Button( _EGWidget ):
