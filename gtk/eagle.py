@@ -832,76 +832,52 @@ class AboutDialog( _EGWidget, AutoGenId ):
 
         _set_icon_list( self._diag, gtk.STOCK_ABOUT )
 
-        self._sw = gtk.ScrolledWindow()
-        self._diag.vbox.pack_start( self._sw, expand=True, fill=True )
-
-        self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
-                             vscrollbar_policy=gtk.POLICY_AUTOMATIC )
-        self._sw.set_shadow_type( gtk.SHADOW_IN )
-
-        self._text = gtk.TextView()
-        self._sw.add( self._text )
-        self._text.set_editable( False )
-        self._text.set_cursor_visible( False )
-        self._text.set_wrap_mode( gtk.WRAP_WORD )
-        self._text.set_left_margin( self.margin )
-        self._text.set_right_margin( self.margin )
+        self._text = RichText( id="About-%s" % self.app.id )
+        self._diag.vbox.pack_start( self._text._widgets[ 0 ], True, True )
 
         self.__setup_text__()
     # __setup_gui__()
 
 
     def __setup_text__( self ):
-        buf = self._text.get_buffer()
-        big = buf.create_tag( "big", scale=pango.SCALE_XX_LARGE )
-        bold = buf.create_tag( "bold", weight=pango.WEIGHT_BOLD )
-        italic = buf.create_tag( "italic", style=pango.STYLE_ITALIC )
-        i = buf.get_start_iter()
-        ins = buf.insert_with_tags
-
-        ins( i, self.title, big, bold )
+        self._text.append( "<h1>%s</h1>" % self.title )
 
         if self.version:
-            ins( i, "\n" )
-            ins( i, ".".join( self.version ), italic )
+            v = ".".join( self.version )
+            self._text.append( "<i>%s</i>" % v )
 
-        ins( i, "\n\n" )
+        self._text.append( "<hr />" )
 
         if self.description:
+            self._text.append( "<h2>Description</h2>" )
             for l in self.description:
-                ins( i, l )
-                ins( i, "\n" )
-            ins( i, "\n\n" )
+                self._text.append( "<p>%s</p>" % l )
 
         if self.license:
-            ins( i, "License: ", bold )
-            ins( i, ", ".join( self.license ) )
-            ins( i, "\n" )
+            self._text.append( "<h2>License</h2><p>" )
+            self._text.append( ", ".join( self.license ) )
+            self._text.append( "</p>" )
 
         if self.author:
             if len( self.author ) == 1:
-                ins( i, "Author:\n", bold )
+                self._text.append( "<h2>Author</h2>" )
             else:
-                ins( i, "Authors:\n", bold )
+                self._text.append( "<h2>Authors</h2>" )
+
+            self._text.append( "<ul>" )
             for a in self.author:
-                ins( i, "\t" )
-                ins( i, a )
-                ins( i, "\n" )
-            ins( i, "\n\n" )
+                self._text.append( "<li>%s</li>" % a )
+            self._text.append( "</ul>" )
 
         if self.help:
-            ins( i, "Help:\n", bold )
+            self._text.append( "<h2>Help</h2>" )
             for l in self.help:
-                ins( i, l )
-                ins( i, "\n" )
-            ins( i, "\n\n" )
+                self._text.append( "<p>%s</p>" % l )
 
         if self.copyright:
-            ins( i, "Copyright:\n", bold )
+            self._text.append( "<h2>Copyright</h2>" )
             for l in self.copyright:
-                ins( i, l )
-                ins( i, "\n" )
-            ins( i, "\n\n" )
+                self._text.append( "<p>%s</p>" % l )
     # __setup_text__()
 
 
@@ -950,40 +926,18 @@ class HelpDialog( _EGWidget, AutoGenId ):
         self._diag.vbox.set_spacing( self.spacing )
         _set_icon_list( self._diag, gtk.STOCK_HELP )
 
-        self._sw = gtk.ScrolledWindow()
-        self._diag.get_child().pack_start( self._sw, expand=True, fill=True )
-
-        self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
-                             vscrollbar_policy=gtk.POLICY_AUTOMATIC )
-        self._sw.set_shadow_type( gtk.SHADOW_IN )
-
-        self._text = gtk.TextView()
-        self._sw.add( self._text )
-        self._text.set_editable( False )
-        self._text.set_cursor_visible( False )
-        self._text.set_wrap_mode( gtk.WRAP_WORD )
-        self._text.set_left_margin( self.margin )
-        self._text.set_right_margin( self.margin )
+        self._text = RichText( id="About-%s" % self.app.id )
+        self._diag.vbox.pack_start( self._text._widgets[ 0 ], True, True )
 
         self.__setup_text__()
     # __setup_gui__()
 
 
     def __setup_text__( self ):
-        buf = self._text.get_buffer()
-        big = buf.create_tag( "big", scale=pango.SCALE_XX_LARGE )
-        bold = buf.create_tag( "bold", weight=pango.WEIGHT_BOLD )
-        italic = buf.create_tag( "italic", style=pango.STYLE_ITALIC )
-        i = buf.get_start_iter()
-        ins = buf.insert_with_tags
-
-        ins( i, self.title, big, bold )
-        ins( i, "\n\n" )
-
-        ins( i, "Help:\n", bold )
+        self._text.append( "<h1>%s</h1>" % self.title )
+        self._text.append( "<h2>Help</h2>" )
         for l in self.help:
-            ins( i, l )
-            ins( i, "\n" )
+            self._text.append( "<p>%s</p>" % l )
     # __setup_text__()
 
 
