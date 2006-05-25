@@ -4229,7 +4229,7 @@ class Table( _EGWidget ):
                     cf = self.cell_format_func( self.app, self,
                                                 row_idx, col_idx, value )
                     if cf is None:
-                        return
+                        cf = Table.CellFormat()
 
                     font = cf.font
                     if font is not None:
