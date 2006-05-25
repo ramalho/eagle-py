@@ -775,12 +775,14 @@ class _EGDataWidget( _EGWidget ):
 
     def get_value( self ):
         """Get data from this widget."""
-        raise NotImplementedError
+        raise NotImplementedError( "%s doesn't implement get_value()" %
+                                   self.__class__.__name__ )
     # get_value()
 
     def set_value( self, value ):
         """Set data to this widget."""
-        raise NotImplementedError
+        raise NotImplementedError( "%s doesn't implement set_value()" %
+                                   self.__class__.__name__ )
     # set_value()
 # _EGDataWidget
 
@@ -3452,6 +3454,11 @@ class CheckBox( _EGDataWidget ):
     def get_value( self ):
         return self._wid.get_active()
     # get_value()
+
+
+    def set_value( self, value ):
+        return self._wid.set_active( bool( value ) )
+    # set_value()
 
 
     def set_label( self, label ):
