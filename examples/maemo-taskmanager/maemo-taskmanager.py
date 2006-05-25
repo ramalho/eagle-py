@@ -364,6 +364,32 @@ def process_format( app, table, row, col, value ):
 
 
 app = App( title="Task Manager",
+           version="1.0",
+           license="GPL",
+           copyright="2006 - Gustavo Sverzut Barbieri, under GPL",
+           author="Gustavo Sverzut Barbieri &lt;barbieri@gmail.com&gt;",
+           description="""\
+<i>Simple Task Manager for Maemo.</i>
+<p>
+This software allows you to monitor processes and their
+resource usage.
+</p>
+""",
+           help="""\
+<p>
+At top you can see the process list, with process identification number (PID),
+CPU usage (C%), memory usage (M%), name and command line.
+</p><p>
+If <b>"Show process info"</b> is selected, a second table will show information
+about the selected process (or the first selected process, if multiple).
+</p><p>
+If you want to finish some process, select it and click <b>"Kill Selected"</b>.
+</p><p>
+Use <b>"Preferences"</b> menu to change refresh rate and also disable use of
+blacklist (that avoid show system process). However notice that if you show
+every process it may slow down the system!
+</p>
+""",
            preferences=( UIntSpin( id="refresh-rate",
                                    label="Refresh Rate (secs)",
                                    value=5,
