@@ -4231,47 +4231,48 @@ class Table( _EGWidget ):
                     if cf is None:
                         cf = Table.CellFormat()
 
-                    font = cf.font
-                    if font is not None:
-                        font = pango.FontDescription( font )
-                    else:
-                        font = self.app._win.style.font_desc
-                    cell_renderer.set_property( "font-desc", font )
-
                     bgcolor = cf.bgcolor
                     if bgcolor is not None:
                         bgcolor = get_color( bgcolor )
                     else:
                         bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
-                    cell_renderer.set_property( "background-gdk", bgcolor )
+                    cell_renderer.set_property( "cell-background-gdk",
+                                                bgcolor )
+                    if isinstance( cell_renderer, gtk.CellRendererText ):
+                        font = cf.font
+                        if font is not None:
+                            font = pango.FontDescription( font )
+                        else:
+                            font = self.app._win.style.font_desc
+                        cell_renderer.set_property( "font-desc", font )
 
-                    fgcolor = cf.fgcolor
-                    if fgcolor is not None:
-                        fgcolor = get_color( fgcolor )
-                    else:
-                        fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
-                    cell_renderer.set_property( "foreground-gdk", fgcolor )
+                        fgcolor = cf.fgcolor
+                        if fgcolor is not None:
+                            fgcolor = get_color( fgcolor )
+                        else:
+                            fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
+                        cell_renderer.set_property( "foreground-gdk", fgcolor )
 
-                    if cf.underline:
-                        underline = pango.UNDERLINE_SINGLE
-                    else:
-                        underline = pango.UNDERLINE_NONE
-                    cell_renderer.set_property( "underline", underline )
+                        if cf.underline:
+                            underline = pango.UNDERLINE_SINGLE
+                        else:
+                            underline = pango.UNDERLINE_NONE
+                        cell_renderer.set_property( "underline", underline )
 
-                    if cf.bold:
-                        bold = pango.WEIGHT_BOLD
-                    else:
-                        bold = pango.WEIGHT_NORMAL
-                    cell_renderer.set_property( "weight", bold )
+                        if cf.bold:
+                            bold = pango.WEIGHT_BOLD
+                        else:
+                            bold = pango.WEIGHT_NORMAL
+                        cell_renderer.set_property( "weight", bold )
 
-                    if cf.italic:
-                        italic = pango.STYLE_ITALIC
-                    else:
-                        italic = pango.STYLE_NORMAL
-                    cell_renderer.set_property( "style", italic )
+                        if cf.italic:
+                            italic = pango.STYLE_ITALIC
+                        else:
+                            italic = pango.STYLE_NORMAL
+                        cell_renderer.set_property( "style", italic )
 
-                    cell_renderer.set_property( "strikethrough",
-                                                bool( cf.strike ) )
+                        cell_renderer.set_property( "strikethrough",
+                                                    bool( cf.strike ) )
                 # func()
                 col.set_cell_data_func( cell_rend, func, i )
             # endif cell_format_func

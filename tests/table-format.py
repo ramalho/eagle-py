@@ -21,6 +21,8 @@ def cell_format_func( app, table, row, col, value ):
             return Table.CellFormat( fgcolor="blue", underline=True )
         elif value == "None":
             return Table.CellFormat( strike=True )
+    if col == 1 and row == 1:
+        return Table.CellFormat( bgcolor="magenta" )
 # cell_format_func()
 
 
