@@ -1,0 +1,39 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+export DH_COMPAT=4
+
+DESTDIR=$(CURDIR)/debian/maemo-taskmanager
+
+.PHONY: install binary binary-arch binary-indep clean build
+
+build:
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	install -D -m755 maemo-taskmanager.py $(DESTDIR)/usr/bin/maemo-taskmanager.py
+	install -D -m644 maemo-taskmanager.desktop $(DESTDIR)/usr/share/applications/hildon/maemo-taskmanager.desktop
+	install -D -m644 maemo-taskmanager.png $(DESTDIR)/usr/share/icons/maemo-taskmanager.png
+
+clean:
+	dh_testdir
+	rm -fr $(DESTDIR)
+
+binary-indep: install
+	dh_testdir
+	dh_testroot
+	dh_link
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary-arch: install
+binary: binary-arch binary-indep
+

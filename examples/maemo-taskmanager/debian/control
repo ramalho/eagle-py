@@ -1,0 +1,15 @@
+Source: maemo-taskmanager
+Section: utils
+Priority: optional
+Maintainer: Gustavo Sverzut Barbieri <barbieri@gmail.com>
+Standards-Version: 3.6.0
+
+Package: maemo-taskmanager
+Architecture: any
+Depends: maemo, pymaemo-runtime, eagle (>=0.5)
+Description: Simple Task Manager to allow identify and kill resource hungry applications
+ Simple Task Manager for Maemo
+ .
+ This task manager list every user process and identify which are consuming more CPU and memory
+ and also allows you to kill desired processes.
+

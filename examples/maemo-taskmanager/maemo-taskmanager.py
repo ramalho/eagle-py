@@ -83,7 +83,7 @@ class ProcessInfo( object ):
     def __load_cmdline__( self ):
         try:
             f = open( "/proc/%d/cmdline" % self.pid )
-            self.cmdline = f.read()
+            self.cmdline = f.read().replace( '\x00', " " ).strip()
             f.close()
         except ( OSError, IOError ), e:
             return
@@ -94,9 +94,17 @@ class ProcessInfo( object ):
 class System( object ):
     blacklisted = ( "/usr/bin/maemo-launcher",
                     "/usr/lib/sapwood/sapwood-server",
-                    "/usr/bin/matchbox-window",
+                    "/usr/bin/matchbox-window-manager",
                     "/usr/bin/hildon-input-method",
-                    "/usr/bin/maemo_af_desktop" )
+		    "/usr/bin/maemo_af_desktop",
+		    "/usr/libexec/dbus-vfs-daemon",
+		    "/usr/sbin/ke-recv",
+		    "/usr/sbin/temp-reaper",
+		    "/usr/bin/dbus-daemon-1",
+		    "/usr/bin/osso-connectivity-ui-conndlgs",
+		    "/usr/bin/osso-media-server",
+		    "/usr/bin/clipboard-manager",
+		    )
     __slots__ = ( "processes", "uid", "cpu", "old_cpu", "cpu_diff",
                   "memtotal", "memfree" )
     def __init__( self ):
@@ -108,33 +116,49 @@ class System( object ):
     # __init__()
 
 
+    def is_blacklisted( self, process ):
+	cmdline = process.cmdline
+	for b in self.blacklisted:
+	    if cmdline.startswith( b ):
+		return True
+	return False
+    # is_blacklisted()
+
+
     def update( self ):
         self.update_global()
 
         pids = []
+	use_blacklist = app[ "use_blacklist" ]
         for p in os.listdir( "/proc" ):
             # just processes (pid numbers)
             if not p.isdigit():
                 continue
 
-            # just user's processes
-            try:
-                s = os.stat( "/proc/%s" % p )
-            except ( OSError, IOError ), e:
-                continue
+	    if use_blacklist:
+		# just user's processes
+		try:
+		    s = os.stat( "/proc/%s" % p )
+		except ( OSError, IOError ), e:
+		    continue
 
-            if s.st_uid != self.uid:
-                continue
+		if s.st_uid != self.uid:
+		    continue
+
 
             pid = int( p )
-            pids.append( pid )
             pinfo = self.processes.get( pid )
             if pinfo:
-                pinfo.update()
+		if use_blacklist and self.is_blacklisted( pinfo ):
+		    continue
+		pinfo.update()
             else:
-                p = ProcessInfo( pid )
-                if p.cmdline not in self.blacklisted:
-                    self.processes[ pid ] = p
+                pinfo = ProcessInfo( pid )
+		if use_blacklist and self.is_blacklisted( pinfo ):
+		    continue
+
+	    self.processes[ pid ] = pinfo
+	    pids.append( pid )
         # end for p in os.listdir( "/proc" )
 
         # remove non-existent processes
@@ -206,6 +230,10 @@ def kill( app, button ):
 
 
 def refresh( app ):
+    if not hasattr( app, "system" ):
+	# app has not loaded it's data yet, return
+	return
+
     processes = app[ "processes" ]
     refresh_processes( app, processes )
     refresh_info( app, app[ "info" ], processes.selected() )
@@ -307,6 +335,21 @@ def refresh_rate_changed( app, entry, value ):
 # refresh_rate_changed()
 
 
+def blacklist_changed( app, entry, value ):
+    refresh( app )
+# blacklist_changed()
+
+
+def show_info_changed( app, entry, is_show ):
+    info = app[ "info" ]
+    if is_show:
+	info.show()
+    else:
+	info.hide()
+# show_info_changed()
+
+
+
 def selected_process( app, info_table, rows ):
     refresh_info( app, app[ "info" ], rows )
 # selected_process()
@@ -322,10 +365,15 @@ def process_format( app, table, row, col, value ):
 
 app = App( title="Task Manager",
            preferences=( UIntSpin( id="refresh-rate",
-                                   label="Refresh Rate",
+                                   label="Refresh Rate (secs)",
                                    value=5,
                                    callback=refresh_rate_changed,
                                    ),
+			 CheckBox( id="use_blacklist",
+				   label="Filter system process",
+				   state=True,
+				   callback=blacklist_changed,
+				   ),
                          ),
            center=( Table( id="processes",
                            label="Processes",
@@ -346,10 +394,16 @@ app = App( title="Task Manager",
                                    ( "Command Line", "" ),
                                    ),
                            ),
-                    Button( id="kill",
+		    ),
+	   bottom=( Button( id="kill",
                             label="Kill Selected",
                             callback=kill,
                             ),
+		    CheckBox( id="show-info",
+			      label="Show process information",
+			      state=True,
+			      callback=show_info_changed,
+			      ),
                     ),
            )
 app.system = System()
