@@ -1675,9 +1675,10 @@ class App( _EGObject, AutoGenId ):
         self._top_layout = gtk.VBox( False )
         self._mv.add( self._top_layout )
 
+        self._vbox = gtk.VBox( False, self.spacing )
         self._hbox = gtk.HBox( False, self.spacing )
         self._hbox.set_border_width( self.border_width )
-        self._top_layout.pack_start( self._hbox, expand=True, fill=True )
+        self._top_layout.pack_start( self._vbox, expand=True, fill=True )
 
         self.__setup_menus__()
         self.__setup_gui_left__()
@@ -1687,13 +1688,12 @@ class App( _EGObject, AutoGenId ):
         self.__setup_gui_bottom__()
         self.__setup_gui_preferences__()
 
-        self._vbox = gtk.VBox( False, self.spacing )
-
         has_top = bool( self._top.__get_widgets__() )
         has_bottom = bool( self._bottom.__get_widgets__() )
         has_left = bool( self._left.__get_widgets__() )
         has_right = bool( self._right.__get_widgets__() )
         has_center = bool( self._center.__get_widgets__() )
+        has_hl = has_left or has_center or has_right
 
         expand_top = False
         expand_bottom = False
@@ -1708,41 +1708,40 @@ class App( _EGObject, AutoGenId ):
             expand_right = True
 
         # Top and Bottom just expand if there is no center
-        if has_top and not has_center:
+        if has_top and not has_hl:
             expand_top = True
-        if has_bottom and not has_center:
+        if has_bottom and not has_hl:
             expand_bottom = True
 
-        # Create Vertical layout with ( Top | Center | Bottom )
-        has_vl = has_top or has_center or has_bottom
-        if has_vl:
-            if has_top:
-                self._vbox.pack_start( self._top, expand_top, True )
-                if has_center or has_bottom:
-                    self._vbox.pack_start( gtk.HSeparator(), False, True )
+        # Create Horizontal layout with ( Left | Center | Right )
+        if has_hl:
+            if has_left:
+                self._hbox.pack_start( self._left, expand_left, True )
+                if has_center or has_right:
+                    self._hbox.pack_start( gtk.VSeparator(), False, True )
 
             if has_center:
-                self._vbox.pack_start( self._center, expand_center, True )
-                if has_bottom:
-                    self._vbox.pack_start( gtk.HSeparator(), False, True )
+                self._hbox.pack_start( self._center, expand_center, True )
+                if has_right:
+                    self._hbox.pack_start( gtk.VSeparator(), False, True )
 
-            if has_bottom:
-                self._vbox.pack_start( self._bottom, expand_bottom, True )
-
-        # Create Horizontal layout with ( Left | VL | Right )
-        # where VL is Vertical layout created before
-        if has_left:
-            self._hbox.pack_start( self._left, expand_left, True )
-            if has_vl or has_right:
-                self._hbox.pack_start( gtk.VSeparator(), False, True )
-
-        if has_vl:
-            self._hbox.pack_start( self._vbox, True, True )
             if has_right:
-                self._hbox.pack_start( gtk.VSeparator(), False, True )
+                self._hbox.pack_start( self._right, expand_right, True )
 
-        if has_right:
-            self._hbox.pack_start( self._right, expand_right, True )
+        # Create Vertical layout with ( TOP | HL | Bottom )
+        # where HL is Horizontal layout created before
+        if has_top:
+            self._vbox.pack_start( self._top, expand_top, True )
+            if has_hl or has_bottom:
+                self._vbox.pack_start( gtk.HSeparator(), False, True )
+
+        if has_hl:
+            self._vbox.pack_start( self._hbox, True, True )
+            if has_bottom:
+                self._vbox.pack_start( gtk.HSeparator(), False, True )
+
+        if has_bottom:
+            self._vbox.pack_start( self._bottom, expand_bottom, True )
 
 
         if self.statusbar:
@@ -3803,7 +3802,7 @@ class Table( _EGWidget ):
         _EGWidget.__init__( self, id )
         self.editable = editable or False
         self.repositioning = repositioning or False
-        self.__label = str( label or "" )
+        self.__label = label
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
         self.cell_format_func = cell_format_func
@@ -3845,15 +3844,18 @@ class Table( _EGWidget ):
 
 
     def __setup_gui__( self ):
-        self._frame = gtk.Frame( self.label )
-        self._frame.set_name( self.id )
-
         self._vbox = gtk.VBox( False, self.spacing )
         self._vbox.set_border_width( self.spacing )
         self._vbox.set_name( "vbox-%s" % self.id )
 
-        self._frame.add( self._vbox )
-        self._widgets = ( self._frame, )
+        if self.label is not None:
+            self._frame = gtk.Frame( self.label )
+            self._frame.set_name( self.id )
+            self._frame.add( self._vbox )
+            root = self._frame
+        else:
+            root = self._vbox
+        self._widgets = ( root, )
 
         self.__setup_table__()
 
@@ -4351,6 +4353,10 @@ class Table( _EGWidget ):
 
 
     def set_label( self, label ):
+        if self.__label is None:
+            raise ValueError( "You cannot change label of widget created "
+                              "without one. Create it with placeholder! "
+                              "(label='')" )
         self.__label = label
         self._frame.set_label( self.__label )
     # set_label()
