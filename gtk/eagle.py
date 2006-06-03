@@ -3690,7 +3690,7 @@ class Table( _EGWidget ):
 
 
 
-    def __init__( self, id, label, items=None, types=None,
+    def __init__( self, id, label="", items=None, types=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
                   cell_format_func=None,
@@ -5152,6 +5152,13 @@ class Button( _EGWidget ):
         "down",
         "font",
         "color",
+        "media:play",
+        "media:pause",
+        "media:stop",
+        "media:previous",
+        "media:next",
+        "media:forward",
+        "media:rewind",
         )
 
 
@@ -5191,6 +5198,13 @@ class Button( _EGWidget ):
         "down": gtk.STOCK_GO_DOWN,
         "font": gtk.STOCK_SELECT_FONT,
         "color": gtk.STOCK_SELECT_COLOR,
+        "media:play": gtk.STOCK_MEDIA_PLAY,
+        "media:pause": gtk.STOCK_MEDIA_PAUSE,
+        "media:stop": gtk.STOCK_MEDIA_STOP,
+        "media:previous": gtk.STOCK_MEDIA_PREVIOUS,
+        "media:next": gtk.STOCK_MEDIA_NEXT,
+        "media:forward": gtk.STOCK_MEDIA_FORWARD,
+        "media:rewind": gtk.STOCK_MEDIA_REWIND,
         }
 
     def __init__( self, id, label="", stock=None, callback=None ):
@@ -5224,7 +5238,7 @@ class Button( _EGWidget ):
         k = {}
         try:
             k[ "stock" ] = self._gtk_stock_map[ self.stock ]
-        except KeyError:
+        except KeyError, e:
             k[ "label" ] = self.label or self.stock
 
         self._button = gtk.Button( **k )

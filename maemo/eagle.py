@@ -3755,7 +3755,7 @@ class Table( _EGWidget ):
 
 
 
-    def __init__( self, id, label, items=None, types=None,
+    def __init__( self, id, label="", items=None, types=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
                   cell_format_func=None,
@@ -5223,6 +5223,13 @@ class Button( _EGWidget ):
         "down",
         "font",
         "color",
+        "media_play",
+        "media_pause",
+        "media_stop",
+        "media_previous",
+        "media_next",
+        "media_forward",
+        "media_rewind",
         )
 
 
@@ -5262,6 +5269,13 @@ class Button( _EGWidget ):
         "down": gtk.STOCK_GO_DOWN,
         "font": gtk.STOCK_SELECT_FONT,
         "color": gtk.STOCK_SELECT_COLOR,
+        "media_play": gtk.STOCK_MEDIA_PLAY,
+        "media_pause": gtk.STOCK_MEDIA_PAUSE,
+        "media_stop": gtk.STOCK_MEDIA_STOP,
+        "media_previous": gtk.STOCK_MEDIA_PREVIOUS,
+        "media_next": gtk.STOCK_MEDIA_NEXT,
+        "media_forward": gtk.STOCK_MEDIA_FORWARD,
+        "media_rewind": gtk.STOCK_MEDIA_REWIND,
         }
 
     def __init__( self, id, label="", stock=None, callback=None ):
