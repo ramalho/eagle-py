@@ -1,0 +1,90 @@
+% Green Tux Beamer Theme
+% Copyright Gustavo Sverzut Barbieri <barbieri@gmail.com>
+% LICENSE: BSD
+% Based on beamerthemeKDE.sty, by Thiago Macieira <thiago@kde.org>
+
+
+%%%%%% SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% COLORS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Back ground
+\definecolor{bg}{HTML}{FFFFFF}
+% Text foreground
+\definecolor{textfg}{HTML}{000000}
+% Title page title and subtitle
+\definecolor{titlefg}{HTML}{5d7c42}
+\definecolor{subtitlefg}{rgb}{0.5,0.5,0.5}
+% Head slide title, location (section) and sublocation (subsection) colors
+\definecolor{titlebarfg}{HTML}{FCC310}
+\definecolor{locationbarfg}{HTML}{000000}
+\definecolor{sublocationbarfg}{HTML}{666666}
+% linkcolor is used at TOC
+\definecolor{linkcolor}{HTML}{263611}
+\definecolor{urlcolor}{HTML}{83C720} %86B647}
+% Structure
+\definecolor{structure}{HTML}{83C720}
+
+%%%%%% END SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usetheme{Rochester}
+
+\pgfdeclareimage[width=12.8cm,interpolate=true]{img-head}{head}
+\pgfdeclareimage[width=2cm,interpolate=true]{indt-logo}{indt}
+
+\beamer@headheight=0.1\paperwidth
+
+\setbeamercolor*{normal text}{fg=textfg,bg=bg}
+\setbeamercolor*{Title bar}{fg=titlebarfg}
+\setbeamercolor*{Location bar}{fg=locationbarfg}
+
+\setbeamercolor*{frametitle}{parent=Title bar}
+\setbeamercolor*{title}{fg=titlefg}
+\setbeamercolor*{subtitle}{fg=subtitlefg}
+
+\usecolortheme[named=structure]{structure}
+
+\setbeamerfont{section in head/foot}{size=\scriptsize,series=\bfseries}
+\setbeamerfont{frametitle}{size=\Large}
+\setbeamerfont{title}{size=\large,series=\bfseries}
+\setbeamerfont{subtitle}{size=\small,series=\mdseries}
+\setbeamerfont{author}{size=\normalsize,series=\bfseries}
+\setbeamerfont{institute}{size=\normalsize}
+\setbeamerfont{date}{size=\scriptsize}
+
+\setbeamertemplate{frametitle}
+{
+  \vskip -1.0cm
+  \hskip -0.8cm
+  % simulate shadow
+  {\color{black}\textbf{\insertframetitle ~}}
+  \vskip -0.66cm
+  \hskip -0.76cm
+  % simulate shadow
+  {\color[rgb]{.9,.9,.9}\textbf{\insertframetitle ~}}
+
+  \vskip -0.46cm
+  \hskip -0.78cm
+  \textbf{\insertframetitle ~}
+}
+
+\setbeamertemplate{headline}
+{
+   \pgfuseimage{img-head}
+
+   \vskip -0.4cm
+   \hskip 0.2cm
+   \begin{beamercolorbox}[
+     wd=\paperwidth,
+     ht=0.5cm]{Location bar}
+     \usebeamerfont{section in head/foot}%
+     \insertsectionhead%
+     % print delimeter just if there is a subsection defined
+     \def\delimiter{::}%
+     \if\insertsubsectionhead\@empty\else\delimiter\fi%
+     {\color{sublocationbarfg}\insertsubsectionhead}
+   \end{beamercolorbox}
+
+   \vskip 6.5cm\hskip 0.2cm%
+   \pgfuseimage{indt-logo}%
+   \vskip -7.6cm
+}
