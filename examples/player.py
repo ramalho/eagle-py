@@ -37,7 +37,7 @@ class Player( object ):
 
 
     def play( self, filename ):
-        self.bin.props.uri = "file://%s" % filename
+        self.bin.set_property( "uri", "file://%s" % filename )
         self.bin.set_state( gst.STATE_PLAYING )
         self.filename = filename
         self.is_playing = True
@@ -46,7 +46,7 @@ class Player( object ):
 
     def stop( self ):
         self.bin.set_state( gst.STATE_NULL )
-        self.bin.props.uri = ""
+        self.bin.set_property( "uri", "" )
         self.filename = None
         self.is_playing = False
     # stop()
