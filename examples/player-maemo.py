@@ -16,7 +16,8 @@ class Player( object ):
         self.is_playing = False
         self.filename = None
 
-        self.bin = gst.parse_launch( "playbin" )
+        self.bin = gst.parse_launch( "gnomevfssrc name=source ! dspmp3sink" )
+        self.source = self.bin.get_by_name( "source" )
         self.bus = self.bin.get_bus()
         self.bus.enable_sync_message_emission()
         self.bus.add_signal_watch()
@@ -37,7 +38,7 @@ class Player( object ):
 
 
     def play( self, filename ):
-        self.bin.set_property( "uri", "file://%s" % filename )
+        self.source.set_property( "location", "file://%s" % filename )
         self.bin.set_state( gst.STATE_PLAYING )
         self.filename = filename
         self.is_playing = True
@@ -46,7 +47,7 @@ class Player( object ):
 
     def stop( self ):
         self.bin.set_state( gst.STATE_NULL )
-        self.bin.set_property( "uri", "" )
+        self.source.set_property( "location", "" )
         self.filename = None
         self.is_playing = False
     # stop()
