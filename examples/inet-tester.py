@@ -119,44 +119,53 @@ def run_tests( app, button ):
 
 app = App( title="Network Tester",
            help="""
-=> Direct IP Connection Tests:
+<h3>Direct IP Connection Tests</h3>
+<p>
+These tests will attempt to connect to IP address at given port.
+</p>
+<p>
+If they fail, you cannot reach the other peer and you may check
+your cables, router, modem and the other peer to ensure it's ok.
+</p>
+<p>
+If they succeeds but you cannot resolve names (see Name Resolution
+Tests), then you have a problem with your DNS (Domain Name
+Service), it may be invalid/incorrect IP address or it's not
+reachable.
+</p>
+<p>
+If they are marked as "slow", then connections are taking too long,
+so web surfing may be slow even if download rates are high.
+</p>
 
-   These tests will attempt to connect to IP address at given port.
+<h3>Name Resolution Tests</h3>
+<p>
+These tests will try to resolve (convert) given DNS (Domain Name
+Service), a easy to remember name like www.google.com to the
+number computers use to identify themselves, like 64.233.179.99.
+</p>
+<p>
+This process occurs every time you try to access another peer given
+its name, like browsing http://www.google.com.
+</p>
+<p>
+If Direct IP Connection Tests fails, this will probably fail too.
+</p>
+<p>
+If Direct IP Connection Tests succeeds and these fails, then you need
+to check your DNS servers.
+</p>
 
-   If they fail, you cannot reach the other peer and you may check
-   your cables, router, modem and the other peer to ensure it's ok.
-
-   If they succeeds but you cannot resolve names (see Name Resolution
-   Tests), then you have a problem with your DNS (Domain Name
-   Service), it may be invalid/incorrect IP address or it's not
-   reachable.
-
-   If they are marked as "slow", then connections are taking too long,
-   so web surfing may be slow even if download rates are high.
-
-
-=> Name Resolution Tests:
-
-   These tests will try to resolve (convert) given DNS (Domain Name
-   Service), a easy to remember name like www.google.com to the
-   number computers use to identify themselves, like 64.233.179.99.
-
-   This process occurs every time you try to access another peer given
-   its name, like browsing http://www.google.com.
-
-   If Direct IP Connection Tests fails, this will probably fail too.
-
-   If Direct IP Connection Tests succeeds and these fails, then you need
-   to check your DNS servers.
-
-
-=> General Usage:
-
-   You may run pre-defined tests just click "Run Tests" button.
-
-   To clear previous results, just hit "Clear Results".
-
-   To add new tests or edit existing, use buttons below tables.
+<h3>General Usage</h3>
+<p>
+You may run pre-defined tests just click "Run Tests" button.
+</p>
+<p>
+To clear previous results, just hit "Clear Results".
+</p>
+<p>
+To add new tests or edit existing, use buttons below tables.
+</p>
 """,
            left=( Button( "run",
                           label="Run Tests",

@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import pygst
+pygst.require( "0.10" )
+
 import gst
 from eagle import *
 
@@ -10,44 +13,52 @@ class Player( object ):
     STATE_PLAYING = gst.STATE_PLAYING
 
     def __init__( self, callback=None ):
-        self.bin = gst.parse_launch( "playbin" )
-        if callback:
-            def state_changed( bin, old, new ):
-                callback( self, new )
-            # state_changed()
-            self.bin.connect( "state-change", state_changed )
-
-            def eos( bin ):
-                callback( self, self.STATE_STOPPED )
-            # eos()
-            self.bin.connect( "eos", eos )
+        self.is_playing = False
         self.filename = None
+
+        self.bin = gst.parse_launch( "playbin" )
+        self.bus = self.bin.get_bus()
+        self.bus.enable_sync_message_emission()
+        self.bus.add_signal_watch()
+
+        if callback:
+            def on_message( bus, message ):
+                t = message.type
+                if   t == gst.MESSAGE_EOS:
+                    self.is_playing = False
+                    self.filename = None
+                    callback( self )
+                elif t == gst.MESSAGE_ERROR:
+                    err, debug = message.parse_error()
+                    print "Error: %s" % err, debug
+            # on_message()
+            self.bus.connect( "message", on_message )
     # __init__()
 
 
     def play( self, filename ):
-        self.filename = filename
         self.bin.props.uri = "file://%s" % filename
         self.bin.set_state( gst.STATE_PLAYING )
+        self.filename = filename
+        self.is_playing = True
     # play()
 
 
     def stop( self ):
         self.bin.set_state( gst.STATE_NULL )
+        self.bin.props.uri = ""
         self.filename = None
+        self.is_playing = False
     # stop()
 
 
-    def is_playing( self ):
-        return self.bin.get_state() == gst.STATE_PLAYING
-    # is_playing()
-
-
     def pause( self ):
-        if self.is_playing():
+        if self.is_playing:
             self.bin.set_state( gst.STATE_PAUSED )
         else:
             self.bin.set_state( gst.STATE_PLAYING )
+
+        self.is_playing = not self.is_playing
     # pause()
 # Player
 
@@ -65,17 +76,35 @@ def play( app, button ):
         app[ "play" ].set_inactive()
         app.player.stop()
         app.player.play( fname )
+        app[ "play" ].set_inactive()
+        app[ "pause" ].set_active()
+        app[ "stop" ].set_active()
+        app[ "now_playing" ] = "Playing %s" % app.player.filename
 # play()
 
 
 def pause( app, button ):
     app.player.pause()
+    if app.player.is_playing:
+        msg = "Playing %s" % app.player.filename
+        app[ "play" ].set_inactive()
+        app[ "pause" ].set_active()
+        app[ "stop" ].set_active()
+    else:
+        msg = "Paused %s" % app.player.filename
+        app[ "play" ].set_inactive()
+        app[ "pause" ].set_active()
+        app[ "stop" ].set_active()
+    app[ "now_playing" ] = msg
 # pause()
 
 
 def stop( app, button ):
     app.player.stop()
     app[ "play" ].set_active( bool( app[ "playlist" ].selected() ) )
+    app[ "pause" ].set_inactive()
+    app[ "stop" ].set_inactive()
+    app[ "now_playing" ] = "Nothing is playing!"
 # stop()
 
 
@@ -85,22 +114,13 @@ def playlist_selected( app, table, rows ):
 # playlist_selected()
 
 
-def player_state_changed( player, state ):
+def end_of_stream( player ):
     app = get_app_by_id( "music_player" )
-    msg = ""
-    if state == player.STATE_PLAYING:
-        msg = "Playing %s" % player.filename
-        app[ "pause" ].set_active()
-        app[ "stop" ].set_active()
-    elif state == player.STATE_PAUSED:
-        msg = "Paused %s" % player.filename
-    else:
-        msg = "Nothing is Playing!"
-        app[ "pause" ].set_inactive()
-        app[ "stop" ].set_inactive()
-
-    app[ "now_playing" ] = msg
-# player_state_changed()
+    app[ "play" ].set_active( bool( app[ "playlist" ].selected() ) )
+    app[ "pause" ].set_inactive()
+    app[ "stop" ].set_inactive()
+    app[ "now_playing" ] = "Nothing is playing!"
+# end_of_stream()
 
 
 app = App( id="music_player",
@@ -135,7 +155,7 @@ app = App( id="music_player",
                     )
            )
 
-app.player = Player( callback=player_state_changed )
+app.player = Player( callback=end_of_stream )
 app[ "play" ].set_inactive()
 app[ "pause" ].set_inactive()
 app[ "stop" ].set_inactive()
