@@ -3693,7 +3693,7 @@ class Table( _EGWidget ):
     def __init__( self, id, label="", items=None, types=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
-                  cell_format_func=None,
+                  hidden_columns_indexes=None, cell_format_func=None,
                   selection_callback=None, data_changed_callback=None ):
         """Table constructor.
 
@@ -3752,6 +3752,17 @@ class Table( _EGWidget ):
             raise ValueError( \
                 "expand_columns_indexes must be a sequence of integers" )
         self.expand_columns_indexes = expand_columns_indexes
+
+        if isinstance( hidden_columns_indexes, ( int, long ) ):
+            hidden_columns_indexes = ( hidden_columns_indexes, )
+        elif isinstance( hidden_columns_indexes, ( tuple, list ) ):
+            hidden_columns_indexes = tuple( hidden_columns_indexes )
+        elif hidden_columns_indexes is None:
+            hidden_columns_indexes = tuple()
+        else:
+            raise ValueError( \
+                "hidden_columns_indexes must be a sequence of integers" )
+        self.hidden_columns_indexes = hidden_columns_indexes
 
         if not ( types or items ):
             raise ValueError( "Must provide items or types!" )
@@ -4218,6 +4229,12 @@ class Table( _EGWidget ):
                 col.set_expand( True )
             else:
                 col.set_expand( False )
+
+            if i not in self.hidden_columns_indexes:
+                col.set_visible( True )
+            else:
+                col.set_visible( False )
+
             self._table.append_column( col )
 
 
