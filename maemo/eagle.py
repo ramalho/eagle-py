@@ -127,6 +127,8 @@ gtk.gdk.threads_init() # enable threads
 
 _apps = {}
 
+_prg = hildon.Program()
+
 
 def _gen_ro_property( name, doc="" ):
     """Generates a Read-Only property.
@@ -1664,16 +1666,13 @@ class App( _EGObject, AutoGenId ):
 
 
     def __setup_gui__( self ):
-        self._win = hildon.App()
-        self._win.set_name( self.id )
+        self._win = hildon.Window()
         self._win.set_title( self.title )
-
-        self._mv = hildon.AppView( self.title )
-        self._win.set_appview( self._mv )
-        self._mv.set_fullscreen_key_allowed( True )
+        _prg.add_window( self._win )
+        self._win_in_fullscreen = False
 
         self._top_layout = gtk.VBox( False )
-        self._mv.add( self._top_layout )
+        self._win.add( self._top_layout )
 
         self._vbox = gtk.VBox( False, self.spacing )
         self._hbox = gtk.HBox( False, self.spacing )
@@ -1761,7 +1760,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def __setup_menus__( self ):
-        self._menu = self._mv.get_menu()
+        self._menu = gtk.Menu()
 
         mi = gtk.MenuItem( "Help" )
         mi.connect( "activate", lambda *x: self.show_help_dialog() )
@@ -1784,6 +1783,8 @@ class App( _EGObject, AutoGenId ):
         self._menu.append( mi )
 
         self._menu.show_all()
+
+        self._win.set_menu( self._menu )
     # __setup_menus__()
 
 
@@ -1820,6 +1821,23 @@ class App( _EGObject, AutoGenId ):
 
     def __setup_connections__( self ):
         self._win.connect( "delete_event", self.__delete_event__ )
+
+
+        def on_window_state_event( widget, event, *args ):
+            self._win_in_fullscreen = bool( event.new_window_state &
+                                            gtk.gdk.WINDOW_STATE_FULLSCREEN )
+        # on_window_state_event()
+        self._win.connect( "window-state-event", on_window_state_event )
+
+
+        def on_key_press_event( widget, event, *args ):
+            if event.keyval == gtk.keysyms.F6:
+                if self._win_in_fullscreen:
+                    self._win.unfullscreen()
+                else:
+                    self._win.fullscreen()
+        # on_key_press_event()
+        self._win.connect( "key-press-event", on_key_press_event );
     # __setup_connections__()
 
 
@@ -2994,9 +3012,8 @@ class IntSpin( Spin ):
 
         if self.step is not None:
             sys.stderr.write( "Maemo HildonNumberEditor doesn't support step\n" )
-
         self._entry = hildon.NumberEditor( vmin, vmax )
-        self._entry.set_name( self.id )
+        ## self._entry.set_name( self.id )
         if self.value:
             self._entry.set_value( self.value )
 
@@ -5223,13 +5240,13 @@ class Button( _EGWidget ):
         "down",
         "font",
         "color",
-        "media_play",
-        "media_pause",
-        "media_stop",
-        "media_previous",
-        "media_next",
-        "media_forward",
-        "media_rewind",
+        "media:play",
+        "media:pause",
+        "media:stop",
+        "media:previous",
+        "media:next",
+        "media:forward",
+        "media:rewind",
         )
 
 
@@ -5269,13 +5286,13 @@ class Button( _EGWidget ):
         "down": gtk.STOCK_GO_DOWN,
         "font": gtk.STOCK_SELECT_FONT,
         "color": gtk.STOCK_SELECT_COLOR,
-        "media_play": gtk.STOCK_MEDIA_PLAY,
-        "media_pause": gtk.STOCK_MEDIA_PAUSE,
-        "media_stop": gtk.STOCK_MEDIA_STOP,
-        "media_previous": gtk.STOCK_MEDIA_PREVIOUS,
-        "media_next": gtk.STOCK_MEDIA_NEXT,
-        "media_forward": gtk.STOCK_MEDIA_FORWARD,
-        "media_rewind": gtk.STOCK_MEDIA_REWIND,
+        "media:play": gtk.STOCK_MEDIA_PLAY,
+        "media:pause": gtk.STOCK_MEDIA_PAUSE,
+        "media:stop": gtk.STOCK_MEDIA_STOP,
+        "media:previous": gtk.STOCK_MEDIA_PREVIOUS,
+        "media:next": gtk.STOCK_MEDIA_NEXT,
+        "media:forward": gtk.STOCK_MEDIA_FORWARD,
+        "media:rewind": gtk.STOCK_MEDIA_REWIND,
         }
 
     def __init__( self, id, label="", stock=None, callback=None ):
@@ -5309,7 +5326,7 @@ class Button( _EGWidget ):
         k = {}
         try:
             k[ "stock" ] = self._gtk_stock_map[ self.stock ]
-        except KeyError:
+        except KeyError, e:
             k[ "label" ] = self.label or self.stock
 
         self._button = gtk.Button( **k )
