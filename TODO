@@ -3,6 +3,20 @@ These are items to be done in next versions of Eagle.
 If Eagle doesn't provide the features you want and they are not
 in this file, please contact barbieri@gmail.com and explain your needs.
 
+BUGS TO FIX
+===========
+
+ * Widgets alignment know about layout. Ie: _EGWidLabelEntry's label
+   would align to the right in vertical and to the left in horizontal.
+ * Fix remaining space to hold horizontal scrollbar even when there is
+   no scrollbar visible (probably bug with GTK).
+
+
+FEATURES
+========
+
  * Menubar
  * Toolbar
+ * User defined areas and layouts
+ * Dynamic UI composition (add/remove widgets after App is created)
  * Automatic thread handling
