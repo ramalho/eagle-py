@@ -1466,7 +1466,7 @@ class App( _EGObject, AutoGenId ):
 
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
-                  preferences=None,
+                  preferences=None, window_size=( 800, 600 ),
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1488,6 +1488,8 @@ class App( _EGObject, AutoGenId ):
                window's bottom.
         @param preferences: list of widgets to be laid out vertically in
                another window, this can be shown with L{PreferencesButton}.
+        @param window_size: tuple of ( width, height ) or None to use the
+               minimum size.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1517,6 +1519,7 @@ class App( _EGObject, AutoGenId ):
         self.bottom = bottom
         self.center = center
         self.preferences = preferences
+        self.window_size = window_size
         self.author = _str_tuple( author )
         self.description = _str_tuple( description )
         self.help = _str_tuple( help )
@@ -1659,7 +1662,8 @@ class App( _EGObject, AutoGenId ):
         self._win = gtk.Window( gtk.WINDOW_TOPLEVEL )
         self._win.set_name( self.id )
         self._win.set_title( self.title )
-        self._win.set_default_size( 800, 600 )
+        if self.window_size:
+            self._win.set_default_size( *self.window_size )
 
         self._top_layout = gtk.VBox( False )
         self._win.add( self._top_layout )
