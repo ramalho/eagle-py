@@ -3680,7 +3680,7 @@ class Table( _EGWidget ):
 
     class CellFormat( object ):
         __slots__ = ( "fgcolor", "bgcolor", "font", "bold",
-                      "italic", "underline", "strike" )
+                      "italic", "underline", "strike", "contents" )
         def __init__( self, **kargs ):
             for a in self.__slots__:
                 v = kargs.get( a, None )
@@ -3873,7 +3873,7 @@ class Table( _EGWidget ):
 
     def __setup_connections_editable__( self ):
         def edit_dialog( data ):
-            title = "Edit data from table %s" % self.label
+            title = "Edit data from table %s" % ( self.label or self.id )
             buttons = ( gtk.STOCK_OK, gtk.RESPONSE_ACCEPT,
                         gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT )
             d = gtk.Dialog( title=title,
@@ -3884,10 +3884,13 @@ class Table( _EGWidget ):
             l = len( data )
             t = gtk.Table( l, 2 )
             t.set_border_width( 0 )
-            w = []
+            w = {}
             for i, v in enumerate( data ):
+                if i in self.hidden_columns_indexes:
+                    continue
+
                 title = self._table.get_column( i ).get_title()
-                label = gtk.Label( title )
+                label = gtk.Label( "%s:" % title )
                 label.set_justify( gtk.JUSTIFY_RIGHT )
                 label.set_alignment( xalign=1.0, yalign=0.5 )
 
@@ -3915,12 +3918,7 @@ class Table( _EGWidget ):
                     entry = gtk.Entry()
                     entry.set_text( data[ i ] )
                 else:
-                    try:
-                        name = tp.__name__
-                    except:
-                        name = tp
-                    raise ValueError( "Unsuported column (%d) type: %s" %
-                                      ( i, name ) )
+                    entry = gtk.Label( str( data[ i ] ) )
 
                 t.attach( label, 0, 1, i, i + 1,
                           xoptions=gtk.FILL,
@@ -3928,7 +3926,7 @@ class Table( _EGWidget ):
                 t.attach( entry, 1, 2, i, i + 1,
                           xoptions=gtk.EXPAND|gtk.FILL,
                           xpadding=self.spacing, ypadding=self.spacing )
-                w.append( entry )
+                w[ i ] = entry
 
             t.show_all()
 
@@ -3953,23 +3951,22 @@ class Table( _EGWidget ):
                 result = []
                 for i in xrange( len( data ) ):
                     tp = self.types[ i ]
-                    wid = w[ i ]
-                    if   tp == bool:
-                        r = bool( wid.get_active() )
-                    elif tp in ( int, long ):
-                        r = tp( wid.get_value() )
-                    elif tp == float:
-                        r = float( wid.get_value() )
-                    elif tp in ( str, unicode ):
-                        r = tp( wid.get_text() )
+
+                    if i not in w:
+                        r = data[ i ]
                     else:
-                        try:
-                            name = tp.__name__
-                        except:
-                            name = tp
-                            raise ValueError( \
-                                "Unsuported column (%d) type: %s" %
-                                ( i, name ) )
+                        wid = w[ i ]
+
+                        if   tp == bool:
+                            r = bool( wid.get_active() )
+                        elif tp in ( int, long ):
+                            r = tp( wid.get_value() )
+                        elif tp == float:
+                            r = float( wid.get_value() )
+                        elif tp in ( str, unicode ):
+                            r = tp( wid.get_text() )
+                        else:
+                            r = data[ i ]
                     result.append( r )
 
                 return result
@@ -3987,11 +3984,16 @@ class Table( _EGWidget ):
                     v = ''
                 else:
                     try:
-                        name = t.__name__
-                    except:
-                        name = t
-                    raise ValueError( "Unsuported column (%d) type: %s" %
-                                      ( i, name ) )
+                        v = t.default_value()
+                    except AttributeError:
+                        try:
+                            name = t.__name__
+                        except:
+                            name = t
+                        raise ValueError( ( "Unsuported column (%d) type: %s."
+                                            " Type should provide "
+                                            "default_value() static method." )
+                                          % ( i, name ) )
                 entry.append( v )
             result = edit_dialog( entry )
             if result:
@@ -4102,6 +4104,102 @@ class Table( _EGWidget ):
     # __setup_connections_selection__()
 
 
+    def __create_column_cell_format_func__( self, col, cell_rend ):
+        def get_color( c ):
+            return Canvas.__to_gtk_color__( Canvas.__color_from__( c ))
+        # get_color()
+
+        def func( column, cell_renderer, model, itr, col_idx ):
+            row_idx = model.get_path( itr )[ 0 ]
+            value = model.get_value( itr, col_idx )
+            cf = self.cell_format_func( self.app, self,
+                                        row_idx, col_idx, value )
+            if cf is None:
+                cf = Table.CellFormat()
+
+            bgcolor = cf.bgcolor
+            if bgcolor is not None:
+                bgcolor = get_color( bgcolor )
+            else:
+                bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
+            cell_renderer.set_property( "cell-background-gdk",
+                                        bgcolor )
+
+            if isinstance( cell_renderer, gtk.CellRendererText ):
+                v = None
+                if cf.contents is not None:
+                    v = model[ itr ][ col_idx ]
+
+                    if callable( cf.contents ):
+                        v = cf.contents( v )
+                    else:
+                        v = cf.contents
+
+                if callable( cell_renderer.model_view_conv ):
+                    if v is None:
+                        v = model[ itr ][ col_idx ]
+                    v = cell_renderer.model_view_conv( v )
+
+                if v is not None:
+                    cell_renderer.set_property( "text", v )
+
+                font = cf.font
+                if font is not None:
+                    font = pango.FontDescription( font )
+                else:
+                    font = self._table.style.font_desc
+                cell_renderer.set_property( "font-desc", font )
+
+                fgcolor = cf.fgcolor
+                if fgcolor is not None:
+                    fgcolor = get_color( fgcolor )
+                else:
+                    fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
+                cell_renderer.set_property( "foreground-gdk", fgcolor )
+
+                if cf.underline:
+                    underline = pango.UNDERLINE_SINGLE
+                else:
+                    underline = pango.UNDERLINE_NONE
+                cell_renderer.set_property( "underline", underline )
+
+                if cf.bold:
+                    bold = pango.WEIGHT_BOLD
+                else:
+                    bold = pango.WEIGHT_NORMAL
+                cell_renderer.set_property( "weight", bold )
+
+                if cf.italic:
+                    italic = pango.STYLE_ITALIC
+                else:
+                    italic = pango.STYLE_NORMAL
+                cell_renderer.set_property( "style", italic )
+
+                cell_renderer.set_property( "strikethrough",
+                                            bool( cf.strike ) )
+
+            elif isinstance( cell_renderer, gtk.CellRendererToggle ):
+                v = None
+                if cf.contents is not None:
+                    v = model[ itr ][ col_idx ]
+
+                    if callable( cf.contents ):
+                        v = cf.contents( v )
+                    else:
+                        v = cf.contents
+
+                if callable( cell_renderer.model_view_conv ):
+                    if v is None:
+                        v = model[ itr ][ col_idx ]
+                    v = cell_renderer.model_view_conv( v )
+
+                if v is not None:
+                    cell_renderer.set_property( "active", v )
+        # func()
+        return func
+    # __create_column_cell_format_func__()
+
+
     def __setup_table__( self ):
         self.__setup_model__()
         self._table = gtk.TreeView( self._model )
@@ -4135,26 +4233,25 @@ class Table( _EGWidget ):
             if   t == bool:
                 cell_rend = gtk.CellRendererToggle()
                 props = { "active": i }
+                cell_rend.model_view_conv = None
                 if self.editable:
                     cell_rend.set_property( "activatable", True)
                     cell_rend.connect( "toggled", toggled, i )
 
             elif t in ( int, long, float, str, unicode ):
                 cell_rend = gtk.CellRendererText()
+                props = { "text": i }
+                cell_rend.model_view_conv = None
                 if self.editable:
                     cell_rend.set_property( "editable", True )
                     cell_rend.connect( "edited", edited, i )
 
-                props = { "text": i }
                 if t in ( int, long, float ):
                     cell_rend.set_property( "xalign", 1.0 )
             else:
-                try:
-                    name = t.__name__
-                except:
-                    name = t
-                raise ValueError( "Unsuported column (%d) type: %s" %
-                                  ( i, name ) )
+                cell_rend = gtk.CellRendererText()
+                props = {}
+                cell_rend.model_view_conv = str
 
             try:
                 title = self.headers[ i ]
@@ -4165,65 +4262,19 @@ class Table( _EGWidget ):
             col.set_resizable( True )
             col.set_sort_column_id( i )
             col.connect( "clicked", column_clicked )
+
             if self.cell_format_func:
-                def get_color( c ):
-                    return Canvas.__to_gtk_color__( Canvas.__color_from__( c ))
-                # get_color()
+                f = self.__create_column_cell_format_func__( col, cell_rend )
+                col.set_cell_data_func( cell_rend, f, i )
 
-                def func( column, cell_renderer, model, itr, col_idx ):
-                    row_idx = model.get_path( itr )[ 0 ]
-                    value = model.get_value( itr, col_idx )
-                    cf = self.cell_format_func( self.app, self,
-                                                row_idx, col_idx, value )
-                    if cf is None:
-                        cf = Table.CellFormat()
+            elif callable( cell_rend.model_view_conv ):
+                def f( column, cell_rend, model, iter, model_idx ):
+                    o = model[ iter ][ model_idx ]
+                    v = cell_rend.model_view_conv( o )
+                    cell_rend.set_property( "text", v )
+                # f()
+                col.set_cell_data_func( cell_rend, f, i )
 
-                    bgcolor = cf.bgcolor
-                    if bgcolor is not None:
-                        bgcolor = get_color( bgcolor )
-                    else:
-                        bgcolor = self._table.style.base[ gtk.STATE_NORMAL ]
-                    cell_renderer.set_property( "cell-background-gdk",
-                                                bgcolor )
-
-                    if isinstance( cell_renderer, gtk.CellRendererText ):
-                        font = cf.font
-                        if font is not None:
-                            font = pango.FontDescription( font )
-                        else:
-                            font = self._table.style.font_desc
-                        cell_renderer.set_property( "font-desc", font )
-
-                        fgcolor = cf.fgcolor
-                        if fgcolor is not None:
-                            fgcolor = get_color( fgcolor )
-                        else:
-                            fgcolor = self._table.style.text[ gtk.STATE_NORMAL ]
-                        cell_renderer.set_property( "foreground-gdk", fgcolor )
-
-                        if cf.underline:
-                            underline = pango.UNDERLINE_SINGLE
-                        else:
-                            underline = pango.UNDERLINE_NONE
-                        cell_renderer.set_property( "underline", underline )
-
-                        if cf.bold:
-                            bold = pango.WEIGHT_BOLD
-                        else:
-                            bold = pango.WEIGHT_NORMAL
-                        cell_renderer.set_property( "weight", bold )
-
-                        if cf.italic:
-                            italic = pango.STYLE_ITALIC
-                        else:
-                            italic = pango.STYLE_NORMAL
-                        cell_renderer.set_property( "style", italic )
-
-                        cell_renderer.set_property( "strikethrough",
-                                                    bool( cf.strike ) )
-                # func()
-                col.set_cell_data_func( cell_rend, func, i )
-            # endif cell_format_func
 
             if i in self.expand_columns_indexes:
                 col.set_expand( True )
@@ -4275,12 +4326,8 @@ class Table( _EGWidget ):
             elif t in ( str, unicode ):
                 gtk_types.append( gobject.TYPE_STRING )
             else:
-                try:
-                    name = t.__name__
-                except:
-                    name = t
-                raise ValueError( "Unsuported column (%d) type: %s" %
-                                  ( i, name ) )
+                gtk_types.append( gobject.TYPE_PYOBJECT )
+
         self._model = gtk.ListStore( *gtk_types )
 
         def sort_fn( model, itr1, itr2, id ):

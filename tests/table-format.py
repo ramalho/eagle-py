@@ -3,6 +3,13 @@
 from eagle import *
 
 def cell_format_func( app, table, row, col, value ):
+    if row == 4:
+        if col == 1:
+            return Table.CellFormat( contents=True )
+        elif col == 2:
+            return Table.CellFormat( contents=lambda x: x * 5 )
+        elif col == 3:
+            return Table.CellFormat( contents="This is a fake content" )
     if col == 2:
         if value < 0:
             return Table.CellFormat( bgcolor="red" )
@@ -32,7 +39,8 @@ App( title="Test Table with Cell Format",
                    items=( ( "a", True, 1.0, "Good" ),
                            ( "b", False, 2.0, "Bad", ),
                            ( "c", True, -1.0, "Medium" ),
-                           ( "d", False, 0.0, "None" ) ),
+                           ( "d", False, 0.0, "None" ),
+                           ( "modified", False, 1.2, "Bla" ) ),
                    cell_format_func=cell_format_func,
                    )
      )
