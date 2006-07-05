@@ -237,7 +237,13 @@ class _Table( gtk.Table ):
         else:
             self.resize( n, 2 )
 
+        if self.horizontal:
+            orientation = _EGWidget.ORIENTATION_HORIZONTAL
+        else:
+            orientation = _EGWidget.ORIENTATION_VERTICAL
+
         for idx, c in enumerate( self.children ):
+            c.__configure_orientation__( orientation )
             w = c.__get_widgets__()
             xrm, yrm = c.__get_resize_mode__()
 
@@ -720,6 +726,14 @@ class _EGWidget( _EGObject ):
         """
         return self._widgets
     # __get_widgets__()
+
+
+    ORIENTATION_VERTICAL = 0
+    ORIENTATION_HORIZONTAL = 1
+    def __configure_orientation__( self, setting ):
+        pass
+    # __configure_orientation__()
+
 
 
     def set_active( self, active=True ):
@@ -1346,13 +1360,22 @@ class _EGWidLabelEntry( _EGDataWidget ):
     def __setup_gui__( self ):
         if self.__label is not None:
             self._label = gtk.Label( self.__label )
-            self._label.set_justify( gtk.JUSTIFY_RIGHT )
-            self._label.set_alignment( xalign=1.0, yalign=0.5 )
             self._label.set_mnemonic_widget( self._entry )
             self._widgets = ( self._label, self._entry )
         else:
             self._widgets = ( self._entry, )
     # __setup_gui__()
+
+
+    def __configure_orientation__( self, setting ):
+        if self.label:
+            if   setting == self.ORIENTATION_VERTICAL:
+                self._label.set_justify( gtk.JUSTIFY_RIGHT )
+                self._label.set_alignment( xalign=1.0, yalign=0.5 )
+            elif setting == self.ORIENTATION_HORIZONTAL:
+                self._label.set_justify( gtk.JUSTIFY_LEFT )
+                self._label.set_alignment( xalign=0.0, yalign=1.0 )
+    # __configure_orientation__()
 
 
     def get_value( self ):
