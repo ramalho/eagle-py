@@ -2759,6 +2759,11 @@ class _MultiLineEntry( gtk.ScrolledWindow ):
         b = self.textview.get_buffer()
         return b.get_text( b.get_start_iter(), b.get_end_iter() )
     # get_text()
+
+
+    def set_editable( self, setting ):
+        self.textview.set_editable( setting )
+    # set_editable()
 # _MultiLineEntry
 gobject.signal_new( "changed",
                     _MultiLineEntry,
@@ -2778,12 +2783,13 @@ class Entry( _EGWidLabelEntry ):
     multiline = _gen_ro_property( "multiline" )
 
     def __init__( self, id, label="", value="", callback=None,
-                  persistent=False, multiline=False ):
+                  editable=True, persistent=False, multiline=False ):
         """Entry constructor.
 
         @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content.
+        @param editable: if this field is editable by user.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
                Function will receive as parameters:
@@ -2797,6 +2803,7 @@ class Entry( _EGWidLabelEntry ):
         self.value = value
         self.callback = _callback_tuple( callback )
         self.multiline = bool( multiline )
+        self._editable = editable
 
         _EGWidLabelEntry.__init__( self, id, persistent, label )
 
@@ -2813,6 +2820,7 @@ class Entry( _EGWidLabelEntry ):
 
         self._entry.set_name( self.id )
         self._entry.set_text( self.value )
+        self.set_editable( self._editable )
 
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
@@ -2837,6 +2845,19 @@ class Entry( _EGWidLabelEntry ):
     def set_value( self, value ):
         self._entry.set_text( str( value ) )
     # set_value()
+
+
+    def set_editable( self, value ):
+        self._editable = bool( value )
+        self._entry.set_editable( self._editable )
+    # set_editable()
+
+
+    def get_editable( self ):
+        return self._editable
+    # set_editable()
+
+    editable = property( get_editable, set_editable )
 
 
     def __get_resize_mode__( self ):
