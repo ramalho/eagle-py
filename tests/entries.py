@@ -10,6 +10,11 @@ def changed( app, entry, value ):
 App( title="Entries Test",
      center=( Entry( id="single" ),
               Entry( id="multi", multiline=True ),
+              Entry( id="non-editable",
+                     label="non-editable", value="Value", editable=False ),
+              Entry( id="non-editable-multi",
+                     label="non-editable", value="Value", editable=False,
+                     multiline=True ),
               ),
      data_changed_callback=changed,
      )
