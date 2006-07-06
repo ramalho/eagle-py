@@ -4055,6 +4055,9 @@ class Table( _EGWidget ):
                 elif tp in ( str, unicode ):
                     entry = gtk.Entry()
                     entry.set_text( data[ i ] )
+                elif tp == Image:
+                    entry = gtk.Image()
+                    entry.set_from_pixbuf( data[ i ].__get_gtk_pixbuf__() )
                 else:
                     entry = gtk.Label( str( data[ i ] ) )
 
@@ -4333,6 +4336,24 @@ class Table( _EGWidget ):
 
                 if v is not None:
                     cell_renderer.set_property( "active", v )
+
+            elif isinstance( cell_renderer, gtk.CellRendererPixbuf ):
+                v = None
+                if cf.contents is not None:
+                    v = model[ itr ][ col_idx ]
+
+                    if callable( cf.contents ):
+                        v = cf.contents( v )
+                    else:
+                        v = cf.contents
+
+                if callable( cell_renderer.model_view_conv ):
+                    if v is None:
+                        v = model[ itr ][ col_idx ]
+                    v = cell_renderer.model_view_conv( v )
+
+                if v is not None:
+                    cell_renderer.set_property( "pixbuf", v )
         # func()
         return func
     # __create_column_cell_format_func__()
@@ -4387,6 +4408,10 @@ class Table( _EGWidget ):
 
                 if t in ( int, long, float ):
                     cell_rend.set_property( "xalign", 1.0 )
+            elif t == Image:
+                cell_rend = gtk.CellRendererPixbuf()
+                cell_rend.model_view_conv = lambda x: x.__get_gtk_pixbuf__()
+                props = {}
             else:
                 cell_rend = gtk.CellRendererText()
                 props = {}
@@ -4410,7 +4435,12 @@ class Table( _EGWidget ):
                 def f( column, cell_rend, model, iter, model_idx ):
                     o = model[ iter ][ model_idx ]
                     v = cell_rend.model_view_conv( o )
-                    cell_rend.set_property( "text", v )
+                    if   isinstance( cell_rend, gtk.CellRendererText ):
+                        cell_rend.set_property( "text", v )
+                    elif isinstance( cell_rend, gtk.CellRendererToggle ):
+                        cell_rend.set_property( "active", v )
+                    elif isinstance( cell_rend, gtk.CellRendererPixbuf ):
+                        cell_rend.set_property( "pixbuf", v )
                 # f()
                 col.set_cell_data_func( cell_rend, f, i )
 
@@ -4429,7 +4459,7 @@ class Table( _EGWidget ):
 
         self._table.set_headers_visible( self.show_headers )
         self._table.set_headers_clickable( True )
-        self._table.set_reorderable( True )
+        self._table.set_reorderable( self.repositioning )
         self._table.set_enable_search( True )
 
         self._sw = gtk.ScrolledWindow()
