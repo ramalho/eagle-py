@@ -4369,7 +4369,7 @@ class Table( _EGWidget ):
 
         self._table.set_headers_visible( self.show_headers )
         self._table.set_headers_clickable( True )
-        self._table.set_reorderable( True )
+        self._table.set_reorderable( self.repositioning )
         self._table.set_enable_search( True )
 
         self._sw = gtk.ScrolledWindow()
