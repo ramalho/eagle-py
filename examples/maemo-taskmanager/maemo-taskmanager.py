@@ -323,37 +323,7 @@ def refresh_processes( app, table ):
 # refresh_processes()
 
 
-def refresh_graph_cpu_load( app, canvas ):
-    pass
-# refresh_graph_cpu_load()
-
-
-def refresh_graph_memory_load( app, canvas ):
-    # Discard value as needed
-    samples = refresh_graph_memory_load.samples
-    index = refresh_graph_memory_load.index
-    if index >= len( samples ):
-        diff = index - len( samples ) + 1
-        samples = samples[ diff : ] + ( [ 0 ] * diff )
-        index = refresh_graph_memory_load.index = ( index - diff )
-        refresh_graph_memory_load.samples = samples
-
-    # calculate current value
-    used = app.system.memtotal - app.system.memfree
-    used_scale = float( used ) / float( app.system.memtotal )
-    used_height = int( used_scale * canvas.height )
-
-    # Remember new value
-    samples[ index ] = used_height
-    refresh_graph_memory_load.index += 1
-
-    try:
-        canvas.clear()
-    except AttributeError, e:
-        # Canvas may not be ready yet
-        return
-
-    # Draw it
+def draw_graph( canvas, samples, color ):
     x = 0
     width = canvas.width / ( len( samples ) - 1 )
     points = []
@@ -368,11 +338,86 @@ def refresh_graph_memory_load( app, canvas ):
                 ( 0, canvas.height ),
                 ( 0, canvas.height - samples[ 0 ] ) ]
 
-    canvas.draw_polygon( points, color="yellow", size=0, fillcolor="red",
+    canvas.draw_polygon( points, color=color, size=0, fillcolor=color,
                          filled=True )
+# draw_graph()
+
+
+class Samples( object ):
+    def __init__( self, n_samples ):
+        self.samples = [ 0 ] * n_samples
+        self.index = 0
+    # __init__()
+
+
+    def append( self, value ):
+        if self.index >= len( self.samples ):
+            # Discard value as needed
+            diff = self.index - len( self.samples ) + 1
+            self.samples = self.samples[ diff : ] + ( [ 0 ] * diff )
+            self.index -= diff
+
+        self.samples[ self.index ] = value
+        self.index += 1
+    # append()
+
+
+    def __len__( self ):
+        return len( self.samples )
+    # __len__()
+
+
+    def __getitem__( self, index ):
+        return self.samples[ index ]
+    # __getitem__()
+
+
+    def __setitem__( self, index, value ):
+        self.samples[ index ] = value
+    # __setitem__()
+# Samples
+
+
+def refresh_graph_cpu_load( app, canvas ):
+    # calculate current value
+    used = sum( p.cpu_diff for p in app.system.processes.itervalues() )
+    used_scale = float( used ) / float( app.system.cpu_diff or 1 )
+    used_height = int( used_scale * canvas.height )
+
+    # Remember new value
+    refresh_graph_cpu_load.samples.append( used_height )
+
+    try:
+        canvas.clear()
+    except AttributeError, e:
+        # Canvas may not be ready yet
+        return
+
+    # Draw it
+    draw_graph( canvas, refresh_graph_cpu_load.samples, "red" )
+# refresh_graph_cpu_load()
+refresh_graph_cpu_load.samples = Samples( 30 )
+
+
+def refresh_graph_memory_load( app, canvas ):
+    # calculate current value
+    used = app.system.memtotal - app.system.memfree
+    used_scale = float( used ) / float( app.system.memtotal or 1 )
+    used_height = int( used_scale * canvas.height )
+
+    # Remember new value
+    refresh_graph_memory_load.samples.append( used_height )
+
+    try:
+        canvas.clear()
+    except AttributeError, e:
+        # Canvas may not be ready yet
+        return
+
+    # Draw it
+    draw_graph( canvas, refresh_graph_memory_load.samples, "red" )
 # refresh_graph_memory_load()
-refresh_graph_memory_load.samples = [ 0 ] * 30
-refresh_graph_memory_load.index = 0
+refresh_graph_memory_load.samples = Samples( 30 )
 
 
 def refresh_graphs( app ):
@@ -465,11 +510,13 @@ statistics_widgets = (
                               label="Processor Load",
                               width=320,
                               height=200,
+                              scrollbars=False,
                               ),
                       Canvas( id="memory_load",
                               label="Memory Load",
                               width=320,
                               height=200,
+                              scrollbars=False,
                               ),
                       ),
            ),
