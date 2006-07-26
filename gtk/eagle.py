@@ -77,6 +77,7 @@ __all__ = [
     "yesno", "confirm",
     "AboutDialog", "HelpDialog", "FileChooser",
     "RichText",
+    "ExpandPolicy",
     ]
 
 import os
@@ -200,6 +201,119 @@ def _set_icon_list( gtkwidget, stock_id ):
 # _set_icon_list()
 
 
+class _ExpandRule( object ):
+    __slots__ = ( "fill", "expand" )
+    def __init__( self, expand=False, fill=True ):
+        self.expand = expand
+        self.fill = fill
+    # __init__()
+
+
+    def __get_gtk_resize_policy__( self ):
+        p = 0
+        if self.expand:
+            p |= gtk.EXPAND
+        if self.fill:
+            p |= gtk.FILL
+        return p
+    # __get_gtk_resize_policy__()
+
+
+    def __str__( self ):
+        return "ExpandRule( expand=%s, fill=%s )" % \
+               ( self.expand, self.fill )
+    # __str__()
+    __repr__ = __str__
+# _ExpandRule
+
+class ExpandPolicy( object ):
+    class Policy( object ):
+        Rule = _ExpandRule
+        __slots__ = ( "horizontal", "vertical" )
+
+        def __init__( self, **kargs ):
+            def conv_arg( arg ):
+                if isinstance( arg, _ExpandRule ):
+                    return arg
+                elif isinstance( arg, ( tuple, list ) ):
+                    return  _ExpandRule( *arg )
+                elif isinstance( arg, dict ):
+                    return _ExpandRule( **arg )
+            # conv_arg()
+
+            h = kargs.get( "horizontal", None )
+            if h is not None:
+                self.horizontal = conv_arg( h )
+            else:
+                self.horizontal = _ExpandRule()
+
+            v = kargs.get( "vertical", None )
+            if v is not None:
+                self.vertical = conv_arg( v )
+            else:
+                self.vertical = _ExpandRule()
+        # __init__()
+
+
+        def __str__( self ):
+            return "%s( horizontal=%s, vertical=%s )" % \
+                   ( self.__class__.__name__, self.horizontal, self.vertical )
+        # __str__()
+        __repr__ = __str__
+    # Policy
+
+
+    class All( Policy ):
+        horizontal = _ExpandRule( expand=True, fill=True )
+        vertical = _ExpandRule( expand=True, fill=True )
+        def __init__( self ): pass
+    # All
+
+
+    class Nothing( Policy ):
+        horizontal = _ExpandRule( expand=False, fill=False )
+        vertical =  _ExpandRule( expand=False, fill=False )
+        def __init__( self ): pass
+    # Nothing
+
+
+    class Horizontal( Policy ):
+        horizontal = _ExpandRule( expand=True, fill=True )
+        vertical = _ExpandRule( expand=False, fill=True )
+        def __init__( self ): pass
+    # Horizontal
+
+
+    class Vertical( Policy ):
+        horizontal = _ExpandRule( expand=False, fill=True )
+        vertical = _ExpandRule( expand=True, fill=True )
+        def __init__( self ): pass
+    # Vertical
+
+
+    class FillHorizontal( Policy ):
+        horizontal = _ExpandRule( expand=False, fill=True )
+        vertical = _ExpandRule( expand=False, fill=False )
+        def __init__( self ): pass
+    # FillHorizontal
+
+
+    class FillVertical( Policy ):
+        horizontal = _ExpandRule( expand=False, fill=False )
+        vertical = _ExpandRule( expand=False, fill=True )
+        def __init__( self ): pass
+    # FillVertical
+
+
+    class Fill( Policy ):
+        horizontal = _ExpandRule( expand=False, fill=True )
+        vertical = _ExpandRule( expand=False, fill=True )
+        def __init__( self ): pass
+    # Fill
+# ExpandPolicy
+
+
+
 class _Table( gtk.Table ):
     """Internal widget to arrange components in tabular form.
 
@@ -245,14 +359,15 @@ class _Table( gtk.Table ):
         for idx, c in enumerate( self.children ):
             c.__configure_orientation__( orientation )
             w = c.__get_widgets__()
-            xrm, yrm = c.__get_resize_mode__()
+            policy = c.expand_policy
 
             if len( w ) == 1:
                 # use last one, in case of LabelEntry without label
-                if isinstance( xrm, ( tuple, list ) ):
-                    xrm = xrm[ -1 ]
-                if isinstance( yrm, ( tuple, list ) ):
-                    yrm = yrm[ -1 ]
+                if isinstance( policy, ( tuple, list ) ):
+                    policy = policy[ -1 ]
+
+                xrm = policy.horizontal.__get_gtk_resize_policy__()
+                yrm = policy.vertical.__get_gtk_resize_policy__()
 
                 if self.horizontal:
                     row0 = 0
@@ -272,10 +387,13 @@ class _Table( gtk.Table ):
                              ypadding=self.padding )
 
             elif len( w ) == 2:
-                if isinstance( xrm, int ):
-                    xrm = ( xrm, xrm )
-                if isinstance( yrm, int ):
-                    yrm = ( yrm, yrm )
+                if not isinstance( policy, ( tuple, list ) ):
+                    policy = ( policy, policy )
+
+                xrm = ( policy[ 0 ].horizontal.__get_gtk_resize_policy__(),
+                        policy[ 1 ].horizontal.__get_gtk_resize_policy__() )
+                yrm = ( policy[ 0 ].vertical.__get_gtk_resize_policy__(),
+                        policy[ 1 ].vertical.__get_gtk_resize_policy__() )
 
                 if self.horizontal:
                     row0 = 0
@@ -705,18 +823,13 @@ class _EGWidget( _EGObject ):
     """
     app = _gen_ro_property( "app" )
 
-    def __init__( self, id, app=None ):
+    def __init__( self, id, app=None, expand_policy=None ):
         _EGObject.__init__( self, id )
         if app is not None:
             self.app = app
         self._widgets = tuple()
+        self.expand_policy = expand_policy or ExpandPolicy.All()
     # __init__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
-    # __get_resize_mode__()
 
 
     def __get_widgets__( self ):
@@ -778,8 +891,8 @@ class _EGDataWidget( _EGWidget ):
     """
     persistent = False
 
-    def __init__( self, id, persistent, app=None ):
-        _EGObject.__init__( self, id )
+    def __init__( self, id, persistent, app=None, expand_policy=None ):
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
         if app is not None:
             self.app = app
         self.persistent = persistent
@@ -1350,8 +1463,22 @@ class _EGWidLabelEntry( _EGDataWidget ):
     C{_entry} before using it, since this will be set as mnemonic for this
     label and also returned in L{__get_widgets__}().
     """
-    def __init__( self, id, persistent, label="" ):
-        _EGDataWidget.__init__( self, id, persistent )
+
+    def __init__( self, id, persistent, label="", expand_policy=None ):
+        """
+        @param expand_policy: one or two ExpandPolicy elements. If just
+               one is provided, it will be used for both inner elements.
+               If two are provided, first will be used for label and
+               second for entry.
+        """
+        if expand_policy is None:
+            expand_policy = ( ExpandPolicy.Fill(),
+                              ExpandPolicy.Horizontal() )
+        elif not isinstance( expand_policy, ( list, tuple ) ):
+            expand_policy = ( expand_policy, expand_policy )
+
+        _EGDataWidget.__init__( self, id, persistent,
+                                expand_policy=expand_policy )
         self.__label = label
         self.__setup_gui__()
     # __init__()
@@ -1411,17 +1538,6 @@ class _EGWidLabelEntry( _EGDataWidget ):
                  self.get_value() )
     # __str__()
     __repr__ = __str__
-
-
-    def __get_resize_mode__( self ):
-        """Resize mode.
-
-        First tuple of tuple is about horizontal mode for label and entry.
-        Second tuple of tuple is about vertical mode for label and entry.
-        """
-        return ( ( 0, gtk.FILL | gtk.EXPAND ),
-                 ( 0, 0 ) )
-    # __get_resize_mode__()
 # _EGWidLabelEntry
 
 
@@ -2061,7 +2177,7 @@ class Canvas( _EGWidget ):
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, width, height, label="", bgcolor=None,
-                  scrollbars=True, callback=None ):
+                  scrollbars=True, callback=None, expand_policy=None ):
         """Canvas Constructor.
 
         @param id: unique identifier.
@@ -2082,10 +2198,12 @@ class Canvas( _EGWidget ):
                 - Button state (or'ed MOUSE_BUTTON_*)
                 - horizontal positon (x)
                 - vertical positon (y)
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
 
         @todo: honor the alpha value while drawing colors.
         """
-        _EGWidget.__init__( self, id )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
         self.__label = label
         self.width = width
         self.height = height
@@ -2258,11 +2376,6 @@ class Canvas( _EGWidget ):
                                gtk.gdk.POINTER_MOTION_MASK |
                                gtk.gdk.POINTER_MOTION_HINT_MASK )
     # __setup_connections__()
-
-
-    def __get_resize_mode__( self ):
-        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
-    # __get_resize_mode__()
 
 
 
@@ -2720,8 +2833,10 @@ class Entry( _EGWidLabelEntry ):
     callback = _gen_ro_property( "callback" )
     multiline = _gen_ro_property( "multiline" )
 
+
     def __init__( self, id, label="", value="", callback=None,
-                  editable=True, persistent=False, multiline=False ):
+                  editable=True, persistent=False, multiline=False,
+                  expand_policy=None ):
         """Entry constructor.
 
         @param id: unique identifier.
@@ -2737,13 +2852,24 @@ class Entry( _EGWidLabelEntry ):
         @param persistent: if this widget should save its data between
                sessions.
         @param multiline: if this entry can be multi-line.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.value = value
         self.callback = _callback_tuple( callback )
         self.multiline = bool( multiline )
         self._editable = editable
 
-        _EGWidLabelEntry.__init__( self, id, persistent, label )
+        if expand_policy is None:
+            if self.multiline:
+                p = ExpandPolicy.All()
+            else:
+                p = ExpandPolicy.Horizontal()
+
+            expand_policy = ( ExpandPolicy.Fill(), p )
+
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -2762,6 +2888,14 @@ class Entry( _EGWidLabelEntry ):
 
         _EGWidLabelEntry.__setup_gui__( self )
     # __setup_gui__()
+
+
+    def __configure_orientation__( self, setting ):
+        super( Entry, self ).__configure_orientation__( setting )
+        if self.multiline and self.label and \
+               setting == self.ORIENTATION_VERTICAL:
+            self._label.set_alignment( xalign=1.0, yalign=0 )
+    # __configure_orientation__()
 
 
     def __setup_connections__( self ):
@@ -2796,21 +2930,6 @@ class Entry( _EGWidLabelEntry ):
     # set_editable()
 
     editable = property( get_editable, set_editable )
-
-
-    def __get_resize_mode__( self ):
-        """Resize mode.
-
-        First tuple of tuple is about horizontal mode for label and entry.
-        Second tuple of tuple is about vertical mode for label and entry.
-        """
-        if self.multiline:
-            return ( ( gtk.FILL, gtk.FILL | gtk.EXPAND ),
-                     ( gtk.FILL, gtk.FILL | gtk.EXPAND ) )
-        else:
-            return ( ( gtk.FILL, gtk.FILL | gtk.EXPAND ),
-                     ( gtk.FILL, gtk.FILL ) )
-    # __get_resize_mode__()
 # Entry
 
 
@@ -2820,7 +2939,7 @@ class Password( Entry ):
     Like L{Entry}, but will show '*' instead of typed chars.
     """
     def __init__( self, id, label="", value="", callback=None,
-                  persistent=False ):
+                  persistent=False, expand_policy=None ):
         """Password constructor.
 
         @param id: unique identifier.
@@ -2834,8 +2953,11 @@ class Password( Entry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
-        Entry.__init__( self, id, label, value, callback, persistent )
+        Entry.__init__( self, id, label, value, callback, persistent,
+                        expand_policy=expand_policy )
         self._entry.set_visibility( False )
     # __init__()
 # Password
@@ -2861,7 +2983,7 @@ class Spin( _EGWidLabelEntry ):
 
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None, digits=3,
-                  callback=None, persistent=False ):
+                  callback=None, persistent=False, expand_policy=None ):
         """Spin constructor.
 
         @param id: unique identifier.
@@ -2879,6 +3001,8 @@ class Spin( _EGWidLabelEntry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.value = value
         self.min = min
@@ -2887,7 +3011,8 @@ class Spin( _EGWidLabelEntry ):
         self.digits = digits
         self.callback = _callback_tuple( callback )
 
-        _EGWidLabelEntry.__init__( self, id, persistent, label )
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy )
 
         self.__setup_connections__()
     # __init__()
@@ -2955,7 +3080,7 @@ class IntSpin( Spin ):
 
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None,
-                  callback=None, persistent=False ):
+                  callback=None, persistent=False, expand_policy=None ):
         """Integer Spin constructor.
 
         @param id: unique identifier.
@@ -2972,6 +3097,8 @@ class IntSpin( Spin ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         if value is not None:
             value = int( value )
@@ -2982,7 +3109,7 @@ class IntSpin( Spin ):
         if step is not None:
             step = int( step )
         Spin.__init__( self, id, label, value, min, max, step, 0, callback,
-                       persistent )
+                       persistent, expand_policy=expand_policy )
     # __init__()
 
 
@@ -3007,7 +3134,7 @@ class UIntSpin( IntSpin ):
 
     def __init__( self, id, label="",
                   value=None, min=0, max=None, step=None,
-                  callback=None, persistent=False ):
+                  callback=None, persistent=False, expand_policy=None ):
         """Unsigned Integer Spin constructor.
 
         @param id: unique identifier.
@@ -3024,11 +3151,13 @@ class UIntSpin( IntSpin ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         if min < 0:
             raise ValueError( "UIntSpin cannot have min < 0!" )
         Spin.__init__( self, id, label, value, min, max, step, 0, callback,
-                       persistent )
+                       persistent, expand_policy=expand_policy )
     # __init__()
 # UIntSpin
 
@@ -3044,8 +3173,7 @@ class Color( _EGWidLabelEntry ):
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", color=0, use_alpha=False,
-                  callback=None,
-                  persistent=False ):
+                  callback=None, persistent=False, expand_policy=None ):
         """Color selector constructor.
 
         @param id: unique identifier.
@@ -3063,11 +3191,14 @@ class Color( _EGWidLabelEntry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.color = self.color_from( color )
         self.use_alpha = use_alpha
         self.callback = _callback_tuple( callback )
-        _EGWidLabelEntry.__init__( self, id, persistent, label )
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy )
 
         self.__setup_connections__()
     # __init__()
@@ -3174,7 +3305,7 @@ class Font( _EGWidLabelEntry ):
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", font="sans 12", callback=None,
-                  persistent=False ):
+                  persistent=False, expand_policy=None ):
         """Font selector constructor.
 
         @param id: unique identifier.
@@ -3188,10 +3319,13 @@ class Font( _EGWidLabelEntry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.font = font
         self.callback = _callback_tuple( callback )
-        _EGWidLabelEntry.__init__( self, id, persistent, label )
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy )
 
         self.__setup_connections__()
     # __init__()
@@ -3237,7 +3371,7 @@ class Selection( _EGWidLabelEntry ):
     active = _gen_ro_property( "active" )
 
     def __init__( self, id, label="", options=None, active=None,
-                  callback=None, persistent=False ):
+                  callback=None, persistent=False, expand_policy=None ):
         """Selection constructor.
 
         @param id: unique identifier.
@@ -3252,11 +3386,14 @@ class Selection( _EGWidLabelEntry ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.options = options or []
         self.active  = active
         self.callback = _callback_tuple( callback )
-        _EGWidLabelEntry.__init__( self, id, persistent, label )
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy )
 
         self.__setup_connections__()
     # __init__()
@@ -3395,7 +3532,7 @@ class Progress( _EGWidLabelEntry ):
     """Progress bar."""
     value = _gen_ro_property( "value" )
 
-    def __init__( self, id, label="", value=0.0 ):
+    def __init__( self, id, label="", value=0.0, expand_policy=None ):
         """Progress bar constructor.
 
         0 <= value <= 1.0
@@ -3403,9 +3540,12 @@ class Progress( _EGWidLabelEntry ):
         @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param value: initial content ( 0.0 <= value <= 1.0 )
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.value = value
-        _EGWidLabelEntry.__init__( self, id, False, label )
+        _EGWidLabelEntry.__init__( self, id, False, label,
+                                   expand_policy=expand_policy )
     # __init__()
 
     def __setup_gui__( self ):
@@ -3448,7 +3588,7 @@ class CheckBox( _EGDataWidget ):
     state = _gen_ro_property( "state" )
 
     def __init__( self, id, label="", state=False, callback=None,
-                  persistent=False ):
+                  persistent=False, expand_policy=None ):
         """Check box constructor.
 
         @param id: unique identifier.
@@ -3462,12 +3602,18 @@ class CheckBox( _EGDataWidget ):
                 - new value
         @param persistent: if this widget should save its data between
                sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
         self.__label = label
         self.state = state
         self.callback = _callback_tuple( callback )
 
-        _EGDataWidget.__init__( self, id, persistent )
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.Fill()
+
+        _EGDataWidget.__init__( self, id, persistent,
+                                expand_policy=expand_policy )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -3491,12 +3637,6 @@ class CheckBox( _EGDataWidget ):
         # callback()
         self._wid.connect( "toggled", callback )
     # __setup_connections__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, 0 )
-    # __get_resize_mode__()
 
 
     def get_value( self ):
@@ -3568,7 +3708,7 @@ class Group( _EGWidget ):
 
 
     def __init__( self, id, label="", children=None, horizontal=False,
-                  border=BORDER_ETCHED_IN ):
+                  border=BORDER_ETCHED_IN, expand_policy=None ):
         """Group constructor.
 
         @param id: unique identified.
@@ -3581,8 +3721,13 @@ class Group( _EGWidget ):
                respect BORDER_NONE, so if you really want no border, use
                None to disable it. Note that Groups without borders cannot
                have one added later.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
-        _EGWidget.__init__( self, id )
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.Horizontal()
+
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
         self.__label = label
         self.children = _obj_tuple( children )
         self.horizontal = bool( horizontal )
@@ -3614,12 +3759,6 @@ class Group( _EGWidget ):
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL | gtk.EXPAND, 0 )
-    # __get_resize_mode__()
 
 
     def set_label( self, label ):
@@ -3774,13 +3913,18 @@ class Tabs( _EGWidget ):
     children = _gen_ro_property( "children" )
 
 
-    def __init__( self, id, children=None ):
+    def __init__( self, id, children=None, expand_policy=None ):
         """Tabs constructor.
 
         @param id: unique identified.
         @param children: an iterable with L{Tabs.Page}
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
-        _EGWidget.__init__( self, id )
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.All()
+
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
         if not children:
             self.children = tuple()
         else:
@@ -3837,12 +3981,6 @@ class Tabs( _EGWidget ):
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
-    # __get_resize_mode__()
 
 
     def __set_page_label__( self, page, value ):
@@ -4040,7 +4178,8 @@ class Table( _EGWidget ):
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
                   hidden_columns_indexes=None, cell_format_func=None,
-                  selection_callback=None, data_changed_callback=None ):
+                  selection_callback=None, data_changed_callback=None,
+                  expand_policy=None ):
         """Table constructor.
 
         @param id: unique identifier.
@@ -4072,6 +4211,8 @@ class Table( _EGWidget ):
                 - App reference
                 - Table reference
                 - Pair ( index, row_contents )
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
 
         @warning: although this widget contains data, it's not a
                   _EGDataWidget and thus will not notify application that
@@ -4080,7 +4221,10 @@ class Table( _EGWidget ):
                   may change in future if Table show to be useful as
                   _EGDataWidget.
         """
-        _EGWidget.__init__( self, id )
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.All()
+
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
         self.editable = editable or False
         self.repositioning = repositioning or False
         self.__label = label
@@ -4713,11 +4857,6 @@ class Table( _EGWidget ):
         for i in xrange( len( self.types ) ):
             self._model.set_sort_func( i, sort_fn, i )
     # __setup_model__()
-
-
-    def __get_resize_mode__( self ):
-        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
-    # __get_resize_mode__()
 
 
     def set_label( self, label ):
@@ -5397,7 +5536,7 @@ class RichText( _EGWidget ):
 
     def __init__( self, id, text="", label=None, link_color="blue",
                   fgcolor=None, bgcolor=None, callback=None,
-                  img_provider=None ):
+                  img_provider=None, expand_policy=None ):
         """RichText constructor.
 
         @param id: unique identifier.
@@ -5426,8 +5565,10 @@ class RichText( _EGWidget ):
                Function signature:
                   def img_provider( filename ):
                       return eagle.Image( ... )
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
-        _EGWidget.__init__( self, id )
+        _EGWidget.__init__( self, id, expand_policy )
         self.__label = label
         self._callback = _callback_tuple( callback )
         self.link_color = link_color
@@ -5647,7 +5788,8 @@ class Button( _EGWidget ):
         "media:rewind": gtk.STOCK_MEDIA_REWIND,
         }
 
-    def __init__( self, id, label="", stock=None, callback=None ):
+    def __init__( self, id, label="", stock=None, callback=None,
+                  expand_policy=None ):
         """Push button constructor.
 
         @param label: what text to show, if stock isn't provided.
@@ -5656,7 +5798,11 @@ class Button( _EGWidget ):
                when button is pressed. Function will get as parameter:
                 - App reference
                 - Button reference
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.Fill()
         self.label = label
         self.stock = stock
         self.callback = _callback_tuple( callback )
@@ -5667,7 +5813,7 @@ class Button( _EGWidget ):
                 print >> sys.stderr, \
                       "Stock item %s missing in implementation map!" % ( i, )
 
-        _EGWidget.__init__( self, id )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -5694,63 +5840,61 @@ class Button( _EGWidget ):
         # callback()
         self._button.connect( "clicked", callback )
     # __setup_connections__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, 0 )
-    # __get_resize_mode__()
 # Button
 
 
 class AboutButton( Button, AutoGenId ):
     """Push button to show L{AboutDialog} of L{App}."""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
         def show_about( app_id, wid_id ):
             self.app.show_about_dialog()
         # show_about()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="about", callback=show_about )
+                         stock="about", callback=show_about,
+                         expand_policy=expand_policy )
     # __init__()
 # AboutButton
 
 
 class CloseButton( Button, AutoGenId ):
     """Push button to close L{App}."""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
         def close( app_id, wid_id ):
             self.app.close()
         # close()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="close", callback=close )
+                         stock="close", callback=close,
+                         expand_policy=expand_policy )
     # __init__()
 # CloseButton
 
 
 class QuitButton( Button, AutoGenId ):
     """Push button to quit all L{App}s."""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             quit()
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="quit", callback=c )
+                         stock="quit", callback=c,
+                         expand_policy=expand_policy )
     # __init__()
 # QuitButton
 
 
 class HelpButton( Button, AutoGenId ):
     """Push button to show L{HelpDialog} of L{App}."""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             self.app.show_help_dialog()
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="help", callback=c )
+                         stock="help", callback=c,
+                         expand_policy=expand_policy )
     # __init__()
 # HelpButton
 
@@ -5759,7 +5903,7 @@ class OpenFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing file."""
     def __init__( self, id=None,
                   filter=None, multiple=False,
-                  callback=None ):
+                  callback=None, expand_policy=None ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -5770,6 +5914,8 @@ class OpenFileButton( Button, AutoGenId ):
                 - app reference.
                 - widget reference.
                 - file name or file list (if multiple).
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
 
         @see: L{FileChooser}
         """
@@ -5780,14 +5926,15 @@ class OpenFileButton( Button, AutoGenId ):
                 callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="open", callback=c )
+                         stock="open", callback=c,
+                         expand_policy=expand_policy )
     # __init__()
 # OpenFileButton
 
 
 class SelectFolderButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing folder/directory."""
-    def __init__( self, id=None, callback=None ):
+    def __init__( self, id=None, callback=None, expand_policy=None ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -5796,6 +5943,8 @@ class SelectFolderButton( Button, AutoGenId ):
                 - app reference.
                 - widget reference.
                 - directory/folder name.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
 
         @see: L{FileChooser}
         """
@@ -5805,7 +5954,8 @@ class SelectFolderButton( Button, AutoGenId ):
                 callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="open", callback=c )
+                         stock="open", callback=c,
+                         expand_policy=expand_policy )
     # __init__()
 # SelectFolderButton
 
@@ -5813,7 +5963,7 @@ class SelectFolderButton( Button, AutoGenId ):
 class SaveFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose a file to save."""
     def __init__( self, id=None, filename=None,
-                  filter=None, callback=None ):
+                  filter=None, callback=None, expand_policy=None ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -5824,6 +5974,8 @@ class SaveFileButton( Button, AutoGenId ):
                 - app reference.
                 - widget reference.
                 - file name.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
 
         @see: L{FileChooser}
         """
@@ -5835,14 +5987,15 @@ class SaveFileButton( Button, AutoGenId ):
                 callback( self.app, self, f )
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="save", callback=c )
+                         stock="save", callback=c,
+                         expand_policy=expand_policy )
     # __init__()
 # SaveFileButton
 
 
 class PreferencesButton( Button, AutoGenId ):
     """Push button to show L{PreferencesDialog} of L{App}."""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             f = self.app.show_preferences_dialog()
@@ -5855,9 +6008,10 @@ class PreferencesButton( Button, AutoGenId ):
 
 class HSeparator( _EGWidget, AutoGenId ):
     """Horizontal separator"""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
-        _EGWidget.__init__( self, id or self.__get_id__() )
+        _EGWidget.__init__( self, id or self.__get_id__(),
+                            expand_policy=expand_policy )
         self._wid = gtk.HSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -5867,9 +6021,10 @@ class HSeparator( _EGWidget, AutoGenId ):
 
 class VSeparator( _EGWidget ):
     """Horizontal separator"""
-    def __init__( self, id=None ):
+    def __init__( self, id=None, expand_policy=None ):
         """You may not provide id, it will be generated automatically"""
-        _EGWidget.__init__( self, id or self.__get_id__() )
+        _EGWidget.__init__( self, id or self.__get_id__(),
+                            expand_policy=expand_policy )
         self._wid = gtk.VSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -5889,7 +6044,7 @@ class Label( _EGDataWidget, AutoGenId ):
     BOTTOM = 1.0
 
     def __init__( self, id=None, label="",
-                  halignment=LEFT, valignment=MIDDLE ):
+                  halignment=LEFT, valignment=MIDDLE, expand_policy=None ):
         """Label constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -5898,8 +6053,14 @@ class Label( _EGDataWidget, AutoGenId ):
                L{CENTER}.
         @param valignment: vertical alignment, like L{TOP}, L{BOTTOM} or
                L{MIDDLE}.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
         """
-        _EGDataWidget.__init__( self, id or self.__get_id__(), False )
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.Nothing()
+
+        _EGDataWidget.__init__( self, id or self.__get_id__(), False,
+                                expand_policy=expand_policy )
         self.label = label
 
         self._wid = gtk.Label( self.label )
@@ -5923,12 +6084,6 @@ class Label( _EGDataWidget, AutoGenId ):
         return "%s( id=%r, label=%r )" % \
                ( self.__class__.__name__, self.id, self.label )
     # __str__()
-
-
-    def __get_resize_mode__( self ):
-        "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL, 0 )
-    # __get_resize_mode__()
 # Label
 
 
