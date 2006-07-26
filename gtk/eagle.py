@@ -69,7 +69,7 @@ __all__ = [
     "OpenFileButton", "SelectFolderButton", "SaveFileButton",
     "PreferencesButton",
     "Selection",
-    "Group", "Table",
+    "Group", "Tabs", "Table",
     "HSeparator", "VSeparator",
     "Label",
     "Canvas", "Image",
@@ -3614,6 +3614,233 @@ class Group( _EGWidget ):
 
     label = property( get_label, set_label )
 # Group
+
+
+class Tabs( _EGWidget ):
+    """Present widgets in Tabs.
+
+    This is also known as TabControl, TabWidget, Notebook, etc in
+    other toolkits.
+
+    Tabs are composed from Pages (L{Tabs.Page}), which behave just
+    like L{Group}s and hold a list of widgets.
+
+    Pages can be accessed by their index number (integer) or label,
+    using the dictionary syntax or L{Tabs.get_page()} method.
+    """
+
+    class Page( _EGWidget, AutoGenId ):
+        """Page in Tabs component.
+
+        Pages must have a name and optionally an id, otherwise one id
+        will be automatically generated.
+
+        It behaves just like L{Group} component.
+        """
+        spacing = 3
+
+        children = _gen_ro_property( "children" )
+        horizontal = _gen_ro_property( "horizontal" )
+        parent = _gen_ro_property( "parent" )
+
+        def __init__( self, id=None, label="", children=None,
+                      horizontal=False ):
+            """Tabs.Page constructor.
+
+            @param id: may not be provided, it will be generated automatically.
+            @param label: displayed as Page label.
+            @param children: a list of eagle widgets that this page contains.
+            @param horizontal: if widgets should be laid out horizontally.
+            """
+            _EGWidget.__init__( self, id or self.__get_id__() )
+            self.__label = label or ""
+            self.horizontal = bool( horizontal )
+            self.children = _obj_tuple( children )
+            self.parent = None
+
+            self.__setup_gui__()
+        # __init__()
+
+
+        def _get_app( self ):
+            try:
+                return self.__ro_app
+            except AttributeError:
+                return None
+        # _get_app()
+
+
+        def _set_app( self, value ):
+            # We need to overload app setter in order to add
+            # children widgets to application as soon as we know the app
+            try:
+                v = self.__ro_app
+            except AttributeError:
+                v = None
+            if v is None:
+                self.__ro_app = value
+                self.__add_widgets_to_app__()
+            else:
+                raise Exception( "Read Only property 'app'." )
+        # _set_app()
+
+        app = property( _get_app, _set_app )
+
+
+        def __add_widgets_to_app__( self ):
+            for w in self.children:
+                self.app.__add_widget__( w )
+        # __add_widgets_to_app__()
+
+
+        def __setup_gui__( self ):
+            self._wid = _Table( id=( "%s-contents" % self.id ),
+                                children=self.children,
+                                horizontal=self.horizontal )
+            self._widgets = ( self._wid, )
+        # __setup_gui__()
+
+
+        def set_label( self, label ):
+            if label is None:
+                raise ValueError( "You cannot have 'None' labels for "
+                                  "Tabs.Page!" )
+            self.__label = str( label )
+
+            if self.parent is not None:
+                self.parent.__set_page_label__( self, self.label )
+        # set_label()
+
+
+        def get_label( self ):
+            return self.__label
+        # get_label()
+
+        label = property( get_label, set_label )
+    # Page
+
+
+    children = _gen_ro_property( "children" )
+
+
+    def __init__( self, id, children=None ):
+        """Tabs constructor.
+
+        @param id: unique identified.
+        @param children: an iterable with L{Tabs.Page}
+        """
+        _EGWidget.__init__( self, id )
+        if not children:
+            self.children = tuple()
+        else:
+            lst = []
+            for i, widget in enumerate( children ):
+                if isinstance( widget, Tabs.Page ):
+                    lst.append( widget )
+                else:
+                    sys.stderr.write( ( "children #%d (%s) is not "
+                                        "instance of Tabs.Page, but %s" ) %
+                                      ( i, widget, type( widget ).__name__ ))
+            self.children = tuple( lst )
+
+        self.__setup_gui__()
+    # __init__()
+
+
+    def __setup_gui__( self ):
+        self._wid = gtk.Notebook()
+        for w in self.children:
+            w.parent = self
+            self._wid.append_page( w._widgets[ 0 ],
+                                   gtk.Label( w.label ) )
+        self._widgets = ( self._wid, )
+    # __setup_gui__()
+
+
+    def _get_app( self ):
+        try:
+            return self.__ro_app
+        except AttributeError:
+            return None
+    # _get_app()
+
+
+    def _set_app( self, value ):
+        # We need to overload app setter in order to add
+        # children widgets to application as soon as we know the app
+        try:
+            v = self.__ro_app
+        except AttributeError:
+            v = None
+        if v is None:
+            self.__ro_app = value
+            self.__add_widgets_to_app__()
+        else:
+            raise Exception( "Read Only property 'app'." )
+    # _set_app()
+
+    app = property( _get_app, _set_app )
+
+
+    def __add_widgets_to_app__( self ):
+        for w in self.children:
+            self.app.__add_widget__( w )
+    # __add_widgets_to_app__()
+
+
+    def __get_resize_mode__( self ):
+        "Return a tuple with ( horizontal, vertical ) resize mode"
+        return ( gtk.FILL | gtk.EXPAND, 0 )
+    # __get_resize_mode__()
+
+
+    def __set_page_label__( self, page, value ):
+        self._wid.set_tab_label( page._widgets[ 0 ], gtk.Label( value ) )
+    # __set_page_label__()
+
+
+    def get_page( self, index_or_name ):
+        """Get the Tabs.Page given its index or name.
+
+        @raise KeyError if index_or_name doesn't exists.
+        """
+        if isinstance( index_or_name, basestring ):
+            name = index_or_name
+            for w in self.children:
+                if w.label == name:
+                    return w
+            raise KeyError( "No page labeled '%s'" % name )
+        else:
+            index = index_or_name
+            try:
+                return self.children[ index ]
+            except IndexError, e:
+                raise KeyError( "No page numbered %s" % index )
+
+    # get_page()
+
+
+    def __getitem__( self, name ):
+        """Same as L{Tabs.get_page()}.
+
+        @raise KeyError see L{Tabs.get_page()}
+        @see L{Tabs.get_page()}
+        """
+        return self.get_page( name )
+    # __getitem__()
+
+
+    def __setitem__( self, name, value ):
+        """Set L{Tabs.Page.label} of a page get using 'name' for
+        L{Tabs.get_page()}.
+
+        @raise KeyError see L{Tabs.get_page()}
+        @see L{Tabs.get_page()}
+        """
+        page = self[ name ]
+        page.label = value
+    # __setitem__()
+# Tabs
 
 
 class Table( _EGWidget ):
