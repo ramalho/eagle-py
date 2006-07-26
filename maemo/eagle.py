@@ -3845,6 +3845,11 @@ class Tabs( _EGWidget ):
         # get_label()
 
         label = property( get_label, set_label )
+
+
+        def focus( self ):
+            self.parent.__focus_page__( self )
+        # focus()
     # Page
 
 
@@ -3925,6 +3930,26 @@ class Tabs( _EGWidget ):
     def __set_page_label__( self, page, value ):
         self._wid.set_tab_label( page._widgets[ 0 ], gtk.Label( value ) )
     # __set_page_label__()
+
+
+    def __focus_page__( self, page ):
+        for index, p in enumerate( self.children ):
+            if p == page:
+                self._wid.set_current_page( index )
+                return
+        raise ValueError( "Page '%s' doesn't exist in this Tab." % ( page, ) )
+    # __focus_page__()
+
+
+    def focus_page( self, index_or_name_or_page ):
+        """Make given page visible."""
+        if not isinstance( index_or_name_or_page, Tabs.Page ):
+            index_or_name = index_or_name_or_page
+            page = self.get_page( index_or_name )
+        else:
+            page = index_or_name_or_page
+        page.focus()
+    # focus_page()
 
 
     def get_page( self, index_or_name ):

@@ -35,6 +35,16 @@ def show_3( app, widget ):
 # show_3()
 
 
+def focus_0( app, widget ):
+    app[ "t0" ].focus_page( 0 )
+# focus_0()
+
+
+def focus_4( app, widget ):
+    app[ "t0" ][ 4 ].focus()
+# focus_4()
+
+
 App( title="Test Tabs",
      center=( Tabs( id="t0",
                     children=( Tabs.Page( label="First",
@@ -58,6 +68,14 @@ App( title="Test Tabs",
                                                      Button( id="show_3",
                                                              label="Show 3",
                                                              callback=show_3,
+                                                             ),
+                                                     Button( id="focus_0",
+                                                             label="Focus 0",
+                                                             callback=focus_0,
+                                                             ),
+                                                     Button( id="focus_4",
+                                                             label="Focus 4",
+                                                             callback=focus_4,
                                                              ),
                                                      ),
                                           horizontal=True,
