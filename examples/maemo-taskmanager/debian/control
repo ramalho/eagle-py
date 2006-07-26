@@ -6,7 +6,7 @@ Standards-Version: 3.6.0
 
 Package: maemo-taskmanager
 Architecture: all
-Depends: maemo, eagle (>=0.7)
+Depends: eagle (>=0.7)
 Description: Simple Task Manager to allow identify and kill resource hungry applications
  Simple Task Manager for Maemo
  .

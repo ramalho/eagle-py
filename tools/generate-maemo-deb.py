@@ -79,7 +79,7 @@ def package( name, files, deps ):
         "maintainer_email": setup.__author_email__,
         "desc": desc,
         "longdesc": longdesc,
-        "deps": ", ".join( list( deps or [] ) + [ "maemo" ] ),
+        "deps": ", ".join( list( deps or [] ) ),
         }
 
     f = open( "control", "w" )
@@ -126,13 +126,14 @@ Description: %(desc)s
 package( "eagle",
          ( ( "maemo/eagle.pyo", site_packages + "/eagle.pyo" ),
            ),
-         ( "pymaemo-runtime", )
+         ( "python2.4-gtk2", "python2.4-hildon" )
          )
 
-usr_share = "usr/share/python-%s_%s/" % ( "eagle-doc", version )
+usr_share = "usr/share/doc/python-%s_%s/" % ( "eagle-doc", version )
 package( "eagle-doc",
          recursive_files( "docs", usr_share ) +
          recursive_files( "tests", usr_share ) +
-         recursive_files( "examples", usr_share ),
+         recursive_files( "examples", usr_share ) +
+         recursive_files( "maemo/share/", usr_share ),
          ( "python-eagle", )
          )
