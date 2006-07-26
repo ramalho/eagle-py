@@ -237,6 +237,7 @@ def refresh( app ):
     processes = app[ "processes" ]
     refresh_processes( app, processes )
     refresh_info( app, app[ "info" ], processes.selected() )
+    refresh_graphs( app )
     return True
 # refresh()
 
@@ -322,6 +323,64 @@ def refresh_processes( app, table ):
 # refresh_processes()
 
 
+def refresh_graph_cpu_load( app, canvas ):
+    pass
+# refresh_graph_cpu_load()
+
+
+def refresh_graph_memory_load( app, canvas ):
+    # Discard value as needed
+    samples = refresh_graph_memory_load.samples
+    index = refresh_graph_memory_load.index
+    if index >= len( samples ):
+        diff = index - len( samples ) + 1
+        samples = samples[ diff : ] + ( [ 0 ] * diff )
+        index = refresh_graph_memory_load.index = ( index - diff )
+        refresh_graph_memory_load.samples = samples
+
+    # calculate current value
+    used = app.system.memtotal - app.system.memfree
+    used_scale = float( used ) / float( app.system.memtotal )
+    used_height = int( used_scale * canvas.height )
+
+    # Remember new value
+    samples[ index ] = used_height
+    refresh_graph_memory_load.index += 1
+
+    try:
+        canvas.clear()
+    except AttributeError, e:
+        # Canvas may not be ready yet
+        return
+
+    # Draw it
+    x = 0
+    width = canvas.width / ( len( samples ) - 1 )
+    points = []
+    base_height = canvas.height
+    for height in samples:
+        y = base_height - height
+        points.append( ( x, y ) )
+        x += width
+
+    points += [ ( canvas.width, canvas.height - samples[ -1 ] ),
+                ( canvas.width, canvas.height ),
+                ( 0, canvas.height ),
+                ( 0, canvas.height - samples[ 0 ] ) ]
+
+    canvas.draw_polygon( points, color="yellow", size=0, fillcolor="red",
+                         filled=True )
+# refresh_graph_memory_load()
+refresh_graph_memory_load.samples = [ 0 ] * 30
+refresh_graph_memory_load.index = 0
+
+
+def refresh_graphs( app ):
+    refresh_graph_cpu_load( app, app[ "cpu_load" ] )
+    refresh_graph_memory_load( app, app[ "memory_load" ] )
+# refresh_graphs()
+
+
 def refresh_rate_changed( app, entry, value ):
     try:
         id = app.refresh_id
@@ -329,7 +388,6 @@ def refresh_rate_changed( app, entry, value ):
         pass
     else:
         app.remove_event_source( id )
-
 
     app.refresh_id = app.timeout_add( value * 1000, refresh )
 # refresh_rate_changed()
@@ -399,6 +457,24 @@ processes_widgets = (
            )
     )
 
+statistics_widgets = (
+    Group( id="statistics_graphs",
+           horizontal=True,
+           border=None,
+           children=( Canvas( id="cpu_load",
+                              label="Processor Load",
+                              width=320,
+                              height=200,
+                              ),
+                      Canvas( id="memory_load",
+                              label="Memory Load",
+                              width=320,
+                              height=200,
+                              ),
+                      ),
+           ),
+    )
+
 
 
 app = App( title="Task Manager",
@@ -443,6 +519,10 @@ every process it may slow down the system!
                         children=( Tabs.Page( id="page_processes",
                                               label="Processes",
                                               children=processes_widgets,
+                                              ),
+                                   Tabs.Page( id="page_stats",
+                                              label="Statistics",
+                                              children=statistics_widgets,
                                               ),
                                    ),
                         )
