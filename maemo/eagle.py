@@ -3618,6 +3618,13 @@ class Group( _EGWidget ):
     Group has a frame and may show a label.
     """
     children = _gen_ro_property( "children" )
+    horizontal = _gen_ro_property( "horizontal" )
+
+    BORDER_NONE = gtk.SHADOW_NONE
+    BORDER_IN = gtk.SHADOW_IN
+    BORDER_OUT = gtk.SHADOW_OUT
+    BORDER_ETCHED_IN = gtk.SHADOW_ETCHED_IN
+    BORDER_ETCHED_OUT = gtk.SHADOW_ETCHED_OUT
 
     def _get_app( self ):
         try:
@@ -3642,17 +3649,20 @@ class Group( _EGWidget ):
     app = property( _get_app, _set_app )
 
 
-    def __init__( self, id, label="", children=None ):
+    def __init__( self, id, label="", children=None, horizontal=False,
+                  border=BORDER_ETCHED_IN ):
         """Group constructor.
 
         @param id: unique identified.
         @param label: displayed at top-left.
         @param children: a list of eagle widgets that this group contains.
-               They're presented in vertical layout.
+        @param horizontal: if widgets should be laid out horizontally.
         """
         _EGWidget.__init__( self, id )
         self.__label = label
-        self.children = children or tuple()
+        self.children = _obj_tuple( children )
+        self.horizontal = bool( horizontal )
+        self.__border = border
 
         self.__setup_gui__()
     # __init__()
@@ -3661,8 +3671,14 @@ class Group( _EGWidget ):
     def __setup_gui__( self ):
         self._frame = gtk.Frame( self.__label )
         self._frame.set_name( self.id )
+        if self.border is not None:
+            self._frame.set_shadow_type( self.border )
+        else:
+            self._frame.set_shadow_type( gtk.SHADOW_NONE )
+
         self._contents = _Table( id=( "%s-contents" % self.id ),
-                                 children=self.children )
+                                 children=self.children,
+                                 horizontal=self.horizontal )
         self._frame.add( self._contents )
         self._widgets = ( self._frame, )
     # __setup_gui__()
@@ -3695,6 +3711,22 @@ class Group( _EGWidget ):
     # get_label()
 
     label = property( get_label, set_label )
+
+
+    def set_border( self, border ):
+        if border is not None:
+            self._frame.set_shadow_type( border )
+        else:
+            self._frame.set_shadow_type( gtk.SHADOW_NONE )
+        self.__border = border
+    # set_border()
+
+
+    def get_border( self ):
+        return self.__border
+    # get_border()
+
+    border = property( get_border, set_border )
 # Group
 
 
@@ -3898,7 +3930,6 @@ class Tabs( _EGWidget ):
                 return self.children[ index ]
             except IndexError, e:
                 raise KeyError( "No page numbered %s" % index )
-
     # get_page()
 
 
