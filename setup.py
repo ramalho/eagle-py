@@ -96,16 +96,37 @@ def recursive_data_files( *args ):
 def setup( module, install_requires=None, data_files=None ):
     data_files = list( data_files or [] )
     data_files += [
-        ( pjoin( "share", "tests" ), listfiles( "tests", "*" ) ),
-        ( pjoin( "share", "examples" ), listfiles( "examples", "*" ) ),
+        ( "tests", listfiles( "tests", "*" ) ),
+        ( "examples", listfiles( "examples", "*" ) ),
         ]
     data_files += recursive_data_files( module, "share", "*" )
 
     docs = recursive_data_files( "docs", "*" )
     for i, ( d, f ) in enumerate( docs ):
-        docs[ i ] = ( os.path.join( "share", d ), f )
+        docs[ i ] = ( d, f )
 
     data_files += docs
+
+    # prefix data_files with share/python2.4-maemo/
+    pkg = "python%s.%s-eagle" % ( sys.version_info[ 0 ],
+                                  sys.version_info[ 1 ] )
+    prefix = "share/%s" % pkg
+    doc_prefix = "share/doc/%s" % pkg
+    tmp = []
+    doc = "docs"
+    module_doc = pjoin( module, "share", "docs" )
+    for ( a, b ) in data_files:
+        if a.startswith( doc ):
+            p = pjoin( doc_prefix, a[ len( doc ) + 1 : ] )
+        elif a.startswith( module_doc ):
+            p = pjoin( doc_prefix, a[ len( module_doc ) + 1 : ] )
+        else:
+            p = pjoin( prefix, a )
+
+        if b:
+            tmp.append( ( p, b ) )
+    data_files = tmp
+
 
     return setuptools \
            .setup( name=("eagle-%s" % module),
@@ -145,7 +166,7 @@ if __name__ == "__main__":
     # eagle-MODULE[-version] will build just MODULE
     # if MODULE is missing, build everything
     if not module or module == "gtk":
-        setup( "gtk", [ "pygtk>=2.6" ] )
+        setup( "gtk", [] )
 
     if not module or module == "maemo":
-        setup( "maemo", [ "pygtk>=2.6" ] )
+        setup( "maemo", [] )

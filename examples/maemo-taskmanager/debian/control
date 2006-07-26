@@ -1,12 +1,12 @@
 Source: maemo-taskmanager
-Section: utils
+Section: user/tools
 Priority: optional
 Maintainer: Gustavo Sverzut Barbieri <barbieri@gmail.com>
 Standards-Version: 3.6.0
 
 Package: maemo-taskmanager
-Architecture: any
-Depends: maemo, pymaemo-runtime, eagle (>=0.5)
+Architecture: all
+Depends: maemo, eagle (>=0.7)
 Description: Simple Task Manager to allow identify and kill resource hungry applications
  Simple Task Manager for Maemo
  .
