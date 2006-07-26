@@ -4,7 +4,7 @@ __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
 __url__ = "http://www.gustavobarbieri.com.br/eagle/"
-__version__ = "0.5"
+__version__ = "0.7"
 __revision__ = "$Rev: 20 $"
 __description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
