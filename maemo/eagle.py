@@ -3918,7 +3918,7 @@ class Tabs( _EGWidget ):
 
     def __get_resize_mode__( self ):
         "Return a tuple with ( horizontal, vertical ) resize mode"
-        return ( gtk.FILL | gtk.EXPAND, 0 )
+        return ( gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND )
     # __get_resize_mode__()
 
 
