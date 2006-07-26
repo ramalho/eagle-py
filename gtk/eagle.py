@@ -3575,6 +3575,12 @@ class Group( _EGWidget ):
         @param label: displayed at top-left.
         @param children: a list of eagle widgets that this group contains.
         @param horizontal: if widgets should be laid out horizontally.
+        @param border: can be one of Group.BORDER_* values or None to
+               disable border and label completely. Note that some themes
+               may have different appearance for borders and some may not
+               respect BORDER_NONE, so if you really want no border, use
+               None to disable it. Note that Groups without borders cannot
+               have one added later.
         """
         _EGWidget.__init__( self, id )
         self.__label = label
@@ -3587,18 +3593,20 @@ class Group( _EGWidget ):
 
 
     def __setup_gui__( self ):
-        self._frame = gtk.Frame( self.__label )
-        self._frame.set_name( self.id )
-        if self.border is not None:
-            self._frame.set_shadow_type( self.border )
-        else:
-            self._frame.set_shadow_type( gtk.SHADOW_NONE )
-
         self._contents = _Table( id=( "%s-contents" % self.id ),
                                  children=self.children,
                                  horizontal=self.horizontal )
-        self._frame.add( self._contents )
-        self._widgets = ( self._frame, )
+
+        if self.border is not None:
+            self._frame = gtk.Frame( self.__label )
+            self._frame.set_name( self.id )
+            self._frame.set_shadow_type( self.border )
+            self._frame.add( self._contents )
+            root = self._frame
+        else:
+            root = self._contents
+
+        self._widgets = ( root, )
     # __setup_gui__()
 
 
@@ -3620,7 +3628,8 @@ class Group( _EGWidget ):
                               "without one. Create it with placeholder! "
                               "(label='')" )
         self.__label = label
-        self._frame.set_label( self.__label )
+        if self.border is not None:
+            self._frame.set_label( self.__label )
     # set_label()
 
 
@@ -3632,10 +3641,15 @@ class Group( _EGWidget ):
 
 
     def set_border( self, border ):
+        if self.__border is None:
+            raise ValueError( "You cannot change border of widget created "
+                              "without one." )
+
         if border is not None:
             self._frame.set_shadow_type( border )
         else:
-            self._frame.set_shadow_type( gtk.SHADOW_NONE )
+            raise ValueError( "You cannot remove widget border" )
+
         self.__border = border
     # set_border()
 
