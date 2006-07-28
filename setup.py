@@ -7,8 +7,7 @@ __url__ = "http://www.gustavobarbieri.com.br/eagle/"
 __version__ = "0.7"
 __revision__ = "$Rev: 20 $"
 __description__ = """\
-Eagle is an abstraction layer atop Graphical Toolkits focused on
-making simple applications easy to build while powerful in features.
+Eagle is an abstraction layer atop Graphical Toolkits focused on making simple applications easy to build while powerful in features.
 """
 __long_description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
