@@ -8,5 +8,5 @@ X-HildonDesk-ShowInToolbar=true
 X-Osso-Type=application/x-executable
 Icon=maemo-taskmanager
 Name=Task Manager
-Exec=/var/lib/install/usr/bin/maemo-taskmanager.py
+Exec=/usr/bin/maemo-taskmanager.py
 StartupWMClass=maemo-taskmanager.py
