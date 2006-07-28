@@ -113,7 +113,9 @@ if m:
             ) )
     sys.exit( -1 )
 
-gtk.gdk.threads_init() # enable threads
+
+if not sys.platform.startswith( "win" ):
+    gtk.gdk.threads_init() # enable threads
 
 _apps = {}
 
@@ -1961,7 +1963,7 @@ class App( _EGObject, AutoGenId ):
 
         if sys.platform.startswith( "win" ):
             appdata = os.environ.get( "APPDATA", "C:" )
-            binname = os.path.realpath( sys.argv[ 0 ] )[ 1 : ]
+            binname = os.path.realpath( sys.argv[ 0 ] ).replace( ":", "" )
             d = os.path.join( appdata, "Eagle", binname )
         else:
             home = os.environ.get( "HOME", "." )
