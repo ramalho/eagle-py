@@ -3844,6 +3844,7 @@ class Tabs( _EGWidget ):
             self.horizontal = bool( horizontal )
             self.children = _obj_tuple( children )
             self.parent = None
+            self._gtk_label = gtk.Label( self.__label )
 
             self.__setup_gui__()
         # __init__()
@@ -3893,9 +3894,7 @@ class Tabs( _EGWidget ):
                 raise ValueError( "You cannot have 'None' labels for "
                                   "Tabs.Page!" )
             self.__label = str( label )
-
-            if self.parent is not None:
-                self.parent.__set_page_label__( self, self.label )
+            self._gtk_label.set_text( self.__label )
         # set_label()
 
 
@@ -3909,6 +3908,12 @@ class Tabs( _EGWidget ):
         def focus( self ):
             self.parent.__focus_page__( self )
         # focus()
+
+
+        def set_active( self, value=True ):
+            _EGWidget.set_active( self, value )
+            self._gtk_label.set_sensitive( value )
+        # set_active()
     # Page
 
 
@@ -3948,8 +3953,7 @@ class Tabs( _EGWidget ):
         self._wid = gtk.Notebook()
         for w in self.children:
             w.parent = self
-            self._wid.append_page( w._widgets[ 0 ],
-                                   gtk.Label( w.label ) )
+            self._wid.append_page( w._widgets[ 0 ], w._gtk_label )
         self._widgets = ( self._wid, )
     # __setup_gui__()
 
@@ -3983,11 +3987,6 @@ class Tabs( _EGWidget ):
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
-
-
-    def __set_page_label__( self, page, value ):
-        self._wid.set_tab_label( page._widgets[ 0 ], gtk.Label( value ) )
-    # __set_page_label__()
 
 
     def __focus_page__( self, page ):
