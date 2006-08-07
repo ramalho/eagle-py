@@ -58,7 +58,10 @@ __doc__ = __long_description__
 __all__ = [
     "run", "quit", "get_value", "set_value",
     "get_app_by_id", "get_widget_by_id",
-    "show", "hide", "set_active", "set_inactive", "close",
+    "show", "hide", "set_visible", "get_visible", "is_visible",
+    "enable", "disable", "is_enabled",
+    "set_active", "set_inactive", "get_active", "is_active",
+    "close",
     "App",
     "Entry", "Password",
     "Spin", "IntSpin", "UIntSpin",
@@ -860,12 +863,49 @@ class _EGWidget( _EGObject ):
         for w in self.__get_widgets__():
             w.set_sensitive( active )
     # set_active()
+    enable = set_active
 
 
     def set_inactive( self ):
         """Same as L{set_active}( False )"""
         self.set_active( False )
     # set_inactive()
+    disable = set_inactive
+
+
+    def get_active( self ):
+        """Return True if it's active (enabled) or False inactive (disabled).
+        """
+        for w in self.__get_widgets__():
+            if w.flags() & gtk.SENSITIVE:
+                return True
+        return False
+    # get_active()
+    is_active = get_active
+    is_enabled = get_active
+
+    active = property( get_active, set_active )
+
+
+    def set_visible( self, visible=True ):
+        """Show or hide widget based on value of 'visible'."""
+        if visible:
+            self.show()
+        else:
+            self.hide()
+    # set_visible()
+
+
+    def get_visible( self ):
+        """Return true if widget is visible (shown)."""
+        for w in self.__get_widgets__():
+            if w.flags() & gtk.VISIBLE:
+                return True
+        return False
+    # get_visible()
+    is_visible = get_visible
+
+    visible = property( get_visible, set_visible )
 
 
     def show( self ):
@@ -6279,6 +6319,28 @@ def hide( widget_id, app_id=None ):
 # hide()
 
 
+def set_visible( widget_id, visible=True, app_id=None ):
+    """Convenience function to get widget and call its set_visible() method."""
+    try:
+        wid = get_widget_by_id( widget_id, app_id )
+        wid.set_visible( visible )
+    except ValueError, e:
+        raise ValueError( e )
+# set_visible()
+
+
+def get_visible( widget_id, app_id=None ):
+    """Convenience function to get widget and call its get_visible() method.
+    """
+    try:
+        wid = get_widget_by_id( widget_id, app_id )
+        return wid.get_visible()
+    except ValueError, e:
+        raise ValueError( e )
+# get_active()
+is_visible = get_visible
+
+
 def set_active( widget_id, active=True, app_id=None ):
     """Convenience function to get widget and call its set_active() method."""
     try:
@@ -6287,11 +6349,11 @@ def set_active( widget_id, active=True, app_id=None ):
     except ValueError, e:
         raise ValueError( e )
 # set_active()
+enable = set_active
 
 
 def set_inactive( widget_id, app_id=None ):
-    """
-    Convenience function to get widget and call its set_inactive() method.
+    """Convenience function to get widget and call its set_inactive() method.
     """
     try:
         wid = get_widget_by_id( widget_id, app_id )
@@ -6299,6 +6361,20 @@ def set_inactive( widget_id, app_id=None ):
     except ValueError, e:
         raise ValueError( e )
 # set_inactive()
+disable = set_inactive
+
+
+def get_active( widget_id, app_id=None ):
+    """Convenience function to get widget and call its get_active() method.
+    """
+    try:
+        wid = get_widget_by_id( widget_id, app_id )
+        return wid.get_active()
+    except ValueError, e:
+        raise ValueError( e )
+# get_active()
+is_active = get_active
+is_enabled = get_active
 
 
 def close( app_id=None ):
