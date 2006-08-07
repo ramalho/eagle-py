@@ -5063,7 +5063,6 @@ class Table( _EGWidget ):
     def select( self, index ):
         selection = self._table.get_selection()
         selection.unselect_all()
-        print "select: %r" % index
         selection.select_path( index )
     # select()
 
