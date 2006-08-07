@@ -133,7 +133,7 @@ I have nothing to help you.
            children=(
                     CheckBox( id="active",
                               label="Active?",
-                              state=True,
+                              value=True,
                               callback=changed,
                               ),
                     Entry( id="name",
@@ -172,7 +172,7 @@ I have nothing to help you.
                          "Peperoni",
                          "Marguerita",
                          ),
-               active="Peperoni",
+               value="Peperoni",
                callback=changed,
                ),
     HelpButton(),

@@ -35,7 +35,7 @@ def remove_option( app, button ):
 App( title="Selection box capabilities",
      left=( Selection( id="selection",
                        options=( "opt1", "opt2" ),
-                       active="opt1",
+                       value="opt1",
                        ),
             Entry( id="entry" ),
             ),

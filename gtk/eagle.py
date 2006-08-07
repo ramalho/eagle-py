@@ -483,6 +483,18 @@ class _Panel( gtk.ScrolledWindow ):
     def __get_widgets__( self ):
         return self._tab.__get_widgets__()
     # __get_widgets__()
+
+
+    def show( self ):
+        gtk.ScrolledWindow.show( self )
+        self._tab.show()
+    # show()
+
+
+    def hide( self ):
+        gtk.ScrolledWindow.hide( self )
+        self._tab.hide()
+    # hide()
 # _Panel
 
 
@@ -828,13 +840,33 @@ class _EGWidget( _EGObject ):
     """
     app = _gen_ro_property( "app" )
 
-    def __init__( self, id, app=None, expand_policy=None ):
+    def __init__( self, id, app=None, expand_policy=None,
+                  active=True, visible=True ):
         _EGObject.__init__( self, id )
         if app is not None:
             self.app = app
-        self._widgets = tuple()
+        self._widgets_ = tuple()
+        self._active = bool( active )
+        self._visible = bool( visible )
         self.expand_policy = expand_policy or ExpandPolicy.All()
     # __init__()
+
+
+    def _set_widgets( self, value ):
+        self._widgets_ = value
+
+        # force new widgets to be set active or visible depending on
+        # previous settings
+        self.set_active( self.get_active() )
+        self.set_visible( self.get_visible() )
+    # _set_widgets()
+
+
+    def _get_widgets( self ):
+        return self._widgets_
+    # _get_widgets()
+
+    _widgets = property( _get_widgets, _set_widgets )
 
 
     def __get_widgets__( self ):
@@ -860,6 +892,7 @@ class _EGWidget( _EGObject ):
         An active widget have their actions enabled, while an inactive
         (active=False) will be grayed and actions disabled.
         """
+        self._active = bool( active )
         for w in self.__get_widgets__():
             w.set_sensitive( active )
     # set_active()
@@ -876,10 +909,7 @@ class _EGWidget( _EGObject ):
     def get_active( self ):
         """Return True if it's active (enabled) or False inactive (disabled).
         """
-        for w in self.__get_widgets__():
-            if w.flags() & gtk.SENSITIVE:
-                return True
-        return False
+        return self._active
     # get_active()
     is_active = get_active
     is_enabled = get_active
@@ -898,10 +928,7 @@ class _EGWidget( _EGObject ):
 
     def get_visible( self ):
         """Return true if widget is visible (shown)."""
-        for w in self.__get_widgets__():
-            if w.flags() & gtk.VISIBLE:
-                return True
-        return False
+        return self._visible
     # get_visible()
     is_visible = get_visible
 
@@ -910,6 +937,7 @@ class _EGWidget( _EGObject ):
 
     def show( self ):
         """Make widget visible."""
+        self._visible = True
         for w in self.__get_widgets__():
             w.show()
     # show()
@@ -917,6 +945,7 @@ class _EGWidget( _EGObject ):
 
     def hide( self ):
         """Make widget invisible."""
+        self._visible = False
         for w in self.__get_widgets__():
             w.hide()
     # hide()
@@ -933,8 +962,10 @@ class _EGDataWidget( _EGWidget ):
     """
     persistent = False
 
-    def __init__( self, id, persistent, app=None, expand_policy=None ):
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+    def __init__( self, id, persistent, app=None, expand_policy=None,
+                  active=True, visible=True ):
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
         if app is not None:
             self.app = app
         self.persistent = persistent
@@ -978,13 +1009,15 @@ class AboutDialog( _EGWidget, AutoGenId ):
         self.version = _str_tuple( version )
         self.license = _str_tuple( license )
         self.copyright = _str_tuple( copyright )
+        self._diag = None
 
         self.__setup_gui__()
     # __init__()
 
 
     def __del__( self ):
-        self._diag.destroy()
+        if self._diag:
+            self._diag.destroy()
     # __del__()
 
 
@@ -1075,12 +1108,15 @@ class HelpDialog( _EGWidget, AutoGenId ):
         _EGWidget.__init__( self, self.__get_id__(), app )
         self.title = title
         self.help = _str_tuple( help )
+
+        self._diag = None
         self.__setup_gui__()
     # __init__()
 
 
     def __del__( self ):
-        self._diag.destroy()
+        if self._diag:
+            self._diag.destroy()
     # __del__()
 
 
@@ -1150,6 +1186,7 @@ class FileChooser( _EGWidget, AutoGenId ):
         self.filename = filename
         self.title = title  or self.__gen_title__()
 
+        self._diag = None
         self.__setup_gui__()
     # __init__()
 
@@ -1166,7 +1203,8 @@ class FileChooser( _EGWidget, AutoGenId ):
 
 
     def __del__( self ):
-        self._diag.destroy()
+        if self._diag:
+            self._diag.destroy()
     # __del__()
 
 
@@ -1245,13 +1283,16 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
     def __init__( self, app, children ):
         _EGWidget.__init__( self, self.__get_id__(), app )
         self.children = _obj_tuple( children )
+
+        self._diag = None
         self.__setup_gui__()
         self.__add_widgets_to_app__()
     # __init__()
 
 
     def __del__( self ):
-        self._diag.destroy()
+        if self._diag:
+            self._diag.destroy()
     # __del__()
 
 
@@ -1506,7 +1547,8 @@ class _EGWidLabelEntry( _EGDataWidget ):
     label and also returned in L{__get_widgets__}().
     """
 
-    def __init__( self, id, persistent, label="", expand_policy=None ):
+    def __init__( self, id, persistent, label="", expand_policy=None,
+                  active=True, visible=True ):
         """
         @param expand_policy: one or two ExpandPolicy elements. If just
                one is provided, it will be used for both inner elements.
@@ -1520,7 +1562,8 @@ class _EGWidLabelEntry( _EGDataWidget ):
             expand_policy = ( expand_policy, expand_policy )
 
         _EGDataWidget.__init__( self, id, persistent,
-                                expand_policy=expand_policy )
+                                expand_policy=expand_policy,
+                                active=active, visible=visible )
         self.__label = label
         self.__setup_gui__()
     # __init__()
@@ -1651,7 +1694,7 @@ class App( _EGObject, AutoGenId ):
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
-                  statusbar=False ):
+                  statusbar=False, visible=True ):
         """App Constructor.
 
         @param title: application name, to be displayed in the title bar.
@@ -1708,6 +1751,7 @@ class App( _EGObject, AutoGenId ):
         self.license = _str_tuple( license )
         self.copyright = _str_tuple( copyright )
         self.statusbar = statusbar
+        self._visible = bool( visible )
         self._widgets = {}
 
         self.quit_callback = _callback_tuple( quit_callback )
@@ -1840,6 +1884,7 @@ class App( _EGObject, AutoGenId ):
 
 
     def __setup_gui__( self ):
+        self._base_widgets = list()
         self._win = gtk.Window( gtk.WINDOW_TOPLEVEL )
         self._win.set_name( self.id )
         self._win.set_title( self.title )
@@ -1849,10 +1894,16 @@ class App( _EGObject, AutoGenId ):
         self._top_layout = gtk.VBox( False )
         self._win.add( self._top_layout )
 
+        self._base_widgets.append( self._win )
+        self._base_widgets.append( self._top_layout )
+
         self._vbox = gtk.VBox( False, self.spacing )
         self._hbox = gtk.HBox( False, self.spacing )
         self._hbox.set_border_width( self.border_width )
         self._top_layout.pack_start( self._vbox, expand=True, fill=True )
+
+        self._base_widgets.append( self._vbox )
+        self._base_widgets.append( self._hbox )
 
         self.__setup_gui_left__()
         self.__setup_gui_right__()
@@ -1890,31 +1941,45 @@ class App( _EGObject, AutoGenId ):
         if has_hl:
             if has_left:
                 self._hbox.pack_start( self._left, expand_left, True )
+                self._base_widgets.append( self._left )
                 if has_center or has_right:
-                    self._hbox.pack_start( gtk.VSeparator(), False, True )
+                    sep = gtk.VSeparator()
+                    self._hbox.pack_start( sep, False, True )
+                    self._base_widgets.append( sep )
 
             if has_center:
                 self._hbox.pack_start( self._center, expand_center, True )
+                self._base_widgets.append( self._center )
                 if has_right:
-                    self._hbox.pack_start( gtk.VSeparator(), False, True )
+                    sep = gtk.VSeparator()
+                    self._hbox.pack_start( sep, False, True )
+                    self._base_widgets.append( sep )
 
             if has_right:
                 self._hbox.pack_start( self._right, expand_right, True )
+                self._base_widgets.append( self._right )
 
         # Create Vertical layout with ( TOP | HL | Bottom )
         # where HL is Horizontal layout created before
         if has_top:
             self._vbox.pack_start( self._top, expand_top, True )
+            self._base_widgets.append( self._top )
             if has_hl or has_bottom:
-                self._vbox.pack_start( gtk.HSeparator(), False, True )
+                sep = gtk.HSeparator()
+                self._vbox.pack_start( sep, False, True )
+                self._base_widgets.append( sep )
 
         if has_hl:
             self._vbox.pack_start( self._hbox, True, True )
+            self._base_widgets.append( self._hbox )
             if has_bottom:
-                self._vbox.pack_start( gtk.HSeparator(), False, True )
+                sep = gtk.HSeparator()
+                self._vbox.pack_start( sep, False, True )
+                self._base_widgets.append( sep )
 
         if has_bottom:
             self._vbox.pack_start( self._bottom, expand_bottom, True )
+            self._base_widgets.append( self._bottom )
 
 
         if self.statusbar:
@@ -1923,8 +1988,10 @@ class App( _EGObject, AutoGenId ):
             self._statusbar.set_has_resize_grip( True )
             self._top_layout.pack_end( self._statusbar,
                                        expand=False, fill=True )
+            self._base_widgets.append( self._statusbar )
 
-        self._win.show_all()
+        self._base_widgets = tuple( self._base_widgets )
+        self.set_visible( self.get_visible() )
     # __setup_gui__()
 
 
@@ -2184,6 +2251,33 @@ class App( _EGObject, AutoGenId ):
         """
         return gobject.source_remove( event_id )
     # remove_event_source()
+
+
+    def set_visible( self, visible=True ):
+        if visible:
+            self.show()
+        else:
+            self.hide()
+    # set_visible()
+
+    def get_visible( self ):
+        return self._visible
+    # get_visible()
+    is_visible = get_visible
+
+
+    def show( self ):
+        self._visible = True
+        for w in self._base_widgets:
+            w.show()
+    # show()
+
+
+    def hide( self ):
+        self._visible = False
+        for w in self._base_widgets:
+            w.hide()
+    # hide()
 # App
 
 
@@ -2219,7 +2313,8 @@ class Canvas( _EGWidget ):
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, width, height, label="", bgcolor=None,
-                  scrollbars=True, callback=None, expand_policy=None ):
+                  scrollbars=True, callback=None, expand_policy=None,
+                  active=True, visible=True ):
         """Canvas Constructor.
 
         @param id: unique identifier.
@@ -2245,7 +2340,8 @@ class Canvas( _EGWidget ):
 
         @todo: honor the alpha value while drawing colors.
         """
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
         self.__label = label
         self.width = width
         self.height = height
@@ -2878,7 +2974,7 @@ class Entry( _EGWidLabelEntry ):
 
     def __init__( self, id, label="", value="", callback=None,
                   editable=True, persistent=False, multiline=False,
-                  expand_policy=None ):
+                  expand_policy=None, active=True, visible=True ):
         """Entry constructor.
 
         @param id: unique identifier.
@@ -2911,7 +3007,8 @@ class Entry( _EGWidLabelEntry ):
             expand_policy = ( ExpandPolicy.Fill(), p )
 
         _EGWidLabelEntry.__init__( self, id, persistent, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -2981,7 +3078,8 @@ class Password( Entry ):
     Like L{Entry}, but will show '*' instead of typed chars.
     """
     def __init__( self, id, label="", value="", callback=None,
-                  persistent=False, expand_policy=None ):
+                  persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Password constructor.
 
         @param id: unique identifier.
@@ -2999,7 +3097,8 @@ class Password( Entry ):
                L{ExpandPolicy.Policy.Rule}.
         """
         Entry.__init__( self, id, label, value, callback, persistent,
-                        expand_policy=expand_policy )
+                        expand_policy=expand_policy,
+                        active=active, visible=visible )
         self._entry.set_visibility( False )
     # __init__()
 # Password
@@ -3025,7 +3124,8 @@ class Spin( _EGWidLabelEntry ):
 
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None, digits=3,
-                  callback=None, persistent=False, expand_policy=None ):
+                  callback=None, persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Spin constructor.
 
         @param id: unique identifier.
@@ -3054,7 +3154,8 @@ class Spin( _EGWidLabelEntry ):
         self.callback = _callback_tuple( callback )
 
         _EGWidLabelEntry.__init__( self, id, persistent, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
 
         self.__setup_connections__()
     # __init__()
@@ -3122,7 +3223,8 @@ class IntSpin( Spin ):
 
     def __init__( self, id, label="",
                   value=None, min=None, max=None, step=None,
-                  callback=None, persistent=False, expand_policy=None ):
+                  callback=None, persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Integer Spin constructor.
 
         @param id: unique identifier.
@@ -3151,7 +3253,8 @@ class IntSpin( Spin ):
         if step is not None:
             step = int( step )
         Spin.__init__( self, id, label, value, min, max, step, 0, callback,
-                       persistent, expand_policy=expand_policy )
+                       persistent, expand_policy=expand_policy,
+                       active=active, visible=visible )
     # __init__()
 
 
@@ -3176,7 +3279,8 @@ class UIntSpin( IntSpin ):
 
     def __init__( self, id, label="",
                   value=None, min=0, max=None, step=None,
-                  callback=None, persistent=False, expand_policy=None ):
+                  callback=None, persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Unsigned Integer Spin constructor.
 
         @param id: unique identifier.
@@ -3199,7 +3303,8 @@ class UIntSpin( IntSpin ):
         if min < 0:
             raise ValueError( "UIntSpin cannot have min < 0!" )
         Spin.__init__( self, id, label, value, min, max, step, 0, callback,
-                       persistent, expand_policy=expand_policy )
+                       persistent, expand_policy=expand_policy,
+                       active=active, visible=visible )
     # __init__()
 # UIntSpin
 
@@ -3215,7 +3320,8 @@ class Color( _EGWidLabelEntry ):
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", color=0, use_alpha=False,
-                  callback=None, persistent=False, expand_policy=None ):
+                  callback=None, persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Color selector constructor.
 
         @param id: unique identifier.
@@ -3240,7 +3346,8 @@ class Color( _EGWidLabelEntry ):
         self.use_alpha = use_alpha
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
 
         self.__setup_connections__()
     # __init__()
@@ -3347,7 +3454,8 @@ class Font( _EGWidLabelEntry ):
     callback = _gen_ro_property( "callback" )
 
     def __init__( self, id, label="", font="sans 12", callback=None,
-                  persistent=False, expand_policy=None ):
+                  persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Font selector constructor.
 
         @param id: unique identifier.
@@ -3367,7 +3475,8 @@ class Font( _EGWidLabelEntry ):
         self.font = font
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
 
         self.__setup_connections__()
     # __init__()
@@ -3412,14 +3521,15 @@ class Selection( _EGWidLabelEntry ):
     options = _gen_ro_property( "options" )
     active = _gen_ro_property( "active" )
 
-    def __init__( self, id, label="", options=None, active=None,
-                  callback=None, persistent=False, expand_policy=None ):
+    def __init__( self, id, label="", options=None, value=None,
+                  callback=None, persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Selection constructor.
 
         @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
         @param options: list of possible values.
-        @param active: selected element.
+        @param value: selected element.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
                Function will receive as parameters:
@@ -3432,10 +3542,11 @@ class Selection( _EGWidLabelEntry ):
                L{ExpandPolicy.Policy.Rule}.
         """
         self.options = options or []
-        self.active  = active
+        self._value  = value
         self.callback = _callback_tuple( callback )
         _EGWidLabelEntry.__init__( self, id, persistent, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
 
         self.__setup_connections__()
     # __init__()
@@ -3446,7 +3557,7 @@ class Selection( _EGWidLabelEntry ):
         self._entry.set_name( self.id )
         for i, o in enumerate( self.options ):
             self._entry.append_text( str( o ) )
-            if self.active == o:
+            if self._value == o:
                 self._entry.set_active( i )
 
         _EGWidLabelEntry.__setup_gui__( self )
@@ -3476,7 +3587,7 @@ class Selection( _EGWidLabelEntry ):
     # set_value()
 
 
-    def append( self, value, set_active=False ):
+    def append( self, value, set_selected=False ):
         """Append new value to available options.
 
         @param value: string that is not already an option.
@@ -3485,14 +3596,14 @@ class Selection( _EGWidLabelEntry ):
         """
         if value not in self.items():
             self._entry.append_text( value )
-            if set_active:
+            if set_selected:
                 self.set_value( value )
         else:
             raise ValueError( "value already in selection" )
     # append()
 
 
-    def prepend( self, value ):
+    def prepend( self, value, set_selected=False ):
         """Prepend new value to available options.
 
         @param value: string that is not already an option.
@@ -3501,14 +3612,14 @@ class Selection( _EGWidLabelEntry ):
         """
         if value not in self.items():
             self._entry.prepend_text( value )
-            if set_active:
+            if set_selected:
                 self.set_value( value )
         else:
             raise ValueError( "value already in selection" )
     # prepend()
 
 
-    def insert( self, position, value ):
+    def insert( self, position, value, set_selected=False ):
         """Insert new option at position.
 
         @param value: string that is not already an option.
@@ -3517,7 +3628,7 @@ class Selection( _EGWidLabelEntry ):
         """
         if value not in self.items():
             self._entry.insert_text( position, value )
-            if set_active:
+            if set_selected:
                 self.set_value( value )
         else:
             raise ValueError( "value already in selection" )
@@ -3574,7 +3685,8 @@ class Progress( _EGWidLabelEntry ):
     """Progress bar."""
     value = _gen_ro_property( "value" )
 
-    def __init__( self, id, label="", value=0.0, expand_policy=None ):
+    def __init__( self, id, label="", value=0.0, expand_policy=None,
+                  active=True, visible=True ):
         """Progress bar constructor.
 
         0 <= value <= 1.0
@@ -3587,7 +3699,8 @@ class Progress( _EGWidLabelEntry ):
         """
         self.value = value
         _EGWidLabelEntry.__init__( self, id, False, label,
-                                   expand_policy=expand_policy )
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
     # __init__()
 
     def __setup_gui__( self ):
@@ -3629,13 +3742,14 @@ class CheckBox( _EGDataWidget ):
     """
     state = _gen_ro_property( "state" )
 
-    def __init__( self, id, label="", state=False, callback=None,
-                  persistent=False, expand_policy=None ):
+    def __init__( self, id, label="", value=False, callback=None,
+                  persistent=False, expand_policy=None,
+                  active=True, visible=True ):
         """Check box constructor.
 
         @param id: unique identifier.
         @param label: what to show on a label on the left side of the widget.
-        @param state: initial state.
+        @param value: initial state.
         @param callback: function (or list of functions) that will
                be called when this widget have its data changed.
                Function will receive as parameters:
@@ -3648,14 +3762,15 @@ class CheckBox( _EGDataWidget ):
                L{ExpandPolicy.Policy.Rule}.
         """
         self.__label = label
-        self.state = state
+        self._value = value
         self.callback = _callback_tuple( callback )
 
         if expand_policy is None:
             expand_policy = ExpandPolicy.Fill()
 
         _EGDataWidget.__init__( self, id, persistent,
-                                expand_policy=expand_policy )
+                                expand_policy=expand_policy,
+                                active=active, visible=visible )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -3665,7 +3780,7 @@ class CheckBox( _EGDataWidget ):
     def __setup_gui__( self ):
         self._wid = gtk.CheckButton( self.__label )
         self._wid.set_name( self.id )
-        self._wid.set_active( self.state )
+        self._wid.set_active( self._value )
         self._widgets = ( self._wid, )
     # __setup_gui__()
 
@@ -3750,7 +3865,8 @@ class Group( _EGWidget ):
 
 
     def __init__( self, id, label="", children=None, horizontal=False,
-                  border=BORDER_ETCHED_IN, expand_policy=None ):
+                  border=BORDER_ETCHED_IN, expand_policy=None,
+                  active=True, visible=True ):
         """Group constructor.
 
         @param id: unique identified.
@@ -3769,7 +3885,8 @@ class Group( _EGWidget ):
         if expand_policy is None:
             expand_policy = ExpandPolicy.Horizontal()
 
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
         self.__label = label
         self.children = _obj_tuple( children )
         self.horizontal = bool( horizontal )
@@ -3789,6 +3906,7 @@ class Group( _EGWidget ):
             self._frame.set_name( self.id )
             self._frame.set_shadow_type( self.border )
             self._frame.add( self._contents )
+            self._contents.show()
             root = self._frame
         else:
             root = self._contents
@@ -3871,7 +3989,7 @@ class Tabs( _EGWidget ):
         parent = _gen_ro_property( "parent" )
 
         def __init__( self, id=None, label="", children=None,
-                      horizontal=False ):
+                      horizontal=False, active=True, visible=True ):
             """Tabs.Page constructor.
 
             @param id: may not be provided, it will be generated automatically.
@@ -3879,7 +3997,8 @@ class Tabs( _EGWidget ):
             @param children: a list of eagle widgets that this page contains.
             @param horizontal: if widgets should be laid out horizontally.
             """
-            _EGWidget.__init__( self, id or self.__get_id__() )
+            _EGWidget.__init__( self, id or self.__get_id__(),
+                                active=active, visible=visible )
             self.__label = label or ""
             self.horizontal = bool( horizontal )
             self.children = _obj_tuple( children )
@@ -3960,7 +4079,8 @@ class Tabs( _EGWidget ):
     children = _gen_ro_property( "children" )
 
 
-    def __init__( self, id, children=None, expand_policy=None ):
+    def __init__( self, id, children=None, expand_policy=None,
+                  active=True, visible=True ):
         """Tabs constructor.
 
         @param id: unique identified.
@@ -3971,7 +4091,8 @@ class Tabs( _EGWidget ):
         if expand_policy is None:
             expand_policy = ExpandPolicy.All()
 
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
         if not children:
             self.children = tuple()
         else:
@@ -4220,7 +4341,7 @@ class Table( _EGWidget ):
                   repositioning=False, expand_columns_indexes=None,
                   hidden_columns_indexes=None, cell_format_func=None,
                   selection_callback=None, data_changed_callback=None,
-                  expand_policy=None ):
+                  expand_policy=None, active=True, visible=True ):
         """Table constructor.
 
         @param id: unique identifier.
@@ -4265,7 +4386,8 @@ class Table( _EGWidget ):
         if expand_policy is None:
             expand_policy = ExpandPolicy.All()
 
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
         self.editable = editable or False
         self.repositioning = repositioning or False
         self.__label = label
@@ -5577,7 +5699,8 @@ class RichText( _EGWidget ):
 
     def __init__( self, id, text="", label=None, link_color="blue",
                   fgcolor=None, bgcolor=None, callback=None,
-                  img_provider=None, expand_policy=None ):
+                  img_provider=None, expand_policy=None,
+                  active=True, visible=True ):
         """RichText constructor.
 
         @param id: unique identifier.
@@ -5609,7 +5732,8 @@ class RichText( _EGWidget ):
         @param expand_policy: how this widget should fit space, see
                L{ExpandPolicy.Policy.Rule}.
         """
-        _EGWidget.__init__( self, id, expand_policy )
+        _EGWidget.__init__( self, id, expand_policy,
+                            active=active, visible=visible )
         self.__label = label
         self._callback = _callback_tuple( callback )
         self.link_color = link_color
@@ -5830,7 +5954,7 @@ class Button( _EGWidget ):
         }
 
     def __init__( self, id, label="", stock=None, callback=None,
-                  expand_policy=None ):
+                  expand_policy=None, active=True, visible=True ):
         """Push button constructor.
 
         @param label: what text to show, if stock isn't provided.
@@ -5854,7 +5978,8 @@ class Button( _EGWidget ):
                 print >> sys.stderr, \
                       "Stock item %s missing in implementation map!" % ( i, )
 
-        _EGWidget.__init__( self, id, expand_policy=expand_policy )
+        _EGWidget.__init__( self, id, expand_policy=expand_policy,
+                            active=active, visible=visible )
 
         self.__setup_gui__()
         self.__setup_connections__()
@@ -5886,56 +6011,64 @@ class Button( _EGWidget ):
 
 class AboutButton( Button, AutoGenId ):
     """Push button to show L{AboutDialog} of L{App}."""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         def show_about( app_id, wid_id ):
             self.app.show_about_dialog()
         # show_about()
         Button.__init__( self, id or self.__get_id__(),
                          stock="about", callback=show_about,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # AboutButton
 
 
 class CloseButton( Button, AutoGenId ):
     """Push button to close L{App}."""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         def close( app_id, wid_id ):
             self.app.close()
         # close()
         Button.__init__( self, id or self.__get_id__(),
                          stock="close", callback=close,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # CloseButton
 
 
 class QuitButton( Button, AutoGenId ):
     """Push button to quit all L{App}s."""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             quit()
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="quit", callback=c,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # QuitButton
 
 
 class HelpButton( Button, AutoGenId ):
     """Push button to show L{HelpDialog} of L{App}."""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             self.app.show_help_dialog()
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="help", callback=c,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # HelpButton
 
@@ -5944,7 +6077,8 @@ class OpenFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing file."""
     def __init__( self, id=None, filename=None,
                   filter=None, multiple=False,
-                  callback=None, expand_policy=None ):
+                  callback=None, expand_policy=None,
+                  active=True, visible=True ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -5970,7 +6104,8 @@ class OpenFileButton( Button, AutoGenId ):
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="open", callback=c,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # OpenFileButton
 
@@ -5978,7 +6113,7 @@ class OpenFileButton( Button, AutoGenId ):
 class SelectFolderButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing folder/directory."""
     def __init__( self, id=None, filename=None, callback=None,
-                  expand_policy=None ):
+                  expand_policy=None, active=True, visible=True ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -6001,7 +6136,8 @@ class SelectFolderButton( Button, AutoGenId ):
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="open", callback=c,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # SelectFolderButton
 
@@ -6009,7 +6145,8 @@ class SelectFolderButton( Button, AutoGenId ):
 class SaveFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose a file to save."""
     def __init__( self, id=None, filename=None,
-                  filter=None, callback=None, expand_policy=None ):
+                  filter=None, callback=None, expand_policy=None,
+                  active=True, visible=True ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -6034,30 +6171,35 @@ class SaveFileButton( Button, AutoGenId ):
         # c()
         Button.__init__( self, id or self.__get_id__(),
                          stock="save", callback=c,
-                         expand_policy=expand_policy )
+                         expand_policy=expand_policy,
+                         active=active, visible=visible )
     # __init__()
 # SaveFileButton
 
 
 class PreferencesButton( Button, AutoGenId ):
     """Push button to show L{PreferencesDialog} of L{App}."""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         def c( app_id, wid_id ):
             f = self.app.show_preferences_dialog()
         # c()
         Button.__init__( self, id or self.__get_id__(),
-                         stock="preferences", callback=c )
+                         stock="preferences", callback=c,
+                         active=active, visible=visible )
     # __init__()
 # PreferencesButton
 
 
 class HSeparator( _EGWidget, AutoGenId ):
     """Horizontal separator"""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         _EGWidget.__init__( self, id or self.__get_id__(),
-                            expand_policy=expand_policy )
+                            expand_policy=expand_policy,
+                            active=active, visible=visible )
         self._wid = gtk.HSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -6067,10 +6209,12 @@ class HSeparator( _EGWidget, AutoGenId ):
 
 class VSeparator( _EGWidget ):
     """Horizontal separator"""
-    def __init__( self, id=None, expand_policy=None ):
+    def __init__( self, id=None, expand_policy=None,
+                  active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
         _EGWidget.__init__( self, id or self.__get_id__(),
-                            expand_policy=expand_policy )
+                            expand_policy=expand_policy,
+                            active=active, visible=visible )
         self._wid = gtk.VSeparator()
         self._wid.set_name( self.id )
         self._widgets = ( self._wid, )
@@ -6090,7 +6234,8 @@ class Label( _EGDataWidget, AutoGenId ):
     BOTTOM = 1.0
 
     def __init__( self, id=None, label="",
-                  halignment=LEFT, valignment=MIDDLE, expand_policy=None ):
+                  halignment=LEFT, valignment=MIDDLE, expand_policy=None,
+                  active=True, visible=True ):
         """Label constructor.
 
         @param id: may not be provided, it will be generated automatically.
@@ -6106,7 +6251,8 @@ class Label( _EGDataWidget, AutoGenId ):
             expand_policy = ExpandPolicy.Nothing()
 
         _EGDataWidget.__init__( self, id or self.__get_id__(), False,
-                                expand_policy=expand_policy )
+                                expand_policy=expand_policy,
+                                active=active, visible=visible )
         self.label = label
 
         self._wid = gtk.Label( self.label )
