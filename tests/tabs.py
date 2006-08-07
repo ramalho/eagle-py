@@ -7,7 +7,7 @@ def bt0( app, widget ):
     print "app", app
     print "t0:", app["t0"]
     try:
-        app[ "t0" ][ "Change-me" ] = "Changed"
+        app[ "t0" ][ "change-me-tab" ] = "Changed"
     except KeyError, e:
         info( "Exception: %s" % e )
 
@@ -80,7 +80,8 @@ App( title="Test Tabs",
                                                      ),
                                           horizontal=True,
                                           ),
-                               Tabs.Page( label="Change-me",
+                               Tabs.Page( id="change-me-tab",
+                                          label="Change-me",
                                           children=( Button( id="bt0",
                                                              label="do it!",
                                                              callback=bt0,

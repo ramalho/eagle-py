@@ -3998,30 +3998,30 @@ class Tabs( _EGWidget ):
     # __focus_page__()
 
 
-    def focus_page( self, index_or_name_or_page ):
+    def focus_page( self, index_or_id_or_page ):
         """Make given page visible."""
-        if not isinstance( index_or_name_or_page, Tabs.Page ):
-            index_or_name = index_or_name_or_page
-            page = self.get_page( index_or_name )
+        if not isinstance( index_or_id_or_page, Tabs.Page ):
+            index_or_id = index_or_id_or_page
+            page = self.get_page( index_or_id )
         else:
-            page = index_or_name_or_page
+            page = index_or_id_or_page
         page.focus()
     # focus_page()
 
 
-    def get_page( self, index_or_name ):
-        """Get the Tabs.Page given its index or name.
+    def get_page( self, index_or_id ):
+        """Get the Tabs.Page given its index or id.
 
-        @raise KeyError if index_or_name doesn't exists.
+        @raise KeyError if index_or_id doesn't exists.
         """
-        if isinstance( index_or_name, basestring ):
-            name = index_or_name
+        if isinstance( index_or_id, basestring ):
+            id = index_or_id
             for w in self.children:
-                if w.label == name:
+                if w.id == id:
                     return w
-            raise KeyError( "No page labeled '%s'" % name )
+            raise KeyError( "No page with id='%s'" % id )
         else:
-            index = index_or_name
+            index = index_or_id
             try:
                 return self.children[ index ]
             except IndexError, e:
@@ -4029,24 +4029,24 @@ class Tabs( _EGWidget ):
     # get_page()
 
 
-    def __getitem__( self, name ):
+    def __getitem__( self, index_or_id ):
         """Same as L{Tabs.get_page()}.
 
         @raise KeyError see L{Tabs.get_page()}
         @see L{Tabs.get_page()}
         """
-        return self.get_page( name )
+        return self.get_page( index_or_id )
     # __getitem__()
 
 
-    def __setitem__( self, name, value ):
-        """Set L{Tabs.Page.label} of a page get using 'name' for
+    def __setitem__( self, index_or_id, value ):
+        """Set L{Tabs.Page.label} of a page get using 'index_or_id' for
         L{Tabs.get_page()}.
 
         @raise KeyError see L{Tabs.get_page()}
         @see L{Tabs.get_page()}
         """
-        page = self[ name ]
+        page = self[ index_or_id ]
         page.label = value
     # __setitem__()
 # Tabs
