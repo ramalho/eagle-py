@@ -4336,7 +4336,7 @@ class Table( _EGWidget ):
 
 
 
-    def __init__( self, id, label="", items=None, types=None,
+    def __init__( self, id, label="", items=None, types=None, selected=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
                   hidden_columns_indexes=None, cell_format_func=None,
@@ -4350,6 +4350,7 @@ class Table( _EGWidget ):
                columns)
         @param types: a list of types (str, int, long, float, unicode, bool)
                for columns, if omitted, will be guessed from items.
+        @param selected: index of selected row or None, for no pre-selected.
         @param headers: what to use as table header.
         @param show_headers: whenever to show table headers
         @param editable: if table is editable. If editable, user can change
@@ -4439,6 +4440,8 @@ class Table( _EGWidget ):
         self._model._hid_row_inserted = None
         self.__setup_connections__()
         self.__setup_items__()
+        if selected is not None:
+                self.select( selected )
     # __init__()
 
 
@@ -4451,6 +4454,7 @@ class Table( _EGWidget ):
             self._frame = gtk.Frame( self.label )
             self._frame.set_name( self.id )
             self._frame.add( self._vbox )
+            self._vbox.show()
             root = self._frame
         else:
             root = self._vbox
@@ -4460,6 +4464,7 @@ class Table( _EGWidget ):
 
         if self.editable or self.repositioning:
             self._hbox = gtk.HBox( False, self.spacing )
+            self._hbox.show()
             self._vbox.pack_start( self._hbox, expand=False, fill=True )
 
         if self.editable:
@@ -4467,16 +4472,25 @@ class Table( _EGWidget ):
             self._btn_del  = gtk.Button( stock=gtk.STOCK_REMOVE )
             self._btn_edit = gtk.Button( stock=gtk.STOCK_EDIT )
 
+            self._btn_add.show()
+            self._btn_del.show()
+            self._btn_edit.show()
+
             self._hbox.pack_start( self._btn_add )
             self._hbox.pack_start( self._btn_del )
             self._hbox.pack_start( self._btn_edit )
 
         if self.repositioning:
             if self.editable:
-                self._hbox.pack_start( gtk.VSeparator() )
+                sep = gtk.VSeparator()
+                self._hbox.pack_start( sep )
+                sep.show()
 
             self._btn_up   = gtk.Button( stock=gtk.STOCK_GO_UP )
             self._btn_down = gtk.Button( stock=gtk.STOCK_GO_DOWN )
+
+            self._btn_up.show()
+            self._btn_down.show()
 
             self._btn_up.set_sensitive( False )
             self._btn_down.set_sensitive( False )
@@ -4877,6 +4891,7 @@ class Table( _EGWidget ):
     def __setup_table__( self ):
         self.__setup_model__()
         self._table = gtk.TreeView( self._model )
+        self._table.show()
         self._table.set_name( "table-%s" % self.id )
         self._table.get_selection().set_mode( gtk.SELECTION_MULTIPLE )
 
@@ -4978,6 +4993,7 @@ class Table( _EGWidget ):
         self._table.set_enable_search( True )
 
         self._sw = gtk.ScrolledWindow()
+        self._sw.show()
         self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
                              vscrollbar_policy=gtk.POLICY_AUTOMATIC )
         self._sw.set_shadow_type( gtk.SHADOW_IN )
@@ -5047,6 +5063,7 @@ class Table( _EGWidget ):
     def select( self, index ):
         selection = self._table.get_selection()
         selection.unselect_all()
+        print "select: %r" % index
         selection.select_path( index )
     # select()
 
