@@ -5988,12 +5988,13 @@ class HelpButton( Button, AutoGenId ):
 
 class OpenFileButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing file."""
-    def __init__( self, id=None,
+    def __init__( self, id=None, filename=None,
                   filter=None, multiple=False,
                   callback=None, expand_policy=None ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
+        @param filename: default filename.
         @param filter: filter files to show, see L{FileChooser}.
         @param multiple: enable selection of multiple files.
         @param callback: function (or list of functions) to call back
@@ -6007,7 +6008,8 @@ class OpenFileButton( Button, AutoGenId ):
         @see: L{FileChooser}
         """
         def c( app_id, wid_id ):
-            f = self.app.file_chooser( FileChooser.ACTION_OPEN,
+            f = self.app.file_chooser( action=FileChooser.ACTION_OPEN,
+                                       filename=filename,
                                        filter=filter, multiple=multiple )
             if f is not None and callback:
                 callback( self.app, self, f )
@@ -6021,10 +6023,12 @@ class OpenFileButton( Button, AutoGenId ):
 
 class SelectFolderButton( Button, AutoGenId ):
     """Push button to show dialog to choose an existing folder/directory."""
-    def __init__( self, id=None, callback=None, expand_policy=None ):
+    def __init__( self, id=None, filename=None, callback=None,
+                  expand_policy=None ):
         """Constructor.
 
         @param id: may not be provided, it will be generated automatically.
+        @param filename: default filename.
         @param callback: function (or list of functions) to call back
                when file is selected. Function will get as parameters:
                 - app reference.
@@ -6036,7 +6040,8 @@ class SelectFolderButton( Button, AutoGenId ):
         @see: L{FileChooser}
         """
         def c( app_id, wid_id ):
-            f = self.app.file_chooser( FileChooser.ACTION_SELECT_FOLDER )
+            f = self.app.file_chooser( action=FileChooser.ACTION_SELECT_FOLDER,
+                                       filename=filename )
             if f is not None and callback:
                 callback( self.app, self, f )
         # c()
@@ -6067,7 +6072,7 @@ class SaveFileButton( Button, AutoGenId ):
         @see: L{FileChooser}
         """
         def c( app_id, wid_id ):
-            f = self.app.file_chooser( FileChooser.ACTION_SAVE,
+            f = self.app.file_chooser( action=FileChooser.ACTION_SAVE,
                                        filename=filename,
                                        filter=filter )
             if f is not None and callback:
