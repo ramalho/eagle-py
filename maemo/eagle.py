@@ -2986,6 +2986,7 @@ class _MultiLineEntry( gtk.ScrolledWindow ):
         self.set_shadow_type( gtk.SHADOW_IN )
 
         self.textview = gtk.TextView()
+        self.textview.show()
         self.add( self.textview )
 
         self.textview.set_editable( True )
