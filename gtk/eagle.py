@@ -544,7 +544,7 @@ class _EGObject( object ):
 # _EGObject
 
 
-class AutoGenId( object ):
+class _AutoGenId( object ):
     """Mix-In to auto-generate ids.
 
     @warning: never use it directly in Eagle applications!
@@ -557,10 +557,10 @@ class AutoGenId( object ):
         return n
     # __get_id__()
     __get_id__ = classmethod( __get_id__ )
-# AutoGenId
+# _AutoGenId
 
 
-class Image( _EGObject, AutoGenId ):
+class Image( _EGObject, _AutoGenId ):
     """
     An image that can be loaded from files or binary data and saved to files.
     """
@@ -987,7 +987,7 @@ class _EGDataWidget( _EGWidget ):
 # _EGDataWidget
 
 
-class AboutDialog( _EGWidget, AutoGenId ):
+class AboutDialog( _EGWidget, _AutoGenId ):
     """A window that displays information about the application.
 
     @attention: avoid using this directly, use L{AboutButton} instead.
@@ -1093,7 +1093,7 @@ class AboutDialog( _EGWidget, AutoGenId ):
 # AboutDialog
 
 
-class HelpDialog( _EGWidget, AutoGenId ):
+class HelpDialog( _EGWidget, _AutoGenId ):
     """A window that displays application help.
 
     @attention: avoid using this directly, use L{HelpButton} instead.
@@ -1156,7 +1156,7 @@ class HelpDialog( _EGWidget, AutoGenId ):
 # HelpDialog
 
 
-class FileChooser( _EGWidget, AutoGenId ):
+class FileChooser( _EGWidget, _AutoGenId ):
     """A dialog to choose a file.
 
     @attention: avoid using this directly, use L{App.file_chooser},
@@ -1272,7 +1272,7 @@ class FileChooser( _EGWidget, AutoGenId ):
 # FileChooser
 
 
-class PreferencesDialog( _EGWidget, AutoGenId ):
+class PreferencesDialog( _EGWidget, _AutoGenId ):
     """A dialog to present user with preferences.
 
     Preferences is another L{App} area, just like C{left}, C{right}, C{center},
@@ -1335,7 +1335,7 @@ class PreferencesDialog( _EGWidget, AutoGenId ):
 # PreferencesDialog
 
 
-class DebugDialog( _EGObject, AutoGenId ):
+class DebugDialog( _EGObject, _AutoGenId ):
     """Dialog to show uncaught exceptions.
 
     This dialog shows information about uncaught exceptions and also save
@@ -1626,7 +1626,7 @@ class _EGWidLabelEntry( _EGDataWidget ):
 # _EGWidLabelEntry
 
 
-class App( _EGObject, AutoGenId ):
+class App( _EGObject, _AutoGenId ):
     """An application window.
 
     This is the base of Eagle programs, since it will hold every graphical
@@ -3975,7 +3975,7 @@ class Tabs( _EGWidget ):
     using the dictionary syntax or L{Tabs.get_page()} method.
     """
 
-    class Page( _EGWidget, AutoGenId ):
+    class Page( _EGWidget, _AutoGenId ):
         """Page in Tabs component.
 
         Pages must have a name and optionally an id, otherwise one id
@@ -6026,7 +6026,7 @@ class Button( _EGWidget ):
 # Button
 
 
-class AboutButton( Button, AutoGenId ):
+class AboutButton( Button, _AutoGenId ):
     """Push button to show L{AboutDialog} of L{App}."""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6042,7 +6042,7 @@ class AboutButton( Button, AutoGenId ):
 # AboutButton
 
 
-class CloseButton( Button, AutoGenId ):
+class CloseButton( Button, _AutoGenId ):
     """Push button to close L{App}."""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6058,7 +6058,7 @@ class CloseButton( Button, AutoGenId ):
 # CloseButton
 
 
-class QuitButton( Button, AutoGenId ):
+class QuitButton( Button, _AutoGenId ):
     """Push button to quit all L{App}s."""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6074,7 +6074,7 @@ class QuitButton( Button, AutoGenId ):
 # QuitButton
 
 
-class HelpButton( Button, AutoGenId ):
+class HelpButton( Button, _AutoGenId ):
     """Push button to show L{HelpDialog} of L{App}."""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6090,7 +6090,7 @@ class HelpButton( Button, AutoGenId ):
 # HelpButton
 
 
-class OpenFileButton( Button, AutoGenId ):
+class OpenFileButton( Button, _AutoGenId ):
     """Push button to show dialog to choose an existing file."""
     def __init__( self, id=None, filename=None,
                   filter=None, multiple=False,
@@ -6127,7 +6127,7 @@ class OpenFileButton( Button, AutoGenId ):
 # OpenFileButton
 
 
-class SelectFolderButton( Button, AutoGenId ):
+class SelectFolderButton( Button, _AutoGenId ):
     """Push button to show dialog to choose an existing folder/directory."""
     def __init__( self, id=None, filename=None, callback=None,
                   expand_policy=None, active=True, visible=True ):
@@ -6159,7 +6159,7 @@ class SelectFolderButton( Button, AutoGenId ):
 # SelectFolderButton
 
 
-class SaveFileButton( Button, AutoGenId ):
+class SaveFileButton( Button, _AutoGenId ):
     """Push button to show dialog to choose a file to save."""
     def __init__( self, id=None, filename=None,
                   filter=None, callback=None, expand_policy=None,
@@ -6194,7 +6194,7 @@ class SaveFileButton( Button, AutoGenId ):
 # SaveFileButton
 
 
-class PreferencesButton( Button, AutoGenId ):
+class PreferencesButton( Button, _AutoGenId ):
     """Push button to show L{PreferencesDialog} of L{App}."""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6209,7 +6209,7 @@ class PreferencesButton( Button, AutoGenId ):
 # PreferencesButton
 
 
-class HSeparator( _EGWidget, AutoGenId ):
+class HSeparator( _EGWidget, _AutoGenId ):
     """Horizontal separator"""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6224,7 +6224,7 @@ class HSeparator( _EGWidget, AutoGenId ):
 # HSeparator
 
 
-class VSeparator( _EGWidget, AutoGenId ):
+class VSeparator( _EGWidget, _AutoGenId ):
     """Horizontal separator"""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
@@ -6239,7 +6239,7 @@ class VSeparator( _EGWidget, AutoGenId ):
 # VSeparator
 
 
-class Label( _EGDataWidget, AutoGenId ):
+class Label( _EGDataWidget, _AutoGenId ):
     """Text label"""
     label = _gen_ro_property( "label" )
 
