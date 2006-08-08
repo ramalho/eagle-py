@@ -6312,7 +6312,7 @@ class HSeparator( _EGWidget, AutoGenId ):
 # HSeparator
 
 
-class VSeparator( _EGWidget ):
+class VSeparator( _EGWidget, AutoGenId ):
     """Horizontal separator"""
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
