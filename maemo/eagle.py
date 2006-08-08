@@ -4156,6 +4156,8 @@ class Tabs( _EGWidget ):
             _EGWidget.set_active( self, value )
             self._gtk_label.set_sensitive( value )
         # set_active()
+
+        active = property( _EGWidget.get_active, set_active )
     # Page
 
 
