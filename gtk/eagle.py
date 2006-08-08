@@ -5260,7 +5260,7 @@ class RichText( _EGWidget ):
     done using a HTML subset.
     """
 
-    class Renderer( gtk.TextView ):
+    class _Renderer( gtk.TextView ):
         """Specialized TextView to render formatted texts.
 
         This class emits "follow-link" when user clicks somewhere.
@@ -5275,7 +5275,7 @@ class RichText( _EGWidget ):
         def __init__( self, link_color="#0000ff",
                       foreground=None, background=None,
                       resource_provider=None ):
-            """RichText.Renderer constructor.
+            """RichText._Renderer constructor.
 
             @param link_color: color to use with links. String with color name
                    or in internet format (3 pairs of RGB, in hexa, prefixed by
@@ -5312,7 +5312,7 @@ class RichText( _EGWidget ):
 
 
         def __create_bullets__( self ):
-            klass = RichText.Renderer
+            klass = RichText._Renderer
             if klass.bullet is None:
                 width = height = 16
                 dx = dy = 4
@@ -5354,7 +5354,7 @@ class RichText( _EGWidget ):
             K_End = gtk.gdk.keyval_from_name( "End" )
 
             if not self.__class__.signal_created:
-                gobject.signal_new( "follow-link", RichText.Renderer,
+                gobject.signal_new( "follow-link", RichText._Renderer,
                                     gobject.SIGNAL_RUN_LAST,
                                     gobject.TYPE_NONE,
                                     ( gobject.TYPE_STRING,
@@ -5653,10 +5653,10 @@ class RichText( _EGWidget ):
             b = self.buffer.get_end_iter()
             self.buffer.delete( a, b )
         # reset()
-    # Renderer
+    # _Renderer
 
 
-    class Parser( htmllib.HTMLParser ):
+    class _Parser( htmllib.HTMLParser ):
         """HTML subset parser"""
         def anchor_bgn( self, href, name, type ):
             htmllib.HTMLParser.anchor_bgn( self, href, name, type )
@@ -5683,10 +5683,10 @@ class RichText( _EGWidget ):
         def end_font( self ):
             self.formatter.pop_font()
         # end_font()
-    # Parser
+    # _Parser
 
 
-    class Formatter( formatter.AbstractFormatter ):
+    class _Formatter( formatter.AbstractFormatter ):
         """HTML subset formatter"""
         def add_image( self, filename, width, height ):
             self.writer.add_image( filename, width, height )
@@ -5707,7 +5707,7 @@ class RichText( _EGWidget ):
             else:
                 formatter.AbstractFormatter.push_font( self, font )
         # push_font()
-    # Formatter
+    # _Formatter
 
     bgcolor = _gen_ro_property( "bgcolor" )
     fgcolor = _gen_ro_property( "fgcolor" )
@@ -5781,10 +5781,10 @@ class RichText( _EGWidget ):
         # img_provider()
 
         self._sw = gtk.ScrolledWindow()
-        self._renderer = RichText.Renderer( link_color=self.link_color,
-                                            foreground=self.fgcolor,
-                                            background=self.bgcolor,
-                                            resource_provider=img_provider )
+        self._renderer = RichText._Renderer( link_color=self.link_color,
+                                             foreground=self.fgcolor,
+                                             background=self.bgcolor,
+                                             resource_provider=img_provider )
 
         self._sw.set_border_width( self.padding )
         self._sw.set_shadow_type( gtk.SHADOW_IN )
@@ -5804,8 +5804,8 @@ class RichText( _EGWidget ):
 
 
     def __setup_parser__( self ):
-        self._formatter = RichText.Formatter( self._renderer )
-        self._parser = RichText.Parser( self._formatter )
+        self._formatter = RichText._Formatter( self._renderer )
+        self._parser = RichText._Parser( self._formatter )
     # __setup_parser__()
 
 
