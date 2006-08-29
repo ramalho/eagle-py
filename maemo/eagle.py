@@ -5612,6 +5612,7 @@ class RichText( _EGWidget ):
             itr = self.buffer.get_end_iter()
             anchor = self.buffer.create_child_anchor( itr )
             w = gtk.HSeparator()
+            w.show()
             def size_allocate( widget, rect ):
                 lm = self.get_left_margin()
                 rm = self.get_right_margin()
