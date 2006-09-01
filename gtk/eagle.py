@@ -2158,7 +2158,7 @@ class App( _EGObject, _AutoGenId ):
     # remove_status_message()
 
 
-    def timeout_add( self, interval, callback ):
+    def timeout_add( self, interval, callback, *args, **kargs ):
         """Register a function to be called after a given timeout/interval.
 
         @param interval: milliseconds between calls.
@@ -2168,14 +2168,14 @@ class App( _EGObject, _AutoGenId ):
                called anymore.
         @return: id number to be used in L{remove_event_source}
         """
-        def wrap( *args ):
-            return callback( self )
+        def wrap( *a ):
+            return callback( self, *args, **kargs )
         # wrap()
         return gobject.timeout_add( interval, wrap )
     # timeout_add()
 
 
-    def idle_add( self, callback ):
+    def idle_add( self, callback, *args, **kargs ):
         """Register a function to be called when system is idle.
 
         System is idle if there is no other event pending.
@@ -2186,8 +2186,8 @@ class App( _EGObject, _AutoGenId ):
                called anymore.
         @return: id number to be used in L{remove_event_source}
         """
-        def wrap( *args ):
-            return callback( self )
+        def wrap( *a ):
+            return callback( self, *args, **kargs )
         # wrap()
         return gobject.idle_add( wrap )
     # idle_add()
@@ -2196,7 +2196,7 @@ class App( _EGObject, _AutoGenId ):
 
     def io_watch( self, file, callback,
                   on_in=False, on_out=False, on_urgent=False, on_error=False,
-                  on_hungup=False ):
+                  on_hungup=False, *args, **kargs ):
         """Register a function to be called after an Input/Output event.
 
         @param file: any file object or file descriptor (integer).
@@ -2222,7 +2222,8 @@ class App( _EGObject, _AutoGenId ):
             on_hungup = bool( cb_condition & gobject.IO_HUP )
             return callback( self, source, on_in=on_in,
                              on_out=on_out, on_urgent=on_urgent,
-                             on_error=on_error, on_hungup=on_hungup )
+                             on_error=on_error, on_hungup=on_hungup,
+                             *args, **kargs )
         # wrap()
 
         condition = 0
@@ -2546,6 +2547,8 @@ class Canvas( _EGWidget ):
                 r, g, b = color
             else:
                 a, r, g, b = color
+        else:
+            raise ValueError( "Color not supported %r" % color)
 
         return a, r, g, b
     # __color_from__()
@@ -4328,8 +4331,17 @@ class Table( _EGWidget ):
 
 
     class CellFormat( object ):
+        XALIGN_LEFT = 1
+        XALIGN_RIGHT = 2
+        XALIGN_CENTER = 3
+
+        YALIGN_TOP = 1
+        YALIGN_BOTTOM = 2
+        YALIGN_CENTER = 3
+
         __slots__ = ( "fgcolor", "bgcolor", "font", "bold",
-                      "italic", "underline", "strike", "contents" )
+                      "italic", "underline", "strike", "contents",
+                      "xalign", "yalign")
         def __init__( self, **kargs ):
             for a in self.__slots__:
                 v = kargs.get( a, None )
@@ -4848,6 +4860,26 @@ class Table( _EGWidget ):
                     italic = pango.STYLE_NORMAL
                 cell_renderer.set_property( "style", italic )
 
+                xalign = 0.0
+                if cf.xalign:
+                    if cf.xalign == cf.XALIGN_LEFT:
+                        xalign = 0.0
+                    elif cf.xalign == cf.XALIGN_RIGHT:
+                        xalign = 1.0
+                    else:
+                        xalign = 0.5
+                cell_renderer.set_property( "xalign", xalign )
+
+                yalign = 0.0
+                if cf.yalign:
+                    if cf.yalign == cf.YALIGN_TOP:
+                        yalign = 0.0
+                    elif cf.yalign == cf.YALIGN_BOTTOM:
+                        yalign = 1.0
+                    else:
+                        yalign = 0.5
+                cell_renderer.set_property( "yalign", yalign )
+
                 cell_renderer.set_property( "strikethrough",
                                             bool( cf.strike ) )
 
@@ -5066,7 +5098,8 @@ class Table( _EGWidget ):
     def select( self, index ):
         selection = self._table.get_selection()
         selection.unselect_all()
-        selection.select_path( index )
+        if index is not None:
+            selection.select_path( index )
     # select()
 
 
