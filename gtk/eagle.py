@@ -744,7 +744,7 @@ class Image( _EGObject, _AutoGenId ):
 
         if len( data ) < height * rowstride:
             raise ValueError( ( "data must be at least "
-                                "width * height * rowstride long."
+                                "height * rowstride long."
                                 "Values are: data size=%d, required=%d" ) %
                               ( len( data ), height * rowstride ) )
 
