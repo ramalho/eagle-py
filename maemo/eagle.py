@@ -4438,7 +4438,8 @@ class Table( _EGWidget ):
                   repositioning=False, expand_columns_indexes=None,
                   hidden_columns_indexes=None, cell_format_func=None,
                   selection_callback=None, data_changed_callback=None,
-                  expand_policy=None, active=True, visible=True ):
+                  scrollbars=True, expand_policy=None, active=True,
+                  visible=True ):
         """Table constructor.
 
         @param id: unique identifier.
@@ -4471,6 +4472,8 @@ class Table( _EGWidget ):
                 - App reference
                 - Table reference
                 - Pair ( index, row_contents )
+        @param scrollbars: whenever to use scrollbars and make table
+               fit small places.
         @param expand_policy: how this widget should fit space, see
                L{ExpandPolicy.Policy.Rule}.
 
@@ -4492,6 +4495,7 @@ class Table( _EGWidget ):
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
         self.cell_format_func = cell_format_func
+        self.scrollbars = bool( scrollbars )
 
         if isinstance( expand_columns_indexes, ( int, long ) ):
             expand_columns_indexes = ( expand_columns_indexes, )
@@ -5118,8 +5122,12 @@ class Table( _EGWidget ):
 
         self._sw = gtk.ScrolledWindow()
         self._sw.show()
-        self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
-                             vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+        if self.scrollbars:
+            policy = gtk.POLICY_AUTOMATIC
+        else:
+            policy = gtk.POLICY_NEVER
+        self._sw.set_policy( hscrollbar_policy=policy,
+                             vscrollbar_policy=policy )
         self._sw.set_shadow_type( gtk.SHADOW_IN )
         self._sw.add( self._table )
         self._vbox.pack_start( self._sw )
