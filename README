@@ -1,13 +1,13 @@
 Eagle is an abstraction layer atop Graphical Toolkits focused on making simple
 applications easy to build while powerful in features.
 
-With Eagle you have many facilities to build application that needs just
-some buttons, user input and a canvas to draw.
+With Eagle you have many facilities to build applications that need just
+a few buttons, user input and a canvas to draw on.
 
-Canvas is really simple, what makes Eagle a great solution to Computer Graphics
+Canvas is really simple, which makes Eagle a great solution for Computer Graphics
 and Image Processing software, the primary focus of this library.
 
-User input widgets are persistent, you just need to mark them "persistent" or
+User input data can be made persistent, you just need to mark the widgets "persistent" or
 put them in the preferences area.
 
 Eagle is not meant to be another Graphical Toolkit, you already have a bunch
@@ -17,7 +17,7 @@ Widgets are laid out automatically in 5 areas: left, right, top, bottom and
 center.
 
 It provides useful widgets like: Color selector, Font selector, Quit button,
-Preferences button and bialog, About dialog and Help dialog.
+Preferences button and dialog, About dialog and Help dialog.
 
 Eagle now supports multiple platforms: gtk, qt and maemo, please refer to each
 directory for specific information.
