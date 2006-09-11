@@ -949,6 +949,13 @@ class _EGWidget( _EGObject ):
         for w in self.__get_widgets__():
             w.hide()
     # hide()
+
+
+    def focus( self ):
+        """Give keyboard focus to this widget."""
+        for w in self.__get_widgets__():
+            w.grab_focus()
+    # focus()
 # _EGWidget
 
 
