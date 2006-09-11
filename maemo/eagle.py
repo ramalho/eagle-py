@@ -6127,8 +6127,8 @@ class Button( _EGWidget ):
         """
         if expand_policy is None:
             expand_policy = ExpandPolicy.Fill()
-        self.label = label
-        self.image = image
+        self.__label = label
+        self.__image = image
         self.stock = stock
         self.callback = _callback_tuple( callback )
 
@@ -6155,21 +6155,47 @@ class Button( _EGWidget ):
         else:
             self._button = gtk.Button()
 
-        if self.image:
-            if isinstance( self.image, Image ):
-                img = self.image
-            elif isinstance( self.image, basestring ):
-                img = Image( filename=self.image )
-            else:
-                raise ValueError( "not supported image type: %r" % self.image )
-
-            image = gtk.Image()
-            image.set_from_pixbuf( img.__get_gtk_pixbuf__() )
-            self._button.set_image( image )
+        if self.__image:
+            self.image = self.__image
 
         self._button.set_name( self.id )
         self._widgets = ( self._button, )
     # __setup_gui__()
+
+
+    def set_label( self, label ):
+        self.__label = label
+        self._button.set_label( label )
+    # set_label()
+
+
+    def get_label( self ):
+        return self.__label
+    # get_label()
+
+    label = property( get_label, set_label )
+
+
+    def set_image( self, image ):
+        if isinstance( image, Image ):
+            img = image
+        elif isinstance( image, basestring ):
+            img = Image( filename=image )
+        else:
+            raise ValueError( "not supported image type: %r" % image )
+
+        self.__image = image
+        gtk_image = gtk.Image()
+        gtk_image.set_from_pixbuf( img.__get_gtk_pixbuf__() )
+        self._button.set_image( gtk_image )
+    # set_image()
+
+
+    def get_image( self ):
+        return self.__image
+    # get_image()
+
+    image = property( get_image, set_image )
 
 
     def __setup_connections__( self ):
