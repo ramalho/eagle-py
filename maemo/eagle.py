@@ -2376,8 +2376,8 @@ class Canvas( _EGWidget ):
     label = _gen_ro_property( "label" )
 
     def __init__( self, id, width, height, label="", bgcolor=None,
-                  scrollbars=True, callback=None, expand_policy=None,
-                  active=True, visible=True ):
+                  scrollbars=True, callback=None, resize_callback=None,
+                  expand_policy=None, active=True, visible=True ):
         """Canvas Constructor.
 
         @param id: unique identifier.
@@ -2398,6 +2398,13 @@ class Canvas( _EGWidget ):
                 - Button state (or'ed MOUSE_BUTTON_*)
                 - horizontal positon (x)
                 - vertical positon (y)
+        @param resize_callback: function (or list of functions) to call
+               when size available to canvas changed. Function will get
+               as parameters:
+                - App reference
+                - Canvas reference
+                - New width
+                - New height
         @param expand_policy: how this widget should fit space, see
                L{ExpandPolicy.Policy.Rule}.
 
@@ -2412,6 +2419,7 @@ class Canvas( _EGWidget ):
 
         self._pixmap = None
         self._callback = _callback_tuple( callback )
+        self._resize_callback = _callback_tuple( resize_callback )
 
         # style and color context must be set just after drawing area is
         # attached to a window, otherwise they'll be empty and useless.
@@ -2468,6 +2476,13 @@ class Canvas( _EGWidget ):
 
 
     def __setup_connections__( self ):
+        def size_allocate( widget, geometry ):
+            x, y, w, h = list( geometry )
+            for c in self._resize_callback:
+                c( self.app, self, w, h )
+        # size_allocate()
+        self._sw.child.connect( "size-allocate", size_allocate )
+
         def configure_event( widget, event ):
             if self._pixmap is None:
                 self.__set_useful_attributes__()
