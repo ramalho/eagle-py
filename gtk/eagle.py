@@ -4067,10 +4067,18 @@ class Tabs( _EGWidget ):
 
 
         def __setup_gui__( self ):
+            self._sw = gtk.ScrolledWindow()
             self._wid = _Table( id=( "%s-contents" % self.id ),
                                 children=self.children,
                                 horizontal=self.horizontal )
-            self._widgets = ( self._wid, )
+            self._sw.add_with_viewport( self._wid )
+            self._sw.set_shadow_type( gtk.SHADOW_NONE )
+            self._sw.child.set_shadow_type( gtk.SHADOW_NONE )
+            self._sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
+                                 vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+            self._wid.show()
+            self._sw.show()
+            self._widgets = ( self._sw, )
         # __setup_gui__()
 
 
