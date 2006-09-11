@@ -74,7 +74,7 @@ def populate_table(app):
 
     graph_items = []
     for row in pop:
-        graph_items.append(row[0:4] + [False, row])
+        graph_items.append(row[0:4] + [False, row, None])
 
     calc_items = []
     for row in pop:
@@ -338,7 +338,7 @@ def graph_selected(app, table, rows):
     """Toggle item selection"""
     if not rows:
         return
-    table.select(None)
+
     idx, row = rows[0]
     v = not row[4]
     table[idx][4] = v
