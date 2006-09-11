@@ -6102,12 +6102,22 @@ class Button( _EGWidget ):
         "media:rewind": gtk.STOCK_MEDIA_REWIND,
         }
 
-    def __init__( self, id, label="", stock=None, callback=None,
+
+    def __init__( self, id, label="", stock=None, image=None, callback=None,
                   expand_policy=None, active=True, visible=True ):
         """Push button constructor.
 
+        It may be a stock button, that is, a pre-defined button that may
+        have an associated image and translated label text.
+
+        It may have an image either by using a stock button or giving image
+        as parameter, but this image will only be visible if system
+        configuration wants that, GTK does that with gtk-button-images
+        property present on gtk.Settings.
+
         @param label: what text to show, if stock isn't provided.
         @param stock: optional. One of L{stock_items}.
+        @param image: image filename (or L{Image} instance) to use.
         @param callback: the function (or list of functions) to call
                when button is pressed. Function will get as parameter:
                 - App reference
@@ -6118,6 +6128,7 @@ class Button( _EGWidget ):
         if expand_policy is None:
             expand_policy = ExpandPolicy.Fill()
         self.label = label
+        self.image = image
         self.stock = stock
         self.callback = _callback_tuple( callback )
 
@@ -6137,12 +6148,25 @@ class Button( _EGWidget ):
 
     def __setup_gui__( self ):
         k = {}
-        try:
-            k[ "stock" ] = self._gtk_stock_map[ self.stock ]
-        except KeyError, e:
-            k[ "label" ] = self.label or self.stock
+        if self.stock:
+            self._button = gtk.Button( stock=self._gtk_stock_map[ self.stock ] )
+        elif self.label:
+            self._button = gtk.Button( label=self.label )
+        else:
+            self._button = gtk.Button()
 
-        self._button = gtk.Button( **k )
+        if self.image:
+            if isinstance( self.image, Image ):
+                img = self.image
+            elif isinstance( self.image, basestring ):
+                img = Image( filename=self.image )
+            else:
+                raise ValueError( "not supported image type: %r" % self.image )
+
+            image = gtk.Image()
+            image.set_from_pixbuf( img.__get_gtk_pixbuf__() )
+            self._button.set_image( image )
+
         self._button.set_name( self.id )
         self._widgets = ( self._button, )
     # __setup_gui__()
