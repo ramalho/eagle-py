@@ -5200,6 +5200,11 @@ class Table( _EGWidget ):
     # __setup_model__()
 
 
+    def focus( self ):
+        self._table.grab_focus()
+    # focus()
+
+
     def set_label( self, label ):
         if self.__label is None:
             raise ValueError( "You cannot change label of widget created "
@@ -5984,6 +5989,11 @@ class RichText( _EGWidget ):
         # callback()
         self._renderer.connect( "follow-link", callback )
     # __setup_connections__()
+
+
+    def focus( self ):
+        self._renderer.grab_focus()
+    # focus()
 
 
     def set_text( self, text ):
