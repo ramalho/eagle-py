@@ -11,6 +11,12 @@ def focus_e1( app, button ):
 def focus_b0( app, button ):
     app[ "b0" ].focus()
 
+def focus_t0( app, button ):
+    app[ "t0" ].focus()
+
+def focus_r0( app, button ):
+    app[ "r0" ].focus()
+
 
 App( title="Test focus",
      top=( Button( id="b0",
@@ -25,6 +31,15 @@ App( title="Test focus",
                    label="Focus b0",
                    callback=focus_b0,
                    ),
+           Button( id="b3",
+                   label="Focus t0",
+                   callback=focus_t0,
+                   ),
+           Button( id="b4",
+                   label="Focus r0",
+                   callback=focus_r0,
+                   ),
+
            ),
      center=( Entry( id="e0",
                      label="e0",
@@ -32,6 +47,14 @@ App( title="Test focus",
               Entry( id="e1",
                      label="e1",
                      ),
+              Table( id="t0",
+                     label=None,
+                     types=(str, str),
+                     ),
+              RichText( id="r0",
+                        label=None,
+                        text="".join( "teste " * 800 ),
+                        ),
               )
      )
 
