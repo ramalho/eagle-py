@@ -71,7 +71,7 @@ def function( arg0, arg1, *args, **kargs ):
               ),
      bottom=(
               Button( id="clear", stock="clear", callback=clear ),
-              Button( id="append", stock="append", callback=append ),
+              Button( id="append", stock="add", callback=append ),
               )
      )
 
