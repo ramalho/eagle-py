@@ -2614,6 +2614,8 @@ class Canvas( _EGWidget ):
     def resize( self, width, height ):
         """Resize the drawing area."""
         old = self._pixmap
+        self.width = width
+        self.height = height
         self._pixmap = gtk.gdk.Pixmap( self._area.window, width, height )
         if old is None:
             # Paint with bg color
