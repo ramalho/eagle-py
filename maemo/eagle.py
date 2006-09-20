@@ -1757,7 +1757,6 @@ class App( _EGObject, _AutoGenId ):
         self.bottom = bottom
         self.center = center
         self.preferences = preferences
-        self.window_size = window_size
         self.author = _str_tuple( author )
         self.description = _str_tuple( description )
         self.help = _str_tuple( help )
@@ -1776,6 +1775,8 @@ class App( _EGObject, _AutoGenId ):
         self.__setup_connections__()
         self.load()
         self.title = title
+        if window_size:
+            self.window_size = window_size
     # __init__()
 
 
@@ -1816,6 +1817,40 @@ class App( _EGObject, _AutoGenId ):
     # get_title()
 
     title = property( get_title, set_title )
+
+
+    def get_window_size( self ):
+        return self._win.get_size()
+    # get_window_size()
+
+
+    def set_window_size( self, *args, **kargs ):
+        """Set window size.
+
+        Parameters are very flexible:
+         - one argument with a tuple with ( width, height )
+         - two integer arguments, being width and height
+         - keywords width and height, both with integers
+        """
+        width = None
+        height = None
+        if len( args ) == 1 and isinstance( args[ 0 ], ( tuple, list ) ):
+            width, height = args[ 0 ]
+        elif len( args ) == 2:
+            width, height = args
+
+        if "width" in kargs:
+            width = kargs[ "width" ]
+        if "height" in kargs:
+            height = kargs[ "height" ]
+
+        if width is None or height is None:
+            raise ValueError( "Must provide width and height" )
+
+        self._win.resize( width, height )
+    # set_window_size()
+
+    window_size = property( get_window_size, set_window_size )
 
 
     def get_widget_by_id( self, widget_id ):
@@ -1920,8 +1955,6 @@ class App( _EGObject, _AutoGenId ):
         self._win = hildon.Window()
         _prg.add_window( self._win )
         self._win_in_fullscreen = False
-        if self.window_size:
-            self._win.set_default_size( *self.window_size )
 
         self._top_layout = gtk.VBox( False )
         self._win.add( self._top_layout )
