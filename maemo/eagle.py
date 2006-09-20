@@ -1706,7 +1706,7 @@ class App( _EGObject, _AutoGenId ):
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
                   preferences=None, window_size=None,
-                  window_position=None,
+                  window_position=None, window_decorated=True,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1732,6 +1732,8 @@ class App( _EGObject, _AutoGenId ):
                default size.
         @param window_position: tuple of ( x, y ) or None to position
                window.
+        @param window_decorated: boolean used to add or remove border,
+               title bar and other decorations from window.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1782,6 +1784,7 @@ class App( _EGObject, _AutoGenId ):
             self.window_size = window_size
         if window_position:
             self.window_position = window_position
+        self.window_decorated = window_decorated
     # __init__()
 
 
@@ -1890,6 +1893,18 @@ class App( _EGObject, _AutoGenId ):
     # set_position()
 
     window_position = property( get_window_position, set_window_position )
+
+
+    def get_window_decorated( self ):
+        return self._win.get_decorated()
+    # get_window_decorated()
+
+
+    def set_window_decorated( self, value ):
+        self._win.set_decorated( bool( value ) )
+    # set_window_decorated()
+
+    window_decorated = property( get_window_decorated, set_window_decorated )
 
 
     def get_widget_by_id( self, widget_id ):
