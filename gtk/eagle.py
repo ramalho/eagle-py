@@ -61,7 +61,7 @@ __all__ = [
     "show", "hide", "set_visible", "get_visible", "is_visible",
     "enable", "disable", "is_enabled",
     "set_active", "set_inactive", "get_active", "is_active",
-    "close",
+    "close", "get_desktop_size",
     "App",
     "Entry", "Password",
     "Spin", "IntSpin", "UIntSpin",
@@ -1698,6 +1698,7 @@ class App( _EGObject, _AutoGenId ):
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
                   preferences=None, window_size=( 800, 600 ),
+                  window_position=None,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1720,7 +1721,9 @@ class App( _EGObject, _AutoGenId ):
         @param preferences: list of widgets to be laid out vertically in
                another window, this can be shown with L{PreferencesButton}.
         @param window_size: tuple of ( width, height ) or None to use the
-               minimum size.
+               default size.
+        @param window_position: tuple of ( x, y ) or None to position
+               window.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1769,6 +1772,8 @@ class App( _EGObject, _AutoGenId ):
         self.title = title
         if window_size:
             self.window_size = window_size
+        if window_position:
+            self.window_position = window_position
     # __init__()
 
 
@@ -1843,6 +1848,40 @@ class App( _EGObject, _AutoGenId ):
     # set_window_size()
 
     window_size = property( get_window_size, set_window_size )
+
+
+    def get_window_position( self ):
+        return self._win.get_position()
+    # get_position()
+
+
+    def set_window_position( self, *args, **kargs ):
+        """Set window position.
+
+        Parameters are very flexible:
+         - one argument with a tuple with ( x, y )
+         - two integer arguments, being x and y
+         - keywords x and y, both with integers
+        """
+        x = None
+        y = None
+        if len( args ) == 1 and isinstance( args[ 0 ], ( tuple, list ) ):
+            x, y = args[ 0 ]
+        elif len( args ) == 2:
+            x, y = args
+
+        if "x" in kargs:
+            x = kargs[ "x" ]
+        if "y" in kargs:
+            y = kargs[ "y" ]
+
+        if x is None or y is None:
+            raise ValueError( "Must provide x and y" )
+
+        self._win.move( x, y )
+    # set_position()
+
+    window_position = property( get_window_position, set_window_position )
 
 
     def get_widget_by_id( self, widget_id ):
@@ -6752,3 +6791,8 @@ def close( app_id=None ):
     except ValueError, e:
         raise ValueError( e )
 # close()
+
+
+def get_desktop_size():
+    return gtk.gdk.screen_width(), gtk.gdk.screen_height()
+# get_desktop_size()
