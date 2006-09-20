@@ -2374,9 +2374,7 @@ class Canvas( _EGWidget ):
         # style and color context must be set just after drawing area is
         # attached to a window, otherwise they'll be empty and useless.
         # This is done in configure_event.
-        self._style = None
         self._fg_gc_normal = None
-        self._bg_gc_normal = None
 
         if bgcolor is not None:
             self.bgcolor = self.__color_from__( bgcolor )
@@ -2418,13 +2416,6 @@ class Canvas( _EGWidget ):
     # __setup_gui__()
 
 
-    def __set_useful_attributes__( self ):
-        self._style = self._area.get_style()
-        self._fg_gc_normal = self._style.fg_gc[ gtk.STATE_NORMAL ]
-        self._bg_gc_normal = self._style.bg_gc[ gtk.STATE_NORMAL ]
-    # __set_useful_attributes__()
-
-
     def __setup_connections__( self ):
         def size_allocate( widget, geometry ):
             x, y, w, h = list( geometry )
@@ -2434,10 +2425,8 @@ class Canvas( _EGWidget ):
         self._sw.child.connect( "size-allocate", size_allocate )
 
         def configure_event( widget, event ):
-            if self._pixmap is None:
-                self.__set_useful_attributes__()
-                w, h = self._area.size_request()
-                self.resize( w, h )
+            if not self._pixmap:
+                self.__setup_canvas__()
             return True
         # configure_event()
         self._area.connect( "configure_event", configure_event )
@@ -2544,6 +2533,12 @@ class Canvas( _EGWidget ):
     # __setup_connections__()
 
 
+    def __setup_canvas__( self ):
+        self.resize( self.width, self.height )
+        self._fg_gc_normal = self._pixmap.new_gc()
+    # __setup_canvas__()
+
+
     def _get_app( self ):
         try:
             return self.__ro_app
@@ -2561,7 +2556,7 @@ class Canvas( _EGWidget ):
         if v is None:
             self.__ro_app = value
             def app_realize( app ):
-                self.resize( self.width, self.height )
+                self.__setup_canvas__()
             # app_realize()
             value.__get_gtk_window__().connect( "realize", app_realize )
         else:
