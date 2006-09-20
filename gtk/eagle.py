@@ -1771,6 +1771,11 @@ class App( _EGObject, _AutoGenId ):
     # __init__()
 
 
+    def __get_gtk_window__( self ):
+        return self._win
+    # __get_gtk_window__()
+
+
     def __getitem__( self, name ):
         w = self.get_widget_by_id( name )
         if isinstance( w, _EGDataWidget ):
@@ -2539,6 +2544,31 @@ class Canvas( _EGWidget ):
     # __setup_connections__()
 
 
+    def _get_app( self ):
+        try:
+            return self.__ro_app
+        except AttributeError:
+            return None
+    # _get_app()
+
+    def _set_app( self, value ):
+        # We need to overload app setter in order to get
+        # gdk.window from app and do resize()
+        try:
+            v = self.__ro_app
+        except AttributeError:
+            v = None
+        if v is None:
+            self.__ro_app = value
+            def app_realize( app ):
+                self.resize( self.width, self.height )
+            # app_realize()
+            value.__get_gtk_window__().connect( "realize", app_realize )
+        else:
+            raise Exception( "Read Only property 'app'." )
+    # _set_app()
+    app = property( _get_app, _set_app )
+
 
     def __color_from__( color ):
         """Convert from color to internal representation.
@@ -2616,11 +2646,10 @@ class Canvas( _EGWidget ):
         old = self._pixmap
         self.width = width
         self.height = height
-        self._pixmap = gtk.gdk.Pixmap( self._area.window, width, height )
-        if old is None:
-            # Paint with bg color
-            self.clear()
-        else:
+        gdk_window = self.app.__get_gtk_window__().window
+        self._pixmap = gtk.gdk.Pixmap( gdk_window, width, height )
+        self.clear()
+        if old is not None:
             # copy old contents over this
             w, h = old.get_size()
             self._pixmap.draw_drawable( self._fg_gc_normal, old,
