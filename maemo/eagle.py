@@ -1751,7 +1751,6 @@ class App( _EGObject, _AutoGenId ):
                 - new value
         """
         _EGObject.__init__( self, id )
-        self.title = title
         self.left = left
         self.right = right
         self.top = top
@@ -1776,6 +1775,7 @@ class App( _EGObject, _AutoGenId ):
         self.__setup_gui__()
         self.__setup_connections__()
         self.load()
+        self.title = title
     # __init__()
 
 
@@ -1804,6 +1804,18 @@ class App( _EGObject, _AutoGenId ):
                 "Could not set value of widget '%s' of type '%s'." % \
                 ( name, type( w ).__name__ ) )
     # __setitem__()
+
+
+    def set_title( self, title ):
+        self._win.set_title( title )
+    # set_title()
+
+
+    def get_title( self ):
+        return self._win.get_title()
+    # get_title()
+
+    title = property( get_title, set_title )
 
 
     def get_widget_by_id( self, widget_id ):
@@ -1906,7 +1918,6 @@ class App( _EGObject, _AutoGenId ):
     def __setup_gui__( self ):
         self._base_widgets = list()
         self._win = hildon.Window()
-        self._win.set_title( self.title )
         _prg.add_window( self._win )
         self._win_in_fullscreen = False
         if self.window_size:
