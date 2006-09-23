@@ -453,14 +453,13 @@ class _Panel( gtk.ScrolledWindow ):
     _vscrollbar_policy = None
 
     def __init__( self, app, id, children ):
-        self.app = app
         self.id = id
         self.children = _obj_tuple( children )
+        self.app = app
 
         gtk.ScrolledWindow.__init__( self )
         self.set_name( id )
         self.__setup_gui__()
-        self.__add_widgets_to_app__()
     # __init__()
 
 
@@ -475,9 +474,23 @@ class _Panel( gtk.ScrolledWindow ):
 
 
     def __add_widgets_to_app__( self ):
+        if not self.app:
+            return
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
+
+    def set_app( self, app ):
+        self._app = app
+        self.__add_widgets_to_app__()
+    # set_app()
+
+
+    def get_app( self ):
+        return self._app
+    # get_app()
+
+    app = property( get_app, set_app )
 
 
     def __get_widgets__( self ):
@@ -1997,23 +2010,13 @@ class App( _EGObject, _AutoGenId ):
 
 
     def __setup_gui__( self ):
-        self._base_widgets = list()
         self._win = gtk.Window( gtk.WINDOW_TOPLEVEL )
         self._win.set_name( self.id )
 
         self._top_layout = gtk.VBox( False )
+        self._top_layout.set_border_width( self.border_width )
+        self._top_layout.show()
         self._win.add( self._top_layout )
-
-        self._base_widgets.append( self._win )
-        self._base_widgets.append( self._top_layout )
-
-        self._vbox = gtk.VBox( False, self.spacing )
-        self._hbox = gtk.HBox( False, self.spacing )
-        self._hbox.set_border_width( self.border_width )
-        self._top_layout.pack_start( self._vbox, expand=True, fill=True )
-
-        self._base_widgets.append( self._vbox )
-        self._base_widgets.append( self._hbox )
 
         self.__setup_gui_left__()
         self.__setup_gui_right__()
@@ -2022,11 +2025,11 @@ class App( _EGObject, _AutoGenId ):
         self.__setup_gui_bottom__()
         self.__setup_gui_preferences__()
 
-        has_top = bool( self._top.__get_widgets__() )
-        has_bottom = bool( self._bottom.__get_widgets__() )
-        has_left = bool( self._left.__get_widgets__() )
-        has_right = bool( self._right.__get_widgets__() )
-        has_center = bool( self._center.__get_widgets__() )
+        has_top = bool( self._top.children )
+        has_bottom = bool( self._bottom.children )
+        has_left = bool( self._left.children )
+        has_right = bool( self._right.children )
+        has_center = bool( self._center.children )
 
         expand_top = False
         expand_bottom = False
@@ -2047,86 +2050,118 @@ class App( _EGObject, _AutoGenId ):
         if has_bottom and not has_hl:
             expand_bottom = True
 
-        # Create Horizontal layout with ( Left | Center | Right )
-        if has_hl:
-            if has_left:
-                self._hbox.pack_start( self._left, expand_left, True )
-                self._base_widgets.append( self._left )
-                if has_center or has_right:
-                    sep = gtk.VSeparator()
-                    self._hbox.pack_start( sep, False, True )
-                    self._base_widgets.append( sep )
-
-            if has_center:
-                self._hbox.pack_start( self._center, expand_center, True )
-                self._base_widgets.append( self._center )
-                if has_right:
-                    sep = gtk.VSeparator()
-                    self._hbox.pack_start( sep, False, True )
-                    self._base_widgets.append( sep )
-
-            if has_right:
-                self._hbox.pack_start( self._right, expand_right, True )
-                self._base_widgets.append( self._right )
-
         # Create Vertical layout with ( TOP | HL | Bottom )
         # where HL is Horizontal layout created before
         if has_top:
-            self._vbox.pack_start( self._top, expand_top, True )
-            self._base_widgets.append( self._top )
+            self._top_layout.pack_start( self._top.__get_widgets__()[0],
+                                         expand_top, True )
             if has_hl or has_bottom:
                 sep = gtk.HSeparator()
-                self._vbox.pack_start( sep, False, True )
-                self._base_widgets.append( sep )
+                sep.show()
+                self._top_layout.pack_start( sep, False, True )
 
+        # Create Horizontal layout with ( Left | Center | Right )
         if has_hl:
-            self._vbox.pack_start( self._hbox, True, True )
-            self._base_widgets.append( self._hbox )
+            self._hbox = gtk.HBox( False )
+            self._hbox.show()
+            self._top_layout.pack_start( self._hbox, True, True )
+
+            if has_left:
+                self._hbox.pack_start( self._left.__get_widgets__()[0],
+                                       expand_left, True )
+                if has_center or has_right:
+                    sep = gtk.VSeparator()
+                    sep.show()
+                    self._hbox.pack_start( sep, False, True )
+
+            if has_center:
+                self._hbox.pack_start( self._center.__get_widgets__()[0],
+                                       expand_center, True )
+                if has_right:
+                    sep = gtk.VSeparator()
+                    sep.show()
+                    self._hbox.pack_start( sep, False, True )
+
+            if has_right:
+                self._hbox.pack_start( self._right.__get_widgets__()[0],
+                                       expand_right, True )
+
             if has_bottom:
                 sep = gtk.HSeparator()
-                self._vbox.pack_start( sep, False, True )
-                self._base_widgets.append( sep )
+                sep.show()
+                self._top_layout.pack_start( sep, False, True )
+
 
         if has_bottom:
-            self._vbox.pack_start( self._bottom, expand_bottom, True )
-            self._base_widgets.append( self._bottom )
-
+            self._top_layout.pack_start( self._bottom.__get_widgets__()[0],
+                                         expand_bottom, True )
 
         if self.statusbar:
             self._statusbar = gtk.Statusbar()
-            self._statusbar_ctx = self._statusbar.get_context_id( self.title )
+            self._statusbar.show()
+            self._statusbar_ctx = self._statusbar.get_context_id( self.id )
             self._statusbar.set_has_resize_grip( True )
             self._top_layout.pack_end( self._statusbar,
                                        expand=False, fill=True )
-            self._base_widgets.append( self._statusbar )
 
-        self._base_widgets = tuple( self._base_widgets )
+        self.__add_widget__( self._left )
+        self.__add_widget__( self._right )
+        self.__add_widget__( self._center )
+        self.__add_widget__( self._top )
+        self.__add_widget__( self._bottom )
+        self._win.show()
+
         self.set_visible( self.get_visible() )
     # __setup_gui__()
 
 
     def __setup_gui_left__( self ):
-        self._left = _VPanel( self, id="left", children=self.left )
+        self._left = Group( id="%s:left" % self.id,
+                            label=None,
+                            border=None,
+                            horizontal=False,
+                            scrollbars=True,
+                            children=self.left )
     # __setup_gui_left__()
 
 
     def __setup_gui_right__( self ):
-        self._right =_VPanel( self, id="right", children=self.right )
+        self._right = Group( id="%s:right" % self.id,
+                            label=None,
+                            border=None,
+                            horizontal=False,
+                            scrollbars=True,
+                            children=self.right )
     # __setup_gui_right__()
 
 
     def __setup_gui_center__( self ):
-        self._center = _VPanel( self, id="center", children=self.center )
+        self._center = Group( id="%s:center" % self.id,
+                              label=None,
+                              border=None,
+                              horizontal=False,
+                              scrollbars=True,
+                              children=self.center )
     # __setup_gui_center__()
 
 
     def __setup_gui_top__( self ):
-        self._top = _HPanel( self, id="top", children=self.top )
+        self._top = Group( id="%s:top" % self.id,
+                           label=None,
+                           border=None,
+                           horizontal=True,
+                           scrollbars=True,
+                           children=self.top )
     # __setup_gui_top__()
 
 
     def __setup_gui_bottom__( self ):
-        self._bottom = _HPanel( self, id="bottom", children=self.bottom )
+        self._bottom = Group( id="%s:bottom" % self.id,
+                              label=None,
+                              border=None,
+                              horizontal=True,
+                              scrollbars=True,
+                              children=self.bottom )
     # __setup_gui_bottom__()
 
 
@@ -2379,15 +2414,13 @@ class App( _EGObject, _AutoGenId ):
 
     def show( self ):
         self._visible = True
-        for w in self._base_widgets:
-            w.show()
+        self._win.show()
     # show()
 
 
     def hide( self ):
         self._visible = False
-        for w in self._base_widgets:
-            w.hide()
+        self._win.hide()
     # hide()
 # App
 
@@ -2516,6 +2549,9 @@ class Canvas( _EGWidget ):
 
     def __setup_connections__( self ):
         def size_allocate( widget, geometry ):
+            if not (self.app and self.app.__get_gtk_window__() and \
+                    self.app.__get_gtk_window__().window):
+                return
             x, y, w, h = list( geometry )
             for c in self._resize_callback:
                 c( self.app, self, w, h )
@@ -3992,31 +4028,18 @@ class Group( _EGWidget ):
     BORDER_ETCHED_OUT = gtk.SHADOW_ETCHED_OUT
 
     def _get_app( self ):
-        try:
-            return self.__ro_app
-        except AttributeError:
-            return None
+        return self._contents.app
     # _get_app()
 
     def _set_app( self, value ):
-        # We need to overload app setter in order to add
-        # children widgets to application as soon as we know the app
-        try:
-            v = self.__ro_app
-        except AttributeError:
-            v = None
-        if v is None:
-            self.__ro_app = value
-            self.__add_widgets_to_app__()
-        else:
-            raise Exception( "Read Only property 'app'." )
+        self._contents.app = value
     # _set_app()
     app = property( _get_app, _set_app )
 
 
     def __init__( self, id, label="", children=None, horizontal=False,
                   border=BORDER_ETCHED_IN, expand_policy=None,
-                  active=True, visible=True ):
+                  scrollbars=False, active=True, visible=True ):
         """Group constructor.
 
         @param id: unique identified.
@@ -4040,6 +4063,7 @@ class Group( _EGWidget ):
         self.__label = label
         self.children = _obj_tuple( children )
         self.horizontal = bool( horizontal )
+        self.scrollbars = bool( scrollbars )
         self.__border = border
 
         self.__setup_gui__()
@@ -4047,9 +4071,16 @@ class Group( _EGWidget ):
 
 
     def __setup_gui__( self ):
-        self._contents = _Table( id=( "%s-contents" % self.id ),
-                                 children=self.children,
-                                 horizontal=self.horizontal )
+        if self.horizontal:
+            cls = _HPanel
+        else:
+            cls = _VPanel
+
+        self._contents = cls( app=None,
+                            id=( "%s-contents" % self.id ),
+                            children=self.children )
+        if not self.scrollbars:
+            self._contents.set_policy( gtk.POLICY_NEVER, gtk.POLICY_NEVER )
 
         if self.border is not None:
             self._frame = gtk.Frame( self.__label )
@@ -4066,6 +4097,7 @@ class Group( _EGWidget ):
 
 
     def __add_widgets_to_app__( self ):
+        self._contents.__add_widgets_to_app__
         for w in self.children:
             self.app.__add_widget__( w )
     # __add_widgets_to_app__()
@@ -6472,6 +6504,8 @@ class HSeparator( _EGWidget, _AutoGenId ):
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.FillHorizontal()
         _EGWidget.__init__( self, id or self.__get_id__(),
                             expand_policy=expand_policy,
                             active=active, visible=visible )
@@ -6487,6 +6521,8 @@ class VSeparator( _EGWidget, _AutoGenId ):
     def __init__( self, id=None, expand_policy=None,
                   active=True, visible=True ):
         """You may not provide id, it will be generated automatically"""
+        if expand_policy is None:
+            expand_policy = ExpandPolicy.FillVertical()
         _EGWidget.__init__( self, id or self.__get_id__(),
                             expand_policy=expand_policy,
                             active=active, visible=visible )
