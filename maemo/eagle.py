@@ -4617,15 +4617,37 @@ class Table( _EGWidget ):
     # CellFormat()
 
 
+    default_value_function_for_type = {
+        bool: bool,
+        int: int,
+        long: long,
+        float: float,
+        str: str,
+        unicode: unicode,
+        }
+
 
     def __init__( self, id, label="", items=None, types=None, selected=None,
                   headers=None, show_headers=True, editable=False,
                   repositioning=False, expand_columns_indexes=None,
                   hidden_columns_indexes=None, cell_format_func=None,
+                  user_widgets=None,
                   selection_callback=None, data_changed_callback=None,
                   scrollbars=True, expand_policy=None, active=True,
                   visible=True ):
         """Table constructor.
+
+        Table can work with not known objects, they just need to
+        implement some methods:
+         - type.default_value(): return a new, possible non
+           initialized instance. Used in default L{add_callback()}
+         - object.commit(): changes were made and they should be
+           commited.
+         - object.rollback(): changes were made and they should be
+           reverted.
+         - object.delete(): delete object
+         - object.get_edit_widget(): get eagle widget to use to edit
+           this object.
 
         @param id: unique identifier.
         @param label: what to show on table frame
@@ -4647,6 +4669,8 @@ class Table( _EGWidget ):
                   def func( app, table, row, col, value ):
                       return Table.CellFormat( ... )
                where row and col are indexes in table.
+        @param user_widgets: widgets to be appended to table's
+               actions, just after edit or move buttons.
         @param selection_callback: the function (or list of functions) to
                call when selection changes. Function will get as parameters:
                 - App reference
@@ -4669,6 +4693,7 @@ class Table( _EGWidget ):
                   may change in future if Table show to be useful as
                   _EGDataWidget.
         """
+        self._app = None
         if expand_policy is None:
             expand_policy = ExpandPolicy.All()
 
@@ -4680,6 +4705,7 @@ class Table( _EGWidget ):
         self.headers = headers or tuple()
         self.show_headers = bool( show_headers )
         self.cell_format_func = cell_format_func
+        self.user_widgets = _obj_tuple( user_widgets )
         self.scrollbars = bool( scrollbars )
 
         if isinstance( expand_columns_indexes, ( int, long ) ):
@@ -4731,6 +4757,19 @@ class Table( _EGWidget ):
     # __init__()
 
 
+    def _get_app( self ):
+        return self._app
+    # _get_app()
+
+
+    def _set_app( self, value ):
+        self._app = value
+        if self._action_group:
+            self._action_group.app = value
+    # _set_app()
+    app = property( _get_app, _set_app )
+
+
     def __setup_gui__( self ):
         self._vbox = gtk.VBox( False, self.spacing )
         self._vbox.set_border_width( self.spacing )
@@ -4748,41 +4787,95 @@ class Table( _EGWidget ):
 
         self.__setup_table__()
 
-        if self.editable or self.repositioning:
-            self._hbox = gtk.HBox( False, self.spacing )
-            self._hbox.show()
-            self._vbox.pack_start( self._hbox, expand=False, fill=True )
+        self.action_widgets = []
 
         if self.editable:
-            self._btn_add  = gtk.Button( stock=gtk.STOCK_ADD )
-            self._btn_del  = gtk.Button( stock=gtk.STOCK_REMOVE )
-            self._btn_edit = gtk.Button( stock=gtk.STOCK_EDIT )
+            def add( app, button ):
+                self.add_callback()
+            # add()
 
-            self._btn_add.show()
-            self._btn_del.show()
-            self._btn_edit.show()
+            def edit( app, button ):
+                selected = self.selected()
+                if not selected:
+                    return
+                self.edit_callback( selected )
+            # edit()
 
-            self._hbox.pack_start( self._btn_add )
-            self._hbox.pack_start( self._btn_del )
-            self._hbox.pack_start( self._btn_edit )
+            def remove( app, button ):
+                selected = self.selected()
+                if not selected:
+                    return
+                self.del_callback( selected )
+            # remove()
+
+            self._btn_add = Button( id="%s:action:add" % self.id,
+                                    stock="add",
+                                    callback=add,
+                                    )
+            self._btn_edit = Button( id="%s:action:edit" % self.id,
+                                     stock="edit",
+                                     callback=edit,
+                                     )
+            self._btn_del = Button( id="%s:action:del" % self.id,
+                                    stock="remove",
+                                    callback=remove,
+                                    )
+
+            self.action_widgets += [ self._btn_add, self._btn_edit,
+                                     self._btn_del ]
 
         if self.repositioning:
             if self.editable:
-                sep = gtk.VSeparator()
-                self._hbox.pack_start( sep )
-                sep.show()
+                self.action_widgets.append( VSeparator() )
 
-            self._btn_up   = gtk.Button( stock=gtk.STOCK_GO_UP )
-            self._btn_down = gtk.Button( stock=gtk.STOCK_GO_DOWN )
 
-            self._btn_up.show()
-            self._btn_down.show()
+            def up( app, button ):
+                result = self.selected()
+                a = result[ 0 ][ 0 ]
+                if a <= 0:
+                    return
+                self.move_up_callback( a )
+            # up()
 
-            self._btn_up.set_sensitive( False )
-            self._btn_down.set_sensitive( False )
+            def down( app, button ):
+                result = self.selected()
+                a = result[ 0 ][ 0 ]
+                if a >= len( self ) - 1:
+                    return
+                self.move_down_callback( a )
+            # down()
 
-            self._hbox.pack_start( self._btn_up )
-            self._hbox.pack_start( self._btn_down )
+            self._btn_up = Button( id="%s:action:up" % self.id,
+                                    stock="up",
+                                    callback=up,
+                                    )
+            self._btn_down = Button( id="%s:action:down" % self.id,
+                                     stock="down",
+                                     callback=down,
+                                     )
+            self._btn_up.active = False
+            self._btn_down.active = False
+            self.action_widgets += [ self._btn_up, self._btn_down ]
+
+        if self.user_widgets:
+            if self.editable or self.repositioning:
+                self.action_widgets.append( VSeparator() )
+
+            self.action_widgets.extend( self.user_widgets )
+
+        if self.action_widgets:
+            self._action_group = Group( id="%s:actions" % self.id,
+                                        horizontal=True,
+                                        scrollbars=False,
+                                        label=None,
+                                        border=None,
+                                        children=self.action_widgets,
+                                        )
+            self._action_group.show()
+            action_gtk_widget = self._action_group.__get_widgets__()[0]
+            self._vbox.pack_start( action_gtk_widget, False, True )
+        else:
+            self._action_group = None
     # __setup_gui__()
 
 
@@ -4790,13 +4883,7 @@ class Table( _EGWidget ):
         if self.data_changed_callback:
             self.__setup_connections_changed__()
 
-        if self.editable:
-            self.__setup_connections_editable__()
-
-        if self.repositioning:
-            self.__setup_connections_repositioning__()
-
-        if self.selection_callback:
+        if self.selection_callback or self.repositioning:
             self.__setup_connections_selection__()
     # __setup_connections__()
 
@@ -4824,240 +4911,258 @@ class Table( _EGWidget ):
     # __setup_connections_changed__()
 
 
-    def __setup_connections_editable__( self ):
-        def edit_dialog( data ):
-            title = "Edit data from table %s" % ( self.label or self.id )
-            buttons = ( gtk.STOCK_OK, gtk.RESPONSE_ACCEPT,
-                        gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT )
-            d = gtk.Dialog( title=title,
-                            flags=gtk.DIALOG_MODAL,
-                            buttons=buttons )
+    def __get_default_value_function_for_type__( self, type ):
+        return self.default_value_function_for_type.get( type )
+    # __get_default_value_function_for_type__()
 
-            settings = d.get_settings()
-            try:
-                settings.set_property( "gtk-button-images", False )
-            except:
-                pass
 
-            d.set_default_response( gtk.RESPONSE_ACCEPT )
+    def edit_dialog( self, data ):
+        """Dialog used to edit data from table.
 
-            l = len( data )
-            t = gtk.Table( l, 2 )
-            t.set_border_width( 0 )
-            w = {}
-            for i, v in enumerate( data ):
-                if i in self.hidden_columns_indexes:
-                    continue
+        @param data: some row from table.
+        @return None if user cancelled action or new row to replace
+        the old one.
+        """
+        title = "Edit data from table %s" % ( self.label or self.id )
+        buttons = ( gtk.STOCK_OK, gtk.RESPONSE_ACCEPT,
+                    gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT )
+        d = gtk.Dialog( title=title,
+                        flags=gtk.DIALOG_MODAL,
+                        buttons=buttons )
 
-                title = self._table.get_column( i ).get_title()
-                label = gtk.Label( "%s:" % title )
-                label.set_justify( gtk.JUSTIFY_RIGHT )
-                label.set_alignment( xalign=1.0, yalign=0.5 )
+        d.set_default_response( gtk.RESPONSE_ACCEPT )
 
+        l = len( data )
+        t = gtk.Table( l, 2 )
+        t.set_border_width( 0 )
+        w = {}
+        for i, v in enumerate( data ):
+            if i in self.hidden_columns_indexes:
+                continue
+
+            title = self._table.get_column( i ).get_title()
+            label = gtk.Label( "%s:" % title )
+            label.set_justify( gtk.JUSTIFY_RIGHT )
+            label.set_alignment( xalign=1.0, yalign=0.5 )
+
+            tp = self.types[ i ]
+            if   tp == bool:
+                entry = gtk.CheckButton()
+                entry.set_active( data[ i ] )
+            elif tp in ( int, long ):
+                entry = gtk.SpinButton( digits=0 )
+                adj = entry.get_adjustment()
+                adj.lower = Spin.default_min
+                adj.upper = Spin.default_max
+                adj.step_increment = 1
+                adj.page_increment = 5
+                entry.set_value( data[ i ] )
+            elif tp == float:
+                entry = gtk.SpinButton( digits=6 )
+                adj = entry.get_adjustment()
+                adj.lower = Spin.default_min
+                adj.upper = Spin.default_max
+                adj.step_increment = 1
+                adj.page_increment = 5
+                entry.set_value( data[ i ] )
+            elif tp in ( str, unicode ):
+                entry = gtk.Entry()
+                entry.set_text( data[ i ] )
+            elif tp == Image:
+                entry = gtk.Image()
+                entry.set_from_pixbuf( data[ i ].__get_gtk_pixbuf__() )
+            else:
+                entry = gtk.Label( str( data[ i ] ) )
+
+            t.attach( label, 0, 1, i, i + 1,
+                      xoptions=gtk.FILL,
+                      xpadding=self.spacing, ypadding=self.spacing )
+            t.attach( entry, 1, 2, i, i + 1,
+                      xoptions=gtk.EXPAND|gtk.FILL,
+                      xpadding=self.spacing, ypadding=self.spacing )
+            w[ i ] = entry
+
+        t.show_all()
+
+        sw = gtk.ScrolledWindow()
+        sw.add_with_viewport( t )
+        sw.get_child().set_shadow_type( gtk.SHADOW_NONE )
+        d.vbox.pack_start( sw )
+        # Hack, disable scrollbars so we get the window to the
+        # best size
+        sw.set_policy( hscrollbar_policy=gtk.POLICY_NEVER,
+                       vscrollbar_policy=gtk.POLICY_NEVER )
+        d.show_all()
+        # Scrollbars are automatic
+        sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
+                       vscrollbar_policy=gtk.POLICY_AUTOMATIC )
+
+        r = d.run()
+        d.destroy()
+        if r in ( gtk.RESPONSE_REJECT, gtk.RESPONSE_DELETE_EVENT ) :
+            return None
+        else:
+            result = []
+            for i in xrange( len( data ) ):
                 tp = self.types[ i ]
-                if   tp == bool:
-                    entry = gtk.CheckButton()
-                    entry.set_active( data[ i ] )
-                elif tp in ( int, long ):
-                    entry = gtk.SpinButton( digits=0 )
-                    adj = entry.get_adjustment()
-                    adj.lower = Spin.default_min
-                    adj.upper = Spin.default_max
-                    adj.step_increment = 1
-                    adj.page_increment = 5
-                    entry.set_value( data[ i ] )
-                elif tp == float:
-                    entry = gtk.SpinButton( digits=6 )
-                    adj = entry.get_adjustment()
-                    adj.lower = Spin.default_min
-                    adj.upper = Spin.default_max
-                    adj.step_increment = 1
-                    adj.page_increment = 5
-                    entry.set_value( data[ i ] )
-                elif tp in ( str, unicode ):
-                    entry = gtk.Entry()
-                    entry.set_text( data[ i ] )
-                elif tp == Image:
-                    entry = gtk.Image()
-                    entry.set_from_pixbuf( data[ i ].__get_gtk_pixbuf__() )
+
+                if i not in w:
+                    r = data[ i ]
                 else:
-                    entry = gtk.Label( str( data[ i ] ) )
+                    wid = w[ i ]
 
-                t.attach( label, 0, 1, i, i + 1,
-                          xoptions=gtk.FILL,
-                          xpadding=self.spacing, ypadding=self.spacing )
-                t.attach( entry, 1, 2, i, i + 1,
-                          xoptions=gtk.EXPAND|gtk.FILL,
-                          xpadding=self.spacing, ypadding=self.spacing )
-                w[ i ] = entry
-
-            t.show_all()
-
-            sw = gtk.ScrolledWindow()
-            sw.add_with_viewport( t )
-            sw.get_child().set_shadow_type( gtk.SHADOW_NONE )
-            d.vbox.pack_start( sw )
-            # Hack, disable scrollbars so we get the window to the
-            # best size
-            sw.set_policy( hscrollbar_policy=gtk.POLICY_NEVER,
-                           vscrollbar_policy=gtk.POLICY_NEVER )
-            d.show_all()
-            # Scrollbars are automatic
-            sw.set_policy( hscrollbar_policy=gtk.POLICY_AUTOMATIC,
-                           vscrollbar_policy=gtk.POLICY_AUTOMATIC )
-
-            r = d.run()
-            d.destroy()
-            if r in ( gtk.RESPONSE_REJECT, gtk.RESPONSE_DELETE_EVENT ) :
-                return None
-            else:
-                result = []
-                for i in xrange( len( data ) ):
-                    tp = self.types[ i ]
-
-                    if i not in w:
-                        r = data[ i ]
+                    if   tp == bool:
+                        r = bool( wid.get_active() )
+                    elif tp in ( int, long ):
+                        r = tp( wid.get_value() )
+                    elif tp == float:
+                        r = float( wid.get_value() )
+                    elif tp in ( str, unicode ):
+                        r = tp( wid.get_text() )
                     else:
-                        wid = w[ i ]
+                        r = data[ i ]
+                result.append( r )
 
-                        if   tp == bool:
-                            r = bool( wid.get_active() )
-                        elif tp in ( int, long ):
-                            r = tp( wid.get_value() )
-                        elif tp == float:
-                            r = float( wid.get_value() )
-                        elif tp in ( str, unicode ):
-                            r = tp( wid.get_text() )
-                        else:
-                            r = data[ i ]
-                    result.append( r )
-
-                return result
-        # edit_dialog()
+            return result
+    # edit_dialog()
 
 
-        def clicked_add( button ):
-            entry = []
-            for i, t in enumerate( self.types ):
-                if   t == bool:
-                    v = False
-                elif t in ( int, long, float ):
-                    v = 0
-                elif t in ( str, unicode ):
-                    v = ''
-                else:
-                    try:
-                        v = t.default_value()
-                    except AttributeError:
-                        try:
-                            name = t.__name__
-                        except:
-                            name = t
-                        raise ValueError( ( "Unsuported column (%d) type: %s."
-                                            " Type should provide "
-                                            "default_value() static method." )
-                                          % ( i, name ) )
-                entry.append( v )
-            result = edit_dialog( entry )
-            if result:
-                self.append( result )
-        # clicked_add()
+    add_dialog = edit_dialog
 
 
-        def clicked_edit( button ):
-            selected = self.selected()
-            if not selected:
-                return
+    def add_callback( self ):
+        """Callback for 'Add' button.
 
-            for index, data in selected:
-                print data
-                result = edit_dialog( data )
-                if result:
-                    self[ index ] = result
-        # clicked_edit()
+        This method is called when 'Add' button, visible when
+        editable=True, is clicked.
 
+        Default implementation creates a new row using some defaults
+        for known objects, like bool, numbers and strings or calls
+        default_value() on type to get some default value. If none of
+        these are available, then None will be used.
 
-        def clicked_del( button ):
-            selected = self.selected()
-            if not selected:
-                return
+        If user accept values, row will be append()ed to table,
+        otherwise it will be forgotten and garbage collector will
+        remove then.
 
-            for index, data in selected:
-                del self[ index ]
-        # clicked_del()
+        If type is not known by system (so default_value() was
+        called), object.commit() will be called, otherwise
+        object.rollback() will be called. You can use this to perform
+        some action on database.
 
-        self._btn_add.connect( "clicked", clicked_add )
-        self._btn_del.connect( "clicked", clicked_del )
-        self._btn_edit.connect( "clicked", clicked_edit )
-
-        def row_activated( treeview, path, column ):
-            data = treeview.get_model()[ path ]
-            result = edit_dialog( data )
-            if result:
-                self[ path[ 0 ] ] = result
-        # row_activated()
-
-
-        self._table.connect( "row-activated", row_activated )
-    # __setup_connections_editable__()
-
-
-    def __setup_connections_repositioning__( self ):
-        def selection_changed( selection ):
-            result = self.selected()
-            if not result:
-                self._btn_up.set_sensitive( False )
-                self._btn_down.set_sensitive( False )
+        It can be overloaded by applications so more ellaborated actions
+        can be done.
+        """
+        entry = []
+        for i, t in enumerate( self.types ):
+            f = self.__get_default_value_function_for_type__( t )
+            if f:
+                v = f()
             else:
-                path = result[ 0 ][ 0 ]
-                if path > 0:
-                    self._btn_up.set_sensitive( True )
-                else:
-                    self._btn_up.set_sensitive( False )
-                if path < len( self ) - 1:
-                    self._btn_down.set_sensitive( True )
-                else:
-                    self._btn_down.set_sensitive( False )
-        # selection_changed()
+                try:
+                    v = t.default_value()
+                except AttributeError:
+                    try:
+                        name = t.__name__
+                    except:
+                        name = t
+                    v = None
+                    sys.stderr.write( ( "Unsuported column (%d) type: %s."
+                                        " Type should provide "
+                                        "default_value() static method.\n" )
+                                      % ( i, name ) )
+            entry.append( v )
 
-        def move_up( button ):
-            result = self.selected()
-            a = result[ 0 ][ 0 ]
-            if a <= 0:
-                return
+        result = self.add_dialog( entry )
+        if result:
+            for o in result:
+                if hasattr(o, "commit"):
+                    o.commit()
+            self.append( result )
+        else:
+            for o in entry:
+                if hasattr(o, "rollback"):
+                    o.rollback()
+    # add_callback()
 
-            b = a - 1
-            la = list( self[ a ] )
-            lb = list( self[ b ] )
-            self[ a ] = lb
-            self[ b ] = la
-            self.select( b )
-        # move_up()
 
-        def move_down( button ):
-            result = self.selected()
-            a = result[ 0 ][ 0 ]
-            if a >= len( self ) - 1:
-                return
+    def edit_callback( self, rows ):
+        """Callback for 'Edit' button.
 
-            b = a + 1
-            la = list( self[ a ] )
-            lb = list( self[ b ] )
-            self[ a ] = lb
-            self[ b ] = la
-            self.select( b )
-        # move_down()
+        This method is called when 'Edit' button, visible when
+        editable=True, is clicked.
 
-        selection = self._table.get_selection()
-        selection.connect( "changed", selection_changed )
-        self._btn_up.connect( "clicked", move_up )
-        self._btn_down.connect( "clicked", move_down )
-    # __setup_connections_repositioning__()
+        If row objects has commit() or rollback() methods, they'll be
+        called based on user action (L{entry_dialog()} returned row or
+        None)
+
+        @param rows: a list of tuples with (index, row), just like
+                     L{selected()}
+        """
+        for index, data in rows:
+            result = self.edit_dialog( data )
+            if result:
+                for o in result:
+                    if hasattr(o, "commit"):
+                        o.commit()
+                self[ index ] = result
+            else:
+                for o in data:
+                    if hasattr(o, "rollback"):
+                        o.rollback()
+    # edit_callback()
+
+
+    def del_callback( self, rows ):
+        """Callback for 'Delete' button.
+
+        This method is called when 'Delete' button, visible when
+        editable=True, is clicked.
+
+        If row object has delete(), it will be called before row is
+        excluded.
+        """
+        for index, data in rows:
+            for o in self[ index ]:
+                if hasattr(o, "delete"):
+                    o.delete()
+            del self[ index ]
+    # del_callback()
+
+
+    def move_up_callback( self, index ):
+        previous = index - 1
+        current_row = list( self[ index ] )
+        previous_row = list( self[ previous ] )
+        self[ index ] = previous_row
+        self[ previous ] = current_row
+        self.select( previous )
+    # move_up_callback()
+
+
+    def move_down_callback( self, index ):
+        next = index + 1
+        current_row = list( self[ index ] )
+        next_row = list( self[ next ] )
+        self[ index ] = next_row
+        self[ next ] = current_row
+        self.select( next )
+    # move_down_callback()
 
 
     def __setup_connections_selection__( self ):
         def selection_changed( selection ):
             result = self.selected()
+
+            if self.repositioning:
+                if not result:
+                    self._btn_up.active = False
+                    self._btn_down.active = False
+                else:
+                    path = result[ 0 ][ 0 ]
+                    self._btn_up.active = ( path > 0 )
+                    self._btn_down.active = ( path < len( self ) - 1 )
+
             for c in self.selection_callback:
                 c( self.app, self, result )
         # selection_changed()
@@ -5423,6 +5528,17 @@ class Table( _EGWidget ):
         if select:
             self._table.set_cursor( self._model[ itr ].path )
     # append()
+
+
+    def extend( self, rows, select=False, autosize=True ):
+        for r in rows:
+            self.append(r, select, autosize)
+    # extend()
+
+
+    def clear( self ):
+        del self[:]
+    # clear()
 
 
     def insert( self, index, row, select=True, autosize=True ):
@@ -6212,6 +6328,7 @@ class Button( _EGWidget ):
         "quit",
         "add",
         "remove",
+        "edit",
         "refresh",
         "update",
         "yes",
@@ -6258,6 +6375,7 @@ class Button( _EGWidget ):
         "quit": gtk.STOCK_QUIT,
         "add": gtk.STOCK_ADD,
         "remove": gtk.STOCK_REMOVE,
+        "edit": gtk.STOCK_EDIT,
         "refresh": gtk.STOCK_REFRESH,
         "update": gtk.STOCK_REFRESH,
         "yes": gtk.STOCK_YES,
