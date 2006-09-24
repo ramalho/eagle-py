@@ -4706,7 +4706,7 @@ class Table( _EGWidget ):
 
         self.__setup_table__()
 
-        self.action_widgets = []
+        action_widgets = []
 
         if self.editable:
             def add( app, button ):
@@ -4740,12 +4740,12 @@ class Table( _EGWidget ):
                                     callback=remove,
                                     )
 
-            self.action_widgets += [ self._btn_add, self._btn_edit,
+            action_widgets += [ self._btn_add, self._btn_edit,
                                      self._btn_del ]
 
         if self.repositioning:
             if self.editable:
-                self.action_widgets.append( VSeparator() )
+                action_widgets.append( VSeparator() )
 
 
             def up( app, button ):
@@ -4774,21 +4774,21 @@ class Table( _EGWidget ):
                                      )
             self._btn_up.active = False
             self._btn_down.active = False
-            self.action_widgets += [ self._btn_up, self._btn_down ]
+            action_widgets += [ self._btn_up, self._btn_down ]
 
         if self.user_widgets:
             if self.editable or self.repositioning:
-                self.action_widgets.append( VSeparator() )
+                action_widgets.append( VSeparator() )
 
-            self.action_widgets.extend( self.user_widgets )
+            action_widgets.extend( self.user_widgets )
 
-        if self.action_widgets:
+        if action_widgets:
             self._action_group = Group( id="%s:actions" % self.id,
                                         horizontal=True,
                                         scrollbars=False,
                                         label=None,
                                         border=None,
-                                        children=self.action_widgets,
+                                        children=action_widgets,
                                         )
             self._action_group.show()
             action_gtk_widget = self._action_group.__get_widgets__()[0]
