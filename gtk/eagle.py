@@ -1695,6 +1695,212 @@ class App( _EGObject, _AutoGenId ):
        >>> app[ "entry" ].get_value() # will fail, since it's a data widget
 
     """
+
+    class Menu( object ):
+        _wid = _gen_ro_property( "_wid" )
+        _app = _gen_ro_property( "_app" )
+
+        class BaseItem( object ):
+            def __init__( self, active=True, visible=True ):
+                self._wid = None
+                self._app = None
+                self.__setup_gui__()
+                self._wid.show()
+                self.active = active
+                self.visible = visible
+            # __init__()
+
+
+            def __setup_gui__( self ):
+                pass
+            # __setup_gui__()
+
+
+            def __str__( self ):
+                return "%s()" % ( self.__class__.__name__, )
+            # __str__()
+            __repr__ = __str__
+
+
+            def set_active( self, active=True ):
+                """Set the menu item as active.
+
+                An active menu have their actions enabled, while an inactive
+                (active=False) will be grayed and actions disabled.
+                """
+                self._wid.set_sensitive( bool( active ) )
+            # set_active()
+            enable = set_active
+
+
+            def set_inactive( self ):
+                """Same as L{set_active}( False )"""
+                self.set_active( False )
+            # set_inactive()
+            disable = set_inactive
+
+
+            def get_active( self ):
+                """Return True if it's active (enabled) or False
+                   inactive (disabled).
+                """
+                return not ( self._wid.get_state() & gtk.STATE_INSENSITIVE )
+            # get_active()
+            is_active = get_active
+            is_enabled = get_active
+
+            active = property( get_active, set_active )
+
+
+            def set_visible( self, visible=True ):
+                """Show or hide menu item based on value of 'visible'."""
+                if visible:
+                    self.show()
+                else:
+                    self.hide()
+            # set_visible()
+
+
+            def get_visible( self ):
+                """Return true if menu item is visible (shown)."""
+                return self._visible
+            # get_visible()
+            is_visible = get_visible
+
+            visible = property( get_visible, set_visible )
+
+
+            def show( self ):
+                """Make menu item visible."""
+                self._visible = True
+                self._wid.show()
+            # show()
+
+
+            def hide( self ):
+                """Make menu item invisible."""
+                self._visible = False
+                self._wid.hide()
+            # hide()
+        # BaseItem
+
+
+        class Separator( BaseItem ):
+            def __setup_gui__( self ):
+                self._wid = gtk.SeparatorMenuItem()
+            # __init__()
+        # Separator
+
+
+        class Item( BaseItem ):
+            """Simple menu item composed of text and callback function."""
+            def __init__( self, label, callback=None, active=True,
+                          visible=True ):
+                """App.Menu.Item constructor.
+
+                @param label: some text to display.
+                @param callback: function or tuple of functions to be called
+                       back when item is clicked. Callbacks should have
+                       the following signature:
+
+                          def callback( app, menu_item ):
+
+                       where app is the App instance that contains this item
+                       and menu_item is an instance to clicked item.
+                @param active: boolean to set item state.
+                @param visible: boolean to set item visibility.
+                """
+                self.label = label or ""
+                self.callback = _callback_tuple( callback )
+
+                App.Menu.BaseItem.__init__( self, active=active,
+                                            visible=visible )
+            # __init__()
+
+
+            def __setup_gui__( self ):
+                self._wid = gtk.MenuItem( label=self.label )
+                if self.callback:
+                    def cb( wid ):
+                        for c in self.callback:
+                            c( self._app, self )
+                    self._wid.connect( "activate", cb )
+            # __init__()
+
+
+            def __str__( self ):
+                return "%s( label=%r, callback=%r )" % \
+                       ( self.__class__.__name__, self.label, self.callback )
+            # __str__()
+            __repr__ = __str__
+        # Item
+
+
+        class Submenu( BaseItem ):
+            """Menu item that have sub items."""
+            def __init__( self, label, subitems=None, active=True,
+                          visible=True ):
+                """App.Menu.Submenu constructor.
+
+                @param label: some text to display.
+                @param subitems: list of App.Menu.BaseItem derived objects.
+                @param active: boolean to set item state.
+                @param visible: boolean to set item visibility.
+                """
+                self.label = label or ""
+                self.subitems = _obj_tuple( subitems )
+
+                App.Menu.BaseItem.__init__( self, active=active,
+                                            visible=visible )
+            # __init__()
+
+
+            def __setup_gui__( self ):
+                self._menu = gtk.Menu()
+                self._wid = gtk.MenuItem( label=self.label )
+                self._wid.set_submenu( self._menu )
+                for i in self.subitems:
+                    if not isinstance( i, App.Menu.BaseItem ):
+                        raise ValueError( ( "Subitem shoud be subclass of "
+                                            "BaseItem, but got %s instead!" ) %
+                                          type( i ).__name__ )
+                    self._menu.append( i._wid )
+            # __init__()
+
+
+            def __str__( self ):
+                return "%s( label=%r, subitems=%r )" % \
+                       ( self.__class__.__name__, self.label, self.subitems )
+            # __str__()
+            __repr__ = __str__
+
+
+            def _get_app( self ):
+                try:
+                    return self.__ro_app
+                except AttributeError:
+                    return None
+            # _get_app()
+
+            def _set_app( self, value ):
+                # We need to overload app setter in order to set
+                # subitem's _app.
+                try:
+                    v = self.__ro_app
+                except AttributeError:
+                    v = None
+                if v is None:
+                    self.__ro_app = value
+                    for item in self.subitems:
+                        item._app = value
+                else:
+                    raise Exception( "Read Only property 'app'." )
+            # _set_app()
+            _app = property( _get_app, _set_app )
+        # Submenu
+    # Menu
+
+
     border_width = 10
     spacing = 3
 
@@ -1742,11 +1948,7 @@ class App( _EGObject, _AutoGenId ):
                window.
         @param window_decorated: boolean used to add or remove border,
                title bar and other decorations from window.
-        @param menu: a list of pairs (label, action), where action can
-               be a callable or another list of tuples (for submenus).
-               Separators can be created using a single string with dashes
-               "-" only (but any number of dashes), either as label or
-               replacing the pair altogether.
+        @param menu: a list of App.Menu.BaseItem subclasses.
         @param toolbar: a list of tuples ( label, img, tooltip, callback ).
                Separators can be done using a single string with dashes "-"
                only (by any number of dashes), either as a label or
@@ -2143,49 +2345,17 @@ b        @param copyright: application copyright, used in L{AboutDialog}.
         if not self.menu:
             return
 
-        def convert_menu_list( item_list ):
-            for item in item_list:
-                if isinstance( item, basestring ) and \
-                   item == ( "-" * len( item ) ):
-                    yield gtk.SeparatorMenuItem()
-                elif isinstance( item, ( list, tuple ) ):
-                    try:
-                        label, action = item
-                    except Exception, e:
-                        raise ValueError( "Each menu item should be a pair of "
-                                          "(label, action)." )
-                    if label == ( "-" * len( label ) ):
-                        item = gtk.SeparatorMenuItem()
-                    else:
-                        item = get_menuitem( label, action )
-                    yield item
-        # convert_menu_list()
-
-        def get_menuitem( label, action ):
-            menu_item = gtk.MenuItem( label=label )
-
-            if callable( action ):
-                def cb( w ):
-                    action()
-                menu_item.connect( "activate", cb )
-
-            if isinstance( action, ( list, tuple ) ):
-                menu = gtk.Menu()
-                menu_item.set_submenu( menu )
-                for item in convert_menu_list( action ):
-                    menu.append( item )
-                    item.show()
-
-            return menu_item
-        # get_menuitem()
-
         self._menubar = gtk.MenuBar()
         self._master_layout.pack_start( self._menubar, expand=False,
                                         fill=True )
         self._menubar.show()
-        for item in convert_menu_list( self.menu ):
-            self._menubar.append( item )
-            item.show()
+        for item in self.menu:
+            if not isinstance( item, App.Menu.BaseItem ):
+                raise ValueError( ( "menu item should be App.Menu.BaseItem, "
+                                    "but got %s instead!" ) %
+                                  type( item ).__name__ )
+            self._menubar.append( item._wid )
+            item._app = self
     # __setup_gui_menu__()
 
 
