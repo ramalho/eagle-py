@@ -1717,7 +1717,8 @@ class App( _EGObject, _AutoGenId ):
 
 
             def __str__( self ):
-                return "%s()" % ( self.__class__.__name__, )
+                return "%s( active=%r, visible=%r )" % \
+                       ( self.__class__.__name__, self.active, self.visible )
             # __str__()
             __repr__ = __str__
 
@@ -1744,7 +1745,7 @@ class App( _EGObject, _AutoGenId ):
                 """Return True if it's active (enabled) or False
                    inactive (disabled).
                 """
-                return not ( self._wid.get_state() & gtk.STATE_INSENSITIVE )
+                return not ( self._wid.state & gtk.STATE_INSENSITIVE )
             # get_active()
             is_active = get_active
             is_enabled = get_active
@@ -1829,8 +1830,9 @@ class App( _EGObject, _AutoGenId ):
 
 
             def __str__( self ):
-                return "%s( label=%r, callback=%r )" % \
-                       ( self.__class__.__name__, self.label, self.callback )
+                return "%s( label=%r, callback=%r, activate=%r, visible=%r )" \
+                       % ( self.__class__.__name__, self.label, self.callback,
+                           self.active, self.visible )
             # __str__()
             __repr__ = __str__
         # Item
@@ -1869,8 +1871,9 @@ class App( _EGObject, _AutoGenId ):
 
 
             def __str__( self ):
-                return "%s( label=%r, subitems=%r )" % \
-                       ( self.__class__.__name__, self.label, self.subitems )
+                return "%s( label=%r, subitems=%r, active=%r, visible=%r )" % \
+                       ( self.__class__.__name__, self.label, self.subitems,
+                         self.active, self.visible )
             # __str__()
             __repr__ = __str__
 
