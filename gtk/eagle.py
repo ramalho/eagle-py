@@ -1707,13 +1707,14 @@ class App( _EGObject, _AutoGenId ):
     preferences = _gen_ro_property( "preferences" )
     statusbar = _gen_ro_property( "statusbar" )
     menu = _gen_ro_property( "menu" )
+    toolbar = _gen_ro_property( "toolbar" )
     _widgets = _gen_ro_property( "_widgets" )
 
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
                   preferences=None, window_size=( 800, 600 ),
                   window_position=None, window_decorated=True,
-                  menu=None,
+                  menu=None, toolbar=None,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1746,6 +1747,10 @@ class App( _EGObject, _AutoGenId ):
                Separators can be created using a single string with dashes
                "-" only (but any number of dashes), either as label or
                replacing the pair altogether.
+        @param toolbar: a list of tuples ( label, img, tooltip, callback ).
+               Separators can be done using a single string with dashes "-"
+               only (by any number of dashes), either as a label or
+               replacing the pair altogether.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1755,7 +1760,7 @@ class App( _EGObject, _AutoGenId ):
                can be shown with L{HelpButton}.
         @param version: application version, used in L{AboutDialog}.
         @param license: application license, used in L{AboutDialog}.
-        @param copyright: application copyright, used in L{AboutDialog}.
+b        @param copyright: application copyright, used in L{AboutDialog}.
         @param quit_callback: function (or list of functions) that will be
                called when application is closed. Function will receive as
                parameter the reference to App. If return value is False,
@@ -1782,6 +1787,7 @@ class App( _EGObject, _AutoGenId ):
         self.copyright = _str_tuple( copyright )
         self.statusbar = statusbar
         self.menu = _obj_tuple( menu )
+        self.toolbar = _obj_tuple( toolbar )
         self._visible = bool( visible )
         self._widgets = {}
 
@@ -2020,6 +2026,7 @@ class App( _EGObject, _AutoGenId ):
     def __setup_gui__( self ):
         self._win = gtk.Window( gtk.WINDOW_TOPLEVEL )
         self._win.set_name( self.id )
+        self._tooltips = gtk.Tooltips()
 
         self._master_layout = gtk.VBox( False )
         self._master_layout.set_border_width( 0 )
@@ -2027,6 +2034,7 @@ class App( _EGObject, _AutoGenId ):
         self._win.add( self._master_layout )
 
         self.__setup_gui_menu__()
+        self.__setup_gui_toolbar__()
 
         self._top_layout = gtk.VBox( False )
         self._top_layout.set_border_width( self.border_width )
@@ -2179,6 +2187,57 @@ class App( _EGObject, _AutoGenId ):
             self._menubar.append( item )
             item.show()
     # __setup_gui_menu__()
+
+
+    def __setup_gui_toolbar__( self ):
+        if not self.toolbar:
+            return
+
+        self._toolbar = gtk.Toolbar()
+        self._toolbar_handlebox = gtk.HandleBox()
+        self._toolbar_handlebox.add( self._toolbar )
+        self._master_layout.pack_start( self._toolbar_handlebox, expand=False,
+                                        fill=True )
+        for item in self.toolbar:
+            wid = None
+            if isinstance( item, basestring ) and \
+               item == ( "-" * len( item ) ):
+                wid = gtk.SeparatorToolItem()
+            elif isinstance( item, ( list, tuple ) ):
+                if len( item ) != 4:
+                    raise ValueError( "Toolbar item must be a tuple with "
+                                      "4 elements!" )
+                label, image, tooltip, callback = item
+                if label == ( "-" * len( label ) ):
+                    wid = gtk.SeparatorToolItem()
+                else:
+                    if image:
+                        if isinstance( image, basestring ):
+                            image = Image( filename=image )
+                        elif not isinstance( image, Image):
+                            raise ValueError( "Toolbar item's image should be "
+                                              "either a filename or an "
+                                              "eagle.Image" )
+                        icon = gtk.Image()
+                        icon.set_from_pixbuf( image.__get_gtk_pixbuf__() )
+                    else:
+                        icon = gtk.Label( label )
+                    icon.show()
+                    wid = gtk.ToolButton( icon_widget=icon, label=label )
+                    wid.set_tooltip( self._tooltips, tooltip or "" )
+
+                    if callable( callback ):
+                        def cb( w ):
+                            callback
+                        wid.connect( "clicked", cb )
+
+
+            if wid is not None:
+                wid.show()
+                self._toolbar.insert( wid, -1 )
+        self._toolbar.show()
+        self._toolbar_handlebox.show()
+    # __setup_gui_toolbar__()
 
 
     def __setup_gui_left__( self ):
