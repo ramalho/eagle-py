@@ -13,8 +13,6 @@ BUGS TO FIX
 FEATURES
 ========
 
- * Menubar
- * Toolbar
- * User defined areas and layouts
+ * Key bindings (keyboard shortcuts)
  * Dynamic UI composition (add/remove widgets after App is created)
  * Automatic thread handling
