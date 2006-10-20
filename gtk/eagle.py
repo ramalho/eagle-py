@@ -1706,12 +1706,14 @@ class App( _EGObject, _AutoGenId ):
     center = _gen_ro_property( "center" )
     preferences = _gen_ro_property( "preferences" )
     statusbar = _gen_ro_property( "statusbar" )
+    menu = _gen_ro_property( "menu" )
     _widgets = _gen_ro_property( "_widgets" )
 
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
                   preferences=None, window_size=( 800, 600 ),
                   window_position=None, window_decorated=True,
+                  menu=None,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1739,6 +1741,11 @@ class App( _EGObject, _AutoGenId ):
                window.
         @param window_decorated: boolean used to add or remove border,
                title bar and other decorations from window.
+        @param menu: a list of pairs (label, action), where action can
+               be a callable or another list of tuples (for submenus).
+               Separators can be created using a single string with dashes
+               "-" only (but any number of dashes), either as label or
+               replacing the pair altogether.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1774,6 +1781,7 @@ class App( _EGObject, _AutoGenId ):
         self.license = _str_tuple( license )
         self.copyright = _str_tuple( copyright )
         self.statusbar = statusbar
+        self.menu = _obj_tuple( menu )
         self._visible = bool( visible )
         self._widgets = {}
 
@@ -2018,6 +2026,7 @@ class App( _EGObject, _AutoGenId ):
         self._top_layout.show()
         self._win.add( self._top_layout )
 
+        self.__setup_gui_menu__()
         self.__setup_gui_left__()
         self.__setup_gui_right__()
         self.__setup_gui_center__()
@@ -2113,6 +2122,55 @@ class App( _EGObject, _AutoGenId ):
 
         self.set_visible( self.get_visible() )
     # __setup_gui__()
+
+
+    def __setup_gui_menu__( self ):
+        if not self.menu:
+            return
+
+        def convert_menu_list( item_list ):
+            for item in item_list:
+                if isinstance( item, basestring ) and \
+                   item == ( "-" * len( item ) ):
+                    yield gtk.SeparatorMenuItem()
+                elif isinstance( item, ( list, tuple ) ):
+                    try:
+                        label, action = item
+                    except Exception, e:
+                        raise ValueError( "Each menu item should be a pair of "
+                                          "(label, action)." )
+                    if label == ( "-" * len( label ) ):
+                        item = gtk.SeparatorMenuItem()
+                    else:
+                        item = get_menuitem( label, action )
+                    yield item
+        # convert_menu_list()
+
+        def get_menuitem( label, action ):
+            menu_item = gtk.MenuItem( label=label )
+
+            if callable( action ):
+                def cb( w ):
+                    action()
+                menu_item.connect( "activate", cb )
+
+            if isinstance( action, ( list, tuple ) ):
+                menu = gtk.Menu()
+                menu_item.set_submenu( menu )
+                for item in convert_menu_list( action ):
+                    menu.append( item )
+                    item.show()
+
+            return menu_item
+        # get_menuitem()
+
+        self._menubar = gtk.MenuBar()
+        self._top_layout.pack_start( self._menubar, expand=False, fill=True )
+        self._menubar.show()
+        for item in convert_menu_list( self.menu ):
+            self._menubar.append( item )
+            item.show()
+    # __setup_gui_menu__()
 
 
     def __setup_gui_left__( self ):
