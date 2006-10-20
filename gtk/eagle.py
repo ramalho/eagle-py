@@ -1829,6 +1829,19 @@ class App( _EGObject, _AutoGenId ):
             # __init__()
 
 
+            def set_label( self, value ):
+                self._label = value
+                if self._wid:
+                    self._wid.child.set_text( self._label )
+            # set_label()
+
+            def get_label( self ):
+                return self._label
+            # get_label()
+
+            label = property( get_label, set_label )
+
+
             def __str__( self ):
                 return "%s( label=%r, callback=%r, activate=%r, visible=%r )" \
                        % ( self.__class__.__name__, self.label, self.callback,
@@ -1840,6 +1853,8 @@ class App( _EGObject, _AutoGenId ):
 
         class Submenu( BaseItem ):
             """Menu item that have sub items."""
+            subitems = _gen_ro_property( "subitems" )
+
             def __init__( self, label, subitems=None, active=True,
                           visible=True ):
                 """App.Menu.Submenu constructor.
@@ -1876,6 +1891,19 @@ class App( _EGObject, _AutoGenId ):
                          self.active, self.visible )
             # __str__()
             __repr__ = __str__
+
+
+            def set_label( self, value ):
+                self._label = value
+                if self._wid:
+                    self._wid.child.set_text( self._label )
+            # set_label()
+
+            def get_label( self ):
+                return self._label
+            # get_label()
+
+            label = property( get_label, set_label )
 
 
             def _get_app( self ):
