@@ -1904,6 +1904,233 @@ class App( _EGObject, _AutoGenId ):
     # Menu
 
 
+    class Toolbar( object ):
+        class BaseItem( object ):
+            _wid = _gen_ro_property( "_wid" )
+            _app = _gen_ro_property( "_app" )
+
+            def __init__( self, active=True, visible=True ):
+                self._wid = None
+                self._app = None
+                self.__setup_gui__()
+                self._wid.show()
+                self.active = active
+                self.visible = visible
+            # __init__()
+
+
+            def __setup_gui__( self ):
+                pass
+            # __setup_gui__()
+
+
+            def __str__( self ):
+                return "%s( active=%r, visible=%r )" % \
+                       ( self.__class__.__name__, self.active, self.visible )
+            # __str__()
+            __repr__ = __str__
+
+
+            def set_active( self, active=True ):
+                """Set the toolbar item as active.
+
+                An active toolbar item have their actions enabled, while
+                an inactive (active=False) will be grayed and actions
+                disabled.
+                """
+                self._wid.set_sensitive( bool( active ) )
+            # set_active()
+            enable = set_active
+
+
+            def set_inactive( self ):
+                """Same as L{set_active}( False )"""
+                self.set_active( False )
+            # set_inactive()
+            disable = set_inactive
+
+
+            def get_active( self ):
+                """Return True if it's active (enabled) or False
+                   inactive (disabled).
+                """
+                return not ( self._wid.state & gtk.STATE_INSENSITIVE )
+            # get_active()
+            is_active = get_active
+            is_enabled = get_active
+
+            active = property( get_active, set_active )
+
+
+            def set_visible( self, visible=True ):
+                """Show or hide toolbar item based on value of 'visible'."""
+                if visible:
+                    self.show()
+                else:
+                    self.hide()
+            # set_visible()
+
+
+            def get_visible( self ):
+                """Return true if toolbar item is visible (shown)."""
+                return self._visible
+            # get_visible()
+            is_visible = get_visible
+
+            visible = property( get_visible, set_visible )
+
+
+            def show( self ):
+                """Make toolbar item visible."""
+                self._visible = True
+                self._wid.show()
+            # show()
+
+
+            def hide( self ):
+                """Make toolbar item invisible."""
+                self._visible = False
+                self._wid.hide()
+            # hide()
+        # BaseItem
+
+
+        class Separator( BaseItem ):
+            def __setup_gui__( self ):
+                self._wid = gtk.SeparatorToolItem()
+            # __init__()
+        # Separator
+
+
+        class Item( BaseItem ):
+            """Simple toolbar item composed of text, icon, tooltip and
+            callback function.
+            """
+            def __init__( self, label, image=None, tooltip=None,
+                          callback=None, active=True, visible=True ):
+                """App.Toolbar.Item constructor.
+
+                @param label: some text to display.
+                @param image: icon image to display, should be a filename
+                       or eagle.Image.
+                @param tooltip: extra text to display when mouse is over
+                       this item.
+                @param callback: function or tuple of functions to be called
+                       back when item is clicked. Callbacks should have
+                       the following signature:
+
+                          def callback( app, toolbar_item ):
+
+                       where app is the App instance that contains this item
+                       and toolbar_item is an instance to clicked item.
+                @param active: boolean to set item state.
+                @param visible: boolean to set item visibility.
+                """
+                self.label = label or ""
+                self.image = image
+                self.tooltip = tooltip or ""
+                self.callback = _callback_tuple( callback )
+
+                App.Toolbar.BaseItem.__init__( self, active=active,
+                                               visible=visible )
+            # __init__()
+
+
+            def __setup_gui__( self ):
+                self._img = gtk.Image()
+                self._img.show()
+                self._img.set_from_pixbuf( self.image.__get_gtk_pixbuf__() )
+                self._wid = gtk.ToolButton( icon_widget=self._img,
+                                            label=self.label )
+                if self.callback:
+                    def cb( wid ):
+                        for c in self.callback:
+                            c( self._app, self )
+                    self._wid.connect( "clicked", cb )
+            # __init__()
+
+
+            def __str__( self ):
+                return ( "%s( label=%r, image=%r, tooltip=%r, callback=%r, "
+                         "activate=%r, visible=%r )" ) % \
+                         ( self.__class__.__name__, self.label,
+                           self.image, self.tooltip, self.callback,
+                           self.active, self.visible )
+            # __str__()
+            __repr__ = __str__
+
+
+            def set_label( self, value ):
+                self._label = value
+                if self._wid:
+                    self._wid.set_label( self._label )
+            # set_label()
+
+            def get_label( self ):
+                return self._label
+            # get_label()
+
+            label = property( get_label, set_label )
+
+
+            def set_image( self, value ):
+                if isinstance( value, basestring ):
+                    value = Image( filename=value )
+                elif not isinstance( value, Image ):
+                    raise ValueError( ( "image should be string or instance "
+                                        "of eagle.Image, got %r instead." ) %
+                                      type( value ).__name__ )
+                self._image = value
+                if self._wid:
+                    self._img.set_from_pixbuf( value.__get_gtk_pixbuf__() )
+            # set_image()
+
+            def get_image( self ):
+                return self._image
+            # get_image()
+
+            image = property( get_image, set_image )
+
+
+            def set_tooltip( self, value ):
+                self._tooltip = value or ""
+                if self._wid and self._app:
+                    self._wid.set_tooltip( self._app._tooltips, self._tooltip )
+            # set_tooltip()
+
+            def get_tooltip( self ):
+                return self._tooltip
+            # get_tooltip()
+
+            tooltip = property( get_tooltip, set_tooltip )
+
+
+            def _get_app( self ):
+                try:
+                    return self.__ro_app
+                except AttributeError:
+                    return None
+            # _get_app()
+
+            def _set_app( self, value ):
+                # We need to overload app setter in order to set
+                # tooltip
+                try:
+                    v = self.__ro_app
+                except AttributeError:
+                    v = None
+                if v is None:
+                    self.__ro_app = value
+                    if self._wid:
+                        self._wid.set_tooltip( value._tooltips, self.tooltip )
+                else:
+                    raise Exception( "Read Only property 'app'." )
+            # _set_app()
+            _app = property( _get_app, _set_app )
+        # Item
+    # Toolbar
+
+
     border_width = 10
     spacing = 3
 
@@ -1952,10 +2179,7 @@ class App( _EGObject, _AutoGenId ):
         @param window_decorated: boolean used to add or remove border,
                title bar and other decorations from window.
         @param menu: a list of App.Menu.BaseItem subclasses.
-        @param toolbar: a list of tuples ( label, img, tooltip, callback ).
-               Separators can be done using a single string with dashes "-"
-               only (by any number of dashes), either as a label or
-               replacing the pair altogether.
+        @param toolbar: a list of App.Toolbar.BaseItem subclasses.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -2372,42 +2596,14 @@ b        @param copyright: application copyright, used in L{AboutDialog}.
         self._master_layout.pack_start( self._toolbar_handlebox, expand=False,
                                         fill=True )
         for item in self.toolbar:
-            wid = None
-            if isinstance( item, basestring ) and \
-               item == ( "-" * len( item ) ):
-                wid = gtk.SeparatorToolItem()
-            elif isinstance( item, ( list, tuple ) ):
-                if len( item ) != 4:
-                    raise ValueError( "Toolbar item must be a tuple with "
-                                      "4 elements!" )
-                label, image, tooltip, callback = item
-                if label == ( "-" * len( label ) ):
-                    wid = gtk.SeparatorToolItem()
-                else:
-                    if image:
-                        if isinstance( image, basestring ):
-                            image = Image( filename=image )
-                        elif not isinstance( image, Image):
-                            raise ValueError( "Toolbar item's image should be "
-                                              "either a filename or an "
-                                              "eagle.Image" )
-                        icon = gtk.Image()
-                        icon.set_from_pixbuf( image.__get_gtk_pixbuf__() )
-                    else:
-                        icon = gtk.Label( label )
-                    icon.show()
-                    wid = gtk.ToolButton( icon_widget=icon, label=label )
-                    wid.set_tooltip( self._tooltips, tooltip or "" )
+            if not isinstance( item, App.Toolbar.BaseItem ):
+                raise ValueError( ( "toolbar item should be "
+                                    "App.Toolbar.BaseItem, but got %s "
+                                    "instead!" ) %
+                                  type( item ).__name__ )
+            self._toolbar.insert( item._wid, -1 )
+            item._app = self
 
-                    if callable( callback ):
-                        def cb( w ):
-                            callback
-                        wid.connect( "clicked", cb )
-
-
-            if wid is not None:
-                wid.show()
-                self._toolbar.insert( wid, -1 )
         self._toolbar.show()
         self._toolbar_handlebox.show()
     # __setup_gui_toolbar__()

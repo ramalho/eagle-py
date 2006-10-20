@@ -2,13 +2,20 @@
 
 from eagle import *
 
-def callback():
-    info( "toolbar item clicked" )
+def callback( app, toolbar_item):
+    info( "clicked on toolbar item %s of %s" % ( toolbar_item, app ) )
 
 App( title="Test Toolbar",
-     toolbar=(("Test", "test.png", "test this toolbar item", callback ),
-              "---------",
-              ("Test", "test.png", "test this toolbar item", callback ),
+     toolbar=(App.Toolbar.Item( "Test",
+                                "test.png",
+                                "test this toolbar item",
+                                callback ),
+              App.Toolbar.Separator(),
+              App.Toolbar.Item( "Test",
+                                "test.png",
+                                "test this toolbar item",
+                                callback,
+                                active=False ),
               ),
      )
 
