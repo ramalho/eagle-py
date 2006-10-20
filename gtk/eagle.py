@@ -1697,10 +1697,10 @@ class App( _EGObject, _AutoGenId ):
     """
 
     class Menu( object ):
-        _wid = _gen_ro_property( "_wid" )
-        _app = _gen_ro_property( "_app" )
-
         class BaseItem( object ):
+            _wid = _gen_ro_property( "_wid" )
+            _app = _gen_ro_property( "_app" )
+
             def __init__( self, active=True, visible=True ):
                 self._wid = None
                 self._app = None
