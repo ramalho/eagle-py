@@ -2021,12 +2021,19 @@ class App( _EGObject, _AutoGenId ):
         self._win = gtk.Window( gtk.WINDOW_TOPLEVEL )
         self._win.set_name( self.id )
 
+        self._master_layout = gtk.VBox( False )
+        self._master_layout.set_border_width( 0 )
+        self._master_layout.show()
+        self._win.add( self._master_layout )
+
+        self.__setup_gui_menu__()
+
         self._top_layout = gtk.VBox( False )
         self._top_layout.set_border_width( self.border_width )
         self._top_layout.show()
-        self._win.add( self._top_layout )
+        self._master_layout.pack_start( self._top_layout, expand=True,
+                                        fill=True )
 
-        self.__setup_gui_menu__()
         self.__setup_gui_left__()
         self.__setup_gui_right__()
         self.__setup_gui_center__()
@@ -2110,8 +2117,8 @@ class App( _EGObject, _AutoGenId ):
             self._statusbar.show()
             self._statusbar_ctx = self._statusbar.get_context_id( self.id )
             self._statusbar.set_has_resize_grip( True )
-            self._top_layout.pack_end( self._statusbar,
-                                       expand=False, fill=True )
+            self._master_layout.pack_end( self._statusbar,
+                                          expand=False, fill=True )
 
         self.__add_widget__( self._left )
         self.__add_widget__( self._right )
@@ -2165,7 +2172,8 @@ class App( _EGObject, _AutoGenId ):
         # get_menuitem()
 
         self._menubar = gtk.MenuBar()
-        self._top_layout.pack_start( self._menubar, expand=False, fill=True )
+        self._master_layout.pack_start( self._menubar, expand=False,
+                                        fill=True )
         self._menubar.show()
         for item in convert_menu_list( self.menu ):
             self._menubar.append( item )
