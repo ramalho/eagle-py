@@ -6,7 +6,6 @@ import time
 import webbrowser
 import socket
 import struct
-import thread
 
 
 class Chat( object ):
@@ -17,13 +16,15 @@ class Chat( object ):
         self.callback = callback
         self.cb_id = None
 
-        if not self.connect( host, port ):
-            thread.start_new_thread( self.serve, ( port, ) )
+        self.client_mode = self.connect( host, port )
+        if not self.client_mode:
+            self.serve( port )
     # __init__()
 
 
     def __setup_callback__( self ):
-        self.cb_id = self.app.io_watch( self.conn, self.callback, on_in=True )
+        self.cb_id = self.app.io_watch( self.conn, self.callback, on_in=True,
+                                        on_error=True, on_hungup=True )
     # __setup_callback__()
 
 
@@ -32,6 +33,11 @@ class Chat( object ):
             self.app.remove_event_source( self.cb_id )
     # __remove_callback__()
 
+
+    def disconnect( self ):
+        if self.cb_id is not None:
+            self.app.remove_event_source( self.cb_id )
+        self.sock.close()
 
     def connect( self, host, port ):
         try:
@@ -47,16 +53,22 @@ class Chat( object ):
     # connect()
 
 
-    def serve( self, port ):
-        self.sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-        self.sock.bind( ( "", port ) )
-        self.sock.listen( 5 )
-        conn, address = self.sock.accept()
+    def accept_connection(self, app, sock, *ign, **kign ):
+        conn, address = sock.accept()
         if conn:
             self.conn = conn
             self.__setup_callback__()
         else:
             self.__remove_callback__()
+        return False
+    # accept_connection()
+
+
+    def serve( self, port ):
+        self.sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+        self.sock.bind( ( "", port ) )
+        self.sock.listen( 5 )
+        self.app.io_watch( self.sock, self.accept_connection, on_in=True )
     # serve()
 
 
@@ -127,8 +139,19 @@ def send_message( app, button ):
 # send_message()
 
 
-def receive_message( app, file, on_in, *ign, **kign ):
+def receive_message( app, file, on_in, on_out, on_urgent, on_error,
+                     on_hungup ):
+
+    if on_error or on_hungup:
+        app.idle_add( reconnect )
+        return False
+
     msg = app.chat.read()
+    if msg is None:
+        app.idle_add( reconnect )
+        return False
+
+    msg = msg.strip()
     if not msg:
         return True
 
@@ -145,9 +168,35 @@ def receive_message( app, file, on_in, *ign, **kign ):
 # receive_message()
 
 
+def create_connection( app ):
+    if app.chat:
+        app.chat.disconnect()
+
+    if app.last_status_message is not None:
+        app.remove_status_message( app.last_status_message )
+
+    host = app[ "host" ]
+    port = app[ "port" ]
+
+    app.chat = Chat( host, port, app, receive_message )
+    if app.chat.client_mode:
+        mid = app.status_message( "Connected to server %s:%d." %
+                                  ( host, port ) )
+    else:
+        mid = app.status_message( "Waiting for clients at port %d." % port )
+    app.last_status_message = mid
+# create_connection()
+
+
+def reconnect( app, *ign ):
+    create_connection( app )
+# reconnect()
+
+
 app = App( title="Chat",
+           statusbar=True,
            preferences=( Entry( id="host",
-                                    label="Host",
+                                label="Host",
                                 value="localhost",
                                 ),
                          UIntSpin( id="port",
@@ -155,7 +204,12 @@ app = App( title="Chat",
                                    value=12345,
                                    ),
                          ),
-           top=PreferencesButton(),
+           top=( PreferencesButton(),
+                 Button( id="reconnect",
+                         label="Reconnect",
+                         callback=reconnect,
+                         ),
+                 ),
            center=( RichText( id="view",
                               label="History:",
                               callback=link_clicked,
@@ -170,6 +224,8 @@ app = App( title="Chat",
                             )
                     )
            )
-app.chat = Chat( host="localhost", port=123456,
-                 app=app, callback=receive_message )
+app.last_status_message = None
+app.chat = None
+create_connection( app )
+
 run()
