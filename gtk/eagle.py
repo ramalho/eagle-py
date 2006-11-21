@@ -3746,13 +3746,13 @@ class Entry( _EGWidLabelEntry ):
 
 
     def __setup_connections__( self ):
-        def callback( obj ):
+        def callback( obj, *args ):
             v = self.get_value()
             self.app.data_changed( self, v )
             for c in self.callback:
                 c( self.app, self, v )
         # callback()
-        self._entry.connect( "changed", callback )
+        self._entry.connect( "notify::text", callback )
     # __setup_connections__()
 
 
@@ -3903,13 +3903,13 @@ class Spin( _EGWidLabelEntry ):
 
 
     def __setup_connections__( self ):
-        def callback( obj ):
+        def callback( obj, *args ):
             v = self.get_value()
             self.app.data_changed( self, v )
             for c in self.callback:
                 c( self.app, self, v )
         # callback()
-        self._entry.connect( "value-changed", callback )
+        self._entry.connect( "notify::value", callback )
     # __setup_connections__()
 
 
