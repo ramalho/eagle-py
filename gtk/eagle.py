@@ -6764,6 +6764,7 @@ class Button( _EGWidget ):
     callback = _gen_ro_property( "callback" )
 
     stock_items = (
+        "new",
         "about",
         "help",
         "quit",
@@ -6811,6 +6812,7 @@ class Button( _EGWidget ):
 
 
     _gtk_stock_map = {
+        "new": gtk.STOCK_NEW,
         "about": gtk.STOCK_ABOUT,
         "help": gtk.STOCK_HELP,
         "quit": gtk.STOCK_QUIT,
