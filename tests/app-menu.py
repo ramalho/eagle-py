@@ -6,32 +6,32 @@ def callback( app, menuitem ):
     info( "clicked on menu item %s of %s" % ( menuitem, app ) )
 
 App( title="Test menu",
-     menu=( App.Menu.Item( "File", callback ),
-            App.Menu.Submenu( "Edit",
-                              ( App.Menu.Item( "Cut", callback ),
-                                App.Menu.Item( "Copy", callback ),
-                                App.Menu.Item( "Paste", callback ),
-                                App.Menu.Separator(),
-                                App.Menu.Item( "Inactive", active=False ),
-                                App.Menu.Item( "Invisible", visible=False ),
-                                App.Menu.Separator(),
-                                App.Menu.Submenu( "Sub-Menu",
-                                                  ( App.Menu.Item( "Item1",
-                                                                   callback ),
-                                                    App.Menu.Item( "Item2",
-                                                                   callback ),
-                                                    ),
-                                                  ),
-                                ),
-                              ),
+     menu=( Menu.Item( label="File", callback=callback ),
+            Menu.Submenu( label="Edit",
+                          subitems=( Menu.Item( label="Cut", callback=callback ),
+                                     Menu.Item( label="Copy", callback=callback ),
+                                     Menu.Item( label="Paste", callback=callback ),
+                                     Menu.Separator(),
+                                     Menu.Item( label="Inactive", active=False ),
+                                     Menu.Item( label="Invisible", visible=False ),
+                                     Menu.Separator(),
+                                     Menu.Submenu( label="Sub-Menu",
+                                                   subitems=( Menu.Item( label="Item1",
+                                                                         callback=callback ),
+                                                              Menu.Item( label="Item2",
+                                                                         callback=callback ),
+                                                              ),
+                                                   ),
+                                     ),
+                          ),
             ),
      center=RichText( id="rt",
                       text="""\
 <h1>Menu Example</h1>
 <p>
   Menus are quite simple in eagle, just give "App" constructor the
-  "menu" parameter with a list of App.Menu.BaseItem subclasses, like
-  App.Menu.Item, App.Menu.Separator or App.Menu.Submenu.
+  "menu" parameter with a list of Menu.BaseItem subclasses, like
+  Menu.Item, Menu.Separator or Menu.Submenu.
 </p>
 <p>
   In this example, <b>File</b> menu is a single item, while <b>Edit</b>
