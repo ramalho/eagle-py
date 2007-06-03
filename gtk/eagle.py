@@ -1470,11 +1470,11 @@ class DebugDialog( _EGObject, _AutoGenId ):
     def save_exception( self, exctype, value, tb ):
         import traceback
         import time
+        import tempfile
         progname = os.path.split( sys.argv[ 0 ] )[ -1 ]
-        filename = "%s-%s-%s.tb" % ( progname,
-                                  os.getuid(),
+        filename = "%s-%s.tb" % ( progname,
                                   int( time.time() ) )
-        filename = os.path.join( os.path.sep, "tmp", filename )
+        filename = os.path.join( os.path.sep, tempfile.gettempdir(), filename )
         f = open( filename, "wb" )
         try:
             os.chmod( filename, 0600 )
