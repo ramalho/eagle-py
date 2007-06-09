@@ -1,0 +1,39 @@
+                              EaglePlot
+                              =========
+
+EaglePlot  is  a simple  application  using  Gustavo Barbieri's  eagle
+python library. It's intended to plot general parametric curves in two
+dimensions  efficiently,  using and  adaptive  sampling method  [F95],
+which samples just the necessary number of points so that the curve is
+drawn smoothly, and is quickly updated.
+
+To  plot  some  function you  just  enter  the  values  for x  and  y,
+parametrized by t whose interval must also be entered. And you can set
+the other options as you like.
+
+Of course,  one can also  plot non-parametric functions,  because they
+can be trivially converted to  a parametric one. For instance, suppose
+you want to plot f(x) = (x-1)*(x-3)*(x-4), in the interval 0.5 <= x <=
+4.5, you just convert it to a  parametric curve by making x(t) = t and
+y(t) = f(t) in the interval 0.5  <= t <= 4.5. Note that you don't need
+to specify the vertical range  that you graph will be plotted, because
+it will be automatically discovered.
+
+The application  will also deal with asymptotes  gracefully, just like
+some other symbolic computation software.
+
+And now  a complex parametric curve,  a kind of  epicycloid. There are
+some other  examples that you  can readily try  just by choosing  on a
+drop down menu, and of course any other curve you can enter.
+
+-- Nilton Volpato
+
+[F95] Luiz Henrique de Figueiredo
+      Adaptive Sampling of Parametric Curves.
+      Graphics Gems V, Academic Press, 1995,
+      Pages 173-178.
+
+
+Original EaglePlot website:
+
+   http://www.loco.ic.unicamp.br/~nilton/sundries/eagleplot/
