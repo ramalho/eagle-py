@@ -1073,7 +1073,8 @@ class AboutDialog( _EGWidget, _AutoGenId ):
 
         _set_icon_list( self._diag, gtk.STOCK_ABOUT )
 
-        self._text = RichText( id="About-%s" % self.app.id )
+        self._text = RichText( id="About-%s" % self.app.id,
+                               callback=self.__link_handler__ )
         self._diag.vbox.pack_start( self._text._widgets[ 0 ], True, True )
 
         self.__setup_text__()
@@ -1120,6 +1121,12 @@ class AboutDialog( _EGWidget, _AutoGenId ):
             for l in self.copyright:
                 self._text.append( "<p>%s</p>" % l )
     # __setup_text__()
+
+
+    def __link_handler__( self, app, textview, href, offset ):
+        import webbrowser
+        webbrowser.open( href, new=1 )
+    # __link_handler__()
 
 
     def run( self ):
@@ -1177,7 +1184,8 @@ class HelpDialog( _EGWidget, _AutoGenId ):
         self._diag.vbox.set_spacing( self.spacing )
         _set_icon_list( self._diag, gtk.STOCK_HELP )
 
-        self._text = RichText( id="About-%s" % self.app.id )
+        self._text = RichText( id="About-%s" % self.app.id,
+                               callback=self.__link_handler__ )
         self._diag.vbox.pack_start( self._text._widgets[ 0 ], True, True )
 
         self.__setup_text__()
@@ -1190,6 +1198,12 @@ class HelpDialog( _EGWidget, _AutoGenId ):
         for l in self.help:
             self._text.append( "<p>%s</p>" % l )
     # __setup_text__()
+
+
+    def __link_handler__( self, app, textview, href, offset ):
+        import webbrowser
+        webbrowser.open( href, new=1 )
+    # __link_handler__()
 
 
     def run( self ):
