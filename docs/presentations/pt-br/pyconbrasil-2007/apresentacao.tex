@@ -1,10 +1,10 @@
 % -*- mode: latex -*-
 % -*- coding: latin-1 -*-
 
-% TOPIC..: Contribuir sem codificar: formas de colaboração.
+% TOPIC..: Treinamento Eagle
 % LICENSE: GNU GPL-2
 % AUTHOR.: Gustavo Sverzut Barbieri <barbieri@gmail.com>
-% URL....: http://palestras.gustavobarbieri.com.br/treinamento_eagle/
+% URL....: http://palestras.gustavobarbieri.com.br/eagle/pt-br/pyconbrasil-2007
 
 % I used to like Prosper, but Beamer is much better!
 % Get it at: http://latex-beamer.sourceforge.net
@@ -23,7 +23,7 @@
   /Title       (Treinamento Eagle)
   /Creator     (TeX)
   /Author      (Gustavo Sverzut Barbieri)
-  /Subject     (PyConBrasil - 2006)
+  /Subject     (PyConBrasil - 2007)
 }
 \usepackage{color}
 \usepackage{listings}
@@ -99,7 +99,7 @@
 \subtitle{Eagle --- Desenvolvimento Ágil de Interfaces}
 \author{Gustavo Sverzut Barbieri}
 \institute{\pgfuseimage{indt}}
-\date{2 de Junho de 2006}
+\date{30 de Agosto de 2007}
 
 \setbeamertemplate{blocks}[rounded][shadow=true]
 \newenvironment{say}{\begin{exampleblock}{}\rmfamily\small``}{''\end{exampleblock}}
@@ -138,10 +138,10 @@
 
 
 \section{Introdução}
-\subsection{O que é o Eagle}
+\subsection{O que é Eagle}
 
 \begin{frame}
-  \frametitle{O que é o Eagle}
+  \frametitle{O que é Eagle}
   Camada de \textbf<2>{abstração} em cima de \textbf<3>{Toolkits Gráficos}
 
   \begin{itemize}
@@ -152,7 +152,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{O que o Eagle não é}
+  \frametitle{O que a Eagle não é}
   \begin{itemize}
   \item\onslide+<1-> Não é concorrente de GTK, QT ou MFC
   \item\onslide+<2-> Não é a solução para todos os problemas!
@@ -181,7 +181,7 @@
   \end{itemize}
 \end{frame}
 
-\section{Entendendo o Eagle}
+\section{Entendendo a Eagle}
 \subsection{Organização}
 
 \frame[containsverbatim]{
@@ -322,7 +322,7 @@ wid.set_inactive()
     \item Facilidade para salvar imagens
     \item Avisa quando posição do mouse mudou
     \item Avisa quando botões do mouse foram pressionados
-    \item Integração com tipo ``imagem'' do Eagle (\lstinline|Image|)
+    \item Integração com tipo ``imagem'' da Eagle (\lstinline|Image|)
     \item Chama-se \lstinline|Canvas|
     \end{itemize}
   \end{minipage}
@@ -358,7 +358,7 @@ wid.set_inactive()
     \item Apresentação de texto formatado com subconjunto de HTML
     \item Avisa quando um ``\textit{link}'' foi pressionado
     \item Possibilidade de inclusão de imagens do tipo \lstinline|Image|
-      em memória no Eagle
+      em memória na Eagle
     \item Possibilidade de inclusão de imagens em qualquer outro
       protocolo, usando função cadastrada para obtê-las
     \item Chama-se \lstinline|RichText|
@@ -376,7 +376,7 @@ wid.set_inactive()
   \frametitle{Obtenha a cópia do SVN}
   Usaremos a versão em desenvolvimento (SVN):
   \begin{lstlisting}[language=csh,basicstyle=\scriptsize\upshape\ttfamily,identifierstyle=\scriptsize\upshape\ttfamily]
-svn co http://code.gustavobarbieri.com.br/eagle/
+svn co http://eagle-py.googlecode.com/svn/ eagle
 
 export PYTHONPATH=$PYTHONPATH:$PWD/eagle/gtk/
 \end{lstlisting}
@@ -436,7 +436,7 @@ export PYTHONPATH=$PYTHONPATH:$PWD/eagle/gtk/
 
 \begin{frame}
   \begin{center}
-    Obrigado \textbf{INdT} por ter ajudado com a participação na \\ \textbf{PyConBrasil 2006}!
+    Obrigado \textbf{INdT} por ter ajudado com a participação na \\ \textbf{PyConBrasil 2007}!
   \end{center}
 \end{frame}
 
@@ -452,7 +452,7 @@ export PYTHONPATH=$PYTHONPATH:$PWD/eagle/gtk/
     \vspace{2em}
 
     \begin{tabular}{rl}
-      Email:& \href{mailto:gustavo.barbieri@indt.org.br}{gustavo.barbieri@indt.org.br}\\
+      Email:& \href{mailto:gustavo.barbieri@openbossa.org}{gustavo.barbieri@openbossa.org}\\
       Website:& \url{http://www.gustavobarbieri.com.br}\\
       ICQ:& 17249123\\
       MSN, Jabber:& barbieri@gmail.com\\
@@ -460,9 +460,9 @@ export PYTHONPATH=$PYTHONPATH:$PWD/eagle/gtk/
   \end{center}
 
     \vspace{2em}
-    {\footnotesize
+    {\scriptsize
     Obtenha esta palestra em:\\
-    \url{http://palestras.gustavobarbieri.com.br/treinamento_eagle/}
+    \url{http://palestras.gustavobarbieri.com.br/eagle/pt-br/pyconbrasil-2007}
   }
 \end{frame}
 
