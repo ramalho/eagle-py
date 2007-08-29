@@ -12,17 +12,17 @@
 % Text foreground
 \definecolor{textfg}{HTML}{000000}
 % Title page title and subtitle
-\definecolor{titlefg}{HTML}{5d7c42}
+\definecolor{titlefg}{HTML}{183573}
 \definecolor{subtitlefg}{rgb}{0.5,0.5,0.5}
 % Head slide title, location (section) and sublocation (subsection) colors
-\definecolor{titlebarfg}{HTML}{FCC310}
+\definecolor{titlebarfg}{HTML}{183573}
 \definecolor{locationbarfg}{HTML}{000000}
 \definecolor{sublocationbarfg}{HTML}{666666}
 % linkcolor is used at TOC
-\definecolor{linkcolor}{HTML}{263611}
-\definecolor{urlcolor}{HTML}{83C720} %86B647}
+\definecolor{linkcolor}{HTML}{183573}
+\definecolor{urlcolor}{HTML}{183573} %86B647}
 % Structure
-\definecolor{structure}{HTML}{83C720}
+\definecolor{structure}{HTML}{183573}
 
 %%%%%% END SETTINGS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -44,47 +44,25 @@
 \usecolortheme[named=structure]{structure}
 
 \setbeamerfont{section in head/foot}{size=\scriptsize,series=\bfseries}
-\setbeamerfont{frametitle}{size=\Large}
-\setbeamerfont{title}{size=\large,series=\bfseries}
+\setbeamerfont{frametitle}{size=\huge\bfseries}
+\setbeamerfont{title}{size=\huge,series=\bfseries}
 \setbeamerfont{subtitle}{size=\small,series=\mdseries}
 \setbeamerfont{author}{size=\normalsize,series=\bfseries}
 \setbeamerfont{institute}{size=\normalsize}
 \setbeamerfont{date}{size=\scriptsize}
 
-\setbeamertemplate{frametitle}
+\setbeamertemplate{background}
 {
-  \vskip -1.0cm
-  \hskip -0.8cm
-  % simulate shadow
-  {\color{black}\textbf{\insertframetitle ~}}
-  \vskip -0.66cm
-  \hskip -0.76cm
-  % simulate shadow
-  {\color[rgb]{.9,.9,.9}\textbf{\insertframetitle ~}}
-
-  \vskip -0.46cm
-  \hskip -0.78cm
-  \textbf{\insertframetitle ~}
+  \includegraphics[height=\paperheight]{background}
 }
 
-\setbeamertemplate{headline}
+\setbeamertemplate{title page}
 {
-   \pgfuseimage{img-head}
-
-   \vskip -0.4cm
-   \hskip 0.2cm
-   \begin{beamercolorbox}[
-     wd=\paperwidth,
-     ht=0.5cm]{Location bar}
-     \usebeamerfont{section in head/foot}%
-     \insertsectionhead%
-     % print delimeter just if there is a subsection defined
-     \def\delimiter{::}%
-     \if\insertsubsectionhead\@empty\else\delimiter\fi%
-     {\color{sublocationbarfg}\insertsubsectionhead}
-   \end{beamercolorbox}
-
-   \vskip 6.5cm\hskip 0.2cm%
-   \pgfuseimage{indt-logo}%
-   \vskip -7.6cm
+\vskip-1.6cm%
+\hskip-\beamer@leftmargin%
+\begin{minipage}{\textwidth}
+\includegraphics[height=\paperheight]{opening.pdf}
+\end{minipage}
 }
+
+\setbeamertemplate{navigation symbols}{}
