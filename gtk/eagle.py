@@ -23,7 +23,7 @@ __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
 __url__ = "http://www.gustavobarbieri.com.br/eagle/"
-__version__ = "0.7"
+__version__ = "0.8"
 __revision__ = "$Rev$"
 __description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
@@ -2017,8 +2017,8 @@ class Toolbar( object ):
         """
         auto_gen_name = "Toolbar.Item"
 
-        def __init__( self, id=None, label="", image=None, tooltip=None,
-                      callback=None, active=True, visible=True ):
+        def __init__( self, id=None, label="", image=None, stock=None,
+                      tooltip=None, callback=None, active=True, visible=True ):
             """Toolbar.Item constructor.
 
             @param id: unique id to this application, or None to generate one
@@ -2026,6 +2026,7 @@ class Toolbar( object ):
             @param label: some text to display.
             @param image: icon image to display, should be a filename
                 or eagle.Image.
+            @param stock: optional. One of L{Button.stock_items}.
             @param tooltip: extra text to display when mouse is over
                 this item.
             @param callback: function or tuple of functions to be called
@@ -2041,6 +2042,7 @@ class Toolbar( object ):
             """
             self.label = label or ""
             self.image = image
+            self.stock = stock
             self.tooltip = tooltip or ""
             self.callback = _callback_tuple( callback )
 
@@ -2050,11 +2052,19 @@ class Toolbar( object ):
 
 
         def __setup_gui__( self ):
-            self._img = gtk.Image()
-            self._img.show()
-            self._img.set_from_pixbuf( self.image.__get_gtk_pixbuf__() )
-            self._wid = gtk.ToolButton( icon_widget=self._img,
-                                        label=self.label )
+            if self.stock:
+                try:
+                    sid = Button._gtk_stock_map[ self.stock ]
+                except KeyError, e:
+                    raise ValueError( "unknown stock '%s'." % self.stock )
+                self._wid = gtk.ToolButton( sid )
+            else:
+                self._img = gtk.Image()
+                self._img.show()
+                self._img.set_from_pixbuf( self.image.__get_gtk_pixbuf__() )
+                self._wid = gtk.ToolButton( icon_widget=self._img,
+                                            label=self.label )
+
             if self.callback:
                 def cb( wid ):
                     for c in self.callback:
@@ -2064,10 +2074,10 @@ class Toolbar( object ):
 
 
         def __str__( self ):
-            return ( "%s( label=%r, image=%r, tooltip=%r, callback=%r, "
-                     "activate=%r, visible=%r )" ) % \
+            return ( "%s( label=%r, image=%r, stock=%r, tooltip=%r, "
+                     "callback=%r, activate=%r, visible=%r )" ) % \
                      ( self.__class__.__name__, self.label,
-                       self.image, self.tooltip, self.callback,
+                       self.image, self.stock, self.tooltip, self.callback,
                        self.active, self.visible )
         # __str__()
         __repr__ = __str__
@@ -2087,6 +2097,10 @@ class Toolbar( object ):
 
 
         def set_image( self, value ):
+            if value is None:
+                self._image = None
+                return
+
             if isinstance( value, basestring ):
                 value = Image( filename=value )
             elif not isinstance( value, Image ):
@@ -2107,7 +2121,7 @@ class Toolbar( object ):
 
         def set_tooltip( self, value ):
             self._tooltip = value or ""
-            if self._wid and self.app:
+            if self._wid and self.app and self._tooltip:
                 self._wid.set_tooltip( self.app._tooltips, self._tooltip )
         # set_tooltip()
 
@@ -2253,7 +2267,7 @@ class App( _EGObject, _AutoGenId ):
                can be shown with L{HelpButton}.
         @param version: application version, used in L{AboutDialog}.
         @param license: application license, used in L{AboutDialog}.
-b        @param copyright: application copyright, used in L{AboutDialog}.
+        @param copyright: application copyright, used in L{AboutDialog}.
         @param quit_callback: function (or list of functions) that will be
                called when application is closed. Function will receive as
                parameter the reference to App. If return value is False,
