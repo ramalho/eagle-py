@@ -23,7 +23,7 @@ __author__ = "Gustavo Sverzut Barbieri"
 __author_email__ = "barbieri@gmail.com"
 __license__ = "LGPL"
 __url__ = "http://www.gustavobarbieri.com.br/eagle/"
-__version__ = "0.7"
+__version__ = "0.8"
 __revision__ = "$Rev$"
 __description__ = """\
 Eagle is an abstraction layer atop Graphical Toolkits focused on
@@ -62,7 +62,7 @@ __all__ = [
     "enable", "disable", "is_enabled",
     "set_active", "set_inactive", "get_active", "is_active",
     "close", "get_desktop_size",
-    "App",
+    "App", "Menu", "Toolbar",
     "Entry", "Password",
     "Spin", "IntSpin", "UIntSpin",
     "CheckBox",
@@ -576,7 +576,12 @@ class _AutoGenId( object ):
     last_id_num = 0
 
     def __get_id__( classobj ):
-        n = "%s-%d" % ( classobj.__name__, classobj.last_id_num )
+        if hasattr( classobj, "auto_gen_name" ):
+            name = getattr( classobj, "auto_gen_name" )
+        else:
+            name = classobj.__name__
+
+        n = "%s-%d" % ( name, classobj.last_id_num )
         classobj.last_id_num += 1
         return n
     # __get_id__()
@@ -1487,11 +1492,11 @@ class DebugDialog( _EGObject, _AutoGenId ):
     def save_exception( self, exctype, value, tb ):
         import traceback
         import time
+        import tempfile
         progname = os.path.split( sys.argv[ 0 ] )[ -1 ]
-        filename = "%s-%s-%s.tb" % ( progname,
-                                  os.getuid(),
+        filename = "%s-%s.tb" % ( progname,
                                   int( time.time() ) )
-        filename = os.path.join( os.path.sep, "tmp", filename )
+        filename = os.path.join( os.path.sep, tempfile.gettempdir(), filename )
         f = open( filename, "wb" )
         try:
             os.chmod( filename, 0600 )
@@ -1668,6 +1673,499 @@ class _EGWidLabelEntry( _EGDataWidget ):
 # _EGWidLabelEntry
 
 
+class Menu( object ):
+    class BaseItem( _EGObject, _AutoGenId ):
+        _wid = _gen_ro_property( "_wid" )
+        auto_gen_name = "Menu.BaseItem"
+
+        def __init__( self, id=None, active=True, visible=True ):
+            _EGObject.__init__( self, id or self.__get_id__() )
+            self._wid = None
+            self.app = None
+            self.__setup_gui__()
+            self._wid.show()
+            self.active = active
+            self.visible = visible
+        # __init__()
+
+
+        def __setup_gui__( self ):
+            pass
+        # __setup_gui__()
+
+
+        def __str__( self ):
+            return "%s( active=%r, visible=%r )" % \
+                   ( self.__class__.__name__, self.active, self.visible )
+        # __str__()
+        __repr__ = __str__
+
+
+        def set_active( self, active=True ):
+            """Set the menu item as active.
+
+            An active menu have their actions enabled, while an inactive
+            (active=False) will be grayed and actions disabled.
+            """
+            self._wid.set_sensitive( bool( active ) )
+        # set_active()
+        enable = set_active
+
+
+        def set_inactive( self ):
+            """Same as L{set_active}( False )"""
+            self.set_active( False )
+        # set_inactive()
+        disable = set_inactive
+
+
+        def get_active( self ):
+            """Return True if it's active (enabled) or False
+                inactive (disabled).
+            """
+            return not ( self._wid.state & gtk.STATE_INSENSITIVE )
+        # get_active()
+        is_active = get_active
+        is_enabled = get_active
+
+        active = property( get_active, set_active )
+
+
+        def set_visible( self, visible=True ):
+            """Show or hide menu item based on value of 'visible'."""
+            if visible:
+                self.show()
+            else:
+                self.hide()
+        # set_visible()
+
+
+        def get_visible( self ):
+            """Return true if menu item is visible (shown)."""
+            return self._visible
+        # get_visible()
+        is_visible = get_visible
+
+        visible = property( get_visible, set_visible )
+
+
+        def show( self ):
+            """Make menu item visible."""
+            self._visible = True
+            self._wid.show()
+        # show()
+
+
+        def hide( self ):
+            """Make menu item invisible."""
+            self._visible = False
+            self._wid.hide()
+        # hide()
+    # BaseItem
+
+
+    class Separator( BaseItem ):
+        auto_gen_name = "Menu.Separator"
+
+        def __setup_gui__( self ):
+            self._wid = gtk.SeparatorMenuItem()
+        # __init__()
+    # Separator
+
+
+    class Item( BaseItem ):
+        """Simple menu item composed of text and callback function."""
+        auto_gen_name = "Menu.Item"
+
+        def __init__( self, id=None, label="", callback=None, active=True,
+                      visible=True ):
+            """Menu.Item constructor.
+
+            @param id: unique id to this application, or None to generate one
+                   automatically.
+            @param label: some text to display.
+            @param callback: function or tuple of functions to be called
+                back when item is clicked. Callbacks should have
+                the following signature:
+
+                    def callback( app, menu_item ):
+
+                where app is the App instance that contains this item
+                and menu_item is an instance to clicked item.
+            @param active: boolean to set item state.
+            @param visible: boolean to set item visibility.
+            """
+            self.label = label or ""
+            self.callback = _callback_tuple( callback )
+
+            Menu.BaseItem.__init__( self, id,  active=active, visible=visible )
+        # __init__()
+
+
+        def __setup_gui__( self ):
+            self._wid = gtk.MenuItem( label=self.label )
+            if self.callback:
+                def cb( wid ):
+                    for c in self.callback:
+                        c( self.app, self )
+                self._wid.connect( "activate", cb )
+        # __init__()
+
+
+        def set_label( self, value ):
+            self._label = value
+            if self._wid:
+                self._wid.child.set_text( self._label )
+        # set_label()
+
+        def get_label( self ):
+            return self._label
+        # get_label()
+
+        label = property( get_label, set_label )
+
+
+        def __str__( self ):
+            return "%s( label=%r, callback=%r, activate=%r, visible=%r )" \
+                   % ( self.__class__.__name__, self.label, self.callback,
+                       self.active, self.visible )
+        # __str__()
+        __repr__ = __str__
+    # Item
+
+
+    class Submenu( BaseItem ):
+        """Menu item that have sub items."""
+        subitems = _gen_ro_property( "subitems" )
+        auto_gen_name = "Menu.Submenu"
+
+        def __init__( self, id=None, label="", subitems=None, active=True,
+                      visible=True ):
+            """Menu.Submenu constructor.
+
+            @param id: unique id to this application, or None to generate one
+                   automatically.
+            @param label: some text to display.
+            @param subitems: list of Menu.BaseItem derived objects.
+            @param active: boolean to set item state.
+            @param visible: boolean to set item visibility.
+            """
+            self.label = label or ""
+            self.subitems = _obj_tuple( subitems )
+
+            Menu.BaseItem.__init__( self, id, active=active, visible=visible )
+        # __init__()
+
+
+        def __setup_gui__( self ):
+            self._menu = gtk.Menu()
+            self._wid = gtk.MenuItem( label=self.label )
+            self._wid.set_submenu( self._menu )
+            for i in self.subitems:
+                if not isinstance( i, Menu.BaseItem ):
+                    raise ValueError( ( "Subitem shoud be subclass of "
+                                        "BaseItem, but got %s instead!" ) %
+                                      type( i ).__name__ )
+                self._menu.append( i._wid )
+        # __init__()
+
+
+        def __str__( self ):
+            return "%s( label=%r, subitems=%r, active=%r, visible=%r )" % \
+                   ( self.__class__.__name__, self.label, self.subitems,
+                     self.active, self.visible )
+        # __str__()
+        __repr__ = __str__
+
+
+        def set_label( self, value ):
+            self._label = value
+            if self._wid:
+                self._wid.child.set_text( self._label )
+        # set_label()
+
+        def get_label( self ):
+            return self._label
+        # get_label()
+
+        label = property( get_label, set_label )
+
+
+        def _get_app( self ):
+            try:
+                return self.__ro_app
+            except AttributeError:
+                return None
+        # _get_app()
+
+        def _set_app( self, value ):
+            # We need to overload app setter in order to set
+            # subitem's _app.
+            try:
+                v = self.__ro_app
+            except AttributeError:
+                v = None
+            if v is None:
+                self.__ro_app = value
+                if value:
+                    for item in self.subitems:
+                        value.__add_widget__( item )
+            else:
+                raise Exception( "Read Only property 'app'." )
+        # _set_app()
+        app = property( _get_app, _set_app )
+    # Submenu
+# Menu
+
+
+class Toolbar( object ):
+    class BaseItem( _EGObject, _AutoGenId ):
+        _wid = _gen_ro_property( "_wid" )
+        auto_gen_name = "Toolbar.BaseItem"
+
+        def __init__( self, id=None, active=True, visible=True ):
+            _EGObject.__init__( self, id or self.__get_id__() )
+            self._wid = None
+            self.app = None
+            self.__setup_gui__()
+            self._wid.show()
+            self.active = active
+            self.visible = visible
+        # __init__()
+
+
+        def __setup_gui__( self ):
+            pass
+        # __setup_gui__()
+
+
+        def __str__( self ):
+            return "%s( active=%r, visible=%r )" % \
+                   ( self.__class__.__name__, self.active, self.visible )
+        # __str__()
+        __repr__ = __str__
+
+
+        def set_active( self, active=True ):
+            """Set the toolbar item as active.
+
+            An active toolbar item have their actions enabled, while
+            an inactive (active=False) will be grayed and actions
+            disabled.
+            """
+            self._wid.set_sensitive( bool( active ) )
+        # set_active()
+        enable = set_active
+
+
+        def set_inactive( self ):
+            """Same as L{set_active}( False )"""
+            self.set_active( False )
+        # set_inactive()
+        disable = set_inactive
+
+
+        def get_active( self ):
+            """Return True if it's active (enabled) or False
+                inactive (disabled).
+            """
+            return not ( self._wid.state & gtk.STATE_INSENSITIVE )
+        # get_active()
+        is_active = get_active
+        is_enabled = get_active
+
+        active = property( get_active, set_active )
+
+
+        def set_visible( self, visible=True ):
+            """Show or hide toolbar item based on value of 'visible'."""
+            if visible:
+                self.show()
+            else:
+                self.hide()
+        # set_visible()
+
+
+        def get_visible( self ):
+            """Return true if toolbar item is visible (shown)."""
+            return self._visible
+        # get_visible()
+        is_visible = get_visible
+
+        visible = property( get_visible, set_visible )
+
+
+        def show( self ):
+            """Make toolbar item visible."""
+            self._visible = True
+            self._wid.show()
+        # show()
+
+
+        def hide( self ):
+            """Make toolbar item invisible."""
+            self._visible = False
+            self._wid.hide()
+        # hide()
+    # BaseItem
+
+
+    class Separator( BaseItem ):
+        auto_gen_name = "Toolbar.Separator"
+
+        def __setup_gui__( self ):
+            self._wid = gtk.SeparatorToolItem()
+        # __init__()
+    # Separator
+
+
+    class Item( BaseItem ):
+        """Simple toolbar item composed of text, icon, tooltip and
+        callback function.
+        """
+        auto_gen_name = "Toolbar.Item"
+
+        def __init__( self, id=None, label="", image=None, stock=None,
+                      tooltip=None, callback=None, active=True, visible=True ):
+            """Toolbar.Item constructor.
+
+            @param id: unique id to this application, or None to generate one
+                   automatically.
+            @param label: some text to display.
+            @param image: icon image to display, should be a filename
+                or eagle.Image.
+            @param stock: optional. One of L{Button.stock_items}.
+            @param tooltip: extra text to display when mouse is over
+                this item.
+            @param callback: function or tuple of functions to be called
+                back when item is clicked. Callbacks should have
+                the following signature:
+
+                    def callback( app, toolbar_item ):
+
+                where app is the App instance that contains this item
+                and toolbar_item is an instance to clicked item.
+            @param active: boolean to set item state.
+            @param visible: boolean to set item visibility.
+            """
+            self.label = label or ""
+            self.image = image
+            self.stock = stock
+            self.tooltip = tooltip or ""
+            self.callback = _callback_tuple( callback )
+
+            Toolbar.BaseItem.__init__( self, id, active=active,
+                                       visible=visible )
+        # __init__()
+
+
+        def __setup_gui__( self ):
+            if self.stock:
+                try:
+                    sid = Button._gtk_stock_map[ self.stock ]
+                except KeyError, e:
+                    raise ValueError( "unknown stock '%s'." % self.stock )
+                self._wid = gtk.ToolButton( sid )
+            else:
+                self._img = gtk.Image()
+                self._img.show()
+                self._img.set_from_pixbuf( self.image.__get_gtk_pixbuf__() )
+                self._wid = gtk.ToolButton( icon_widget=self._img,
+                                            label=self.label )
+
+            if self.callback:
+                def cb( wid ):
+                    for c in self.callback:
+                        c( self.app, self )
+                self._wid.connect( "clicked", cb )
+        # __init__()
+
+
+        def __str__( self ):
+            return ( "%s( label=%r, image=%r, stock=%r, tooltip=%r, "
+                     "callback=%r, activate=%r, visible=%r )" ) % \
+                     ( self.__class__.__name__, self.label,
+                       self.image, self.stock, self.tooltip, self.callback,
+                       self.active, self.visible )
+        # __str__()
+        __repr__ = __str__
+
+
+        def set_label( self, value ):
+            self._label = value
+            if self._wid:
+                self._wid.set_label( self._label )
+        # set_label()
+
+        def get_label( self ):
+            return self._label
+        # get_label()
+
+        label = property( get_label, set_label )
+
+
+        def set_image( self, value ):
+            if value is None:
+                self._image = None
+                return
+
+            if isinstance( value, basestring ):
+                value = Image( filename=value )
+            elif not isinstance( value, Image ):
+                raise ValueError( ( "image should be string or instance "
+                                    "of eagle.Image, got %r instead." ) %
+                                  type( value ).__name__ )
+            self._image = value
+            if self._wid:
+                self._img.set_from_pixbuf( value.__get_gtk_pixbuf__() )
+        # set_image()
+
+        def get_image( self ):
+            return self._image
+        # get_image()
+
+        image = property( get_image, set_image )
+
+
+        def set_tooltip( self, value ):
+            self._tooltip = value or ""
+            if self._wid and self.app and self._tooltip:
+                self._wid.set_tooltip( self.app._tooltips, self._tooltip )
+        # set_tooltip()
+
+        def get_tooltip( self ):
+            return self._tooltip
+        # get_tooltip()
+
+        tooltip = property( get_tooltip, set_tooltip )
+
+
+        def _get_app( self ):
+            try:
+                return self.__ro_app
+            except AttributeError:
+                return None
+        # _get_app()
+
+        def _set_app( self, value ):
+            # We need to overload app setter in order to set
+            # tooltip
+            try:
+                v = self.__ro_app
+            except AttributeError:
+                v = None
+            if v is None:
+                self.__ro_app = value
+                if self._wid:
+                    self._wid.set_tooltip( value._tooltips, self.tooltip )
+            else:
+                raise Exception( "Read Only property 'app'." )
+        # _set_app()
+        app = property( _get_app, _set_app )
+    # Item
+# Toolbar
+
+
 class App( _EGObject, _AutoGenId ):
     """An application window.
 
@@ -1704,7 +2202,7 @@ class App( _EGObject, _AutoGenId ):
     L{get_data<_EGDataWidget.get_data>}, it make things easier, but
     B{be careful to don't misuse it!}. Example:
 
-       >>> app= App( "My App", left=Entry( id="entry" ),
+       >>> app = App( "My App", left=Entry( id="entry" ),
        ...           right=Canvas( "canvas", 300, 300 ) )
        >>> app[ "entry" ]
        ''
@@ -1728,12 +2226,15 @@ class App( _EGObject, _AutoGenId ):
     center = _gen_ro_property( "center" )
     preferences = _gen_ro_property( "preferences" )
     statusbar = _gen_ro_property( "statusbar" )
+    menu = _gen_ro_property( "menu" )
+    toolbar = _gen_ro_property( "toolbar" )
     _widgets = _gen_ro_property( "_widgets" )
 
     def __init__( self, title, id=None,
                   center=None, left=None, right=None, top=None, bottom=None,
-                  preferences=None, window_size=None,
+                  preferences=None, window_size=( 800, 480 ),
                   window_position=None, window_decorated=True,
+                  menu=None, toolbar=None,
                   quit_callback=None, data_changed_callback=None,
                   author=None, description=None, help=None, version=None,
                   license=None, copyright=None,
@@ -1761,6 +2262,8 @@ class App( _EGObject, _AutoGenId ):
                window.
         @param window_decorated: boolean used to add or remove border,
                title bar and other decorations from window.
+        @param menu: a list of Menu.BaseItem subclasses.
+        @param toolbar: a list of Toolbar.BaseItem subclasses.
         @param statusbar: if C{True}, an statusbar will be available and
                usable with L{status_message} method.
         @param author: the application author or list of author, used in
@@ -1796,6 +2299,8 @@ class App( _EGObject, _AutoGenId ):
         self.license = _str_tuple( license )
         self.copyright = _str_tuple( copyright )
         self.statusbar = statusbar
+        self.menu = _obj_tuple( menu )
+        self.toolbar = _obj_tuple( toolbar )
         self._visible = bool( visible )
         self._widgets = {}
 
@@ -2035,13 +2540,22 @@ class App( _EGObject, _AutoGenId ):
         self._win = hildon.Window()
         _prg.add_window( self._win )
         self._win_in_fullscreen = False
+        self._tooltips = gtk.Tooltips()
+
+        self._master_layout = gtk.VBox( False )
+        self._master_layout.set_border_width( 0 )
+        self._master_layout.show()
+        self._win.add( self._master_layout )
+
+        self.__setup_gui_menu__()
+        self.__setup_gui_toolbar__()
 
         self._top_layout = gtk.VBox( False )
         self._top_layout.set_border_width( self.border_width )
         self._top_layout.show()
-        self._win.add( self._top_layout )
+        self._master_layout.pack_start( self._top_layout, expand=True,
+                                        fill=True )
 
-        self.__setup_menus__()
         self.__setup_gui_left__()
         self.__setup_gui_right__()
         self.__setup_gui_center__()
@@ -2054,13 +2568,13 @@ class App( _EGObject, _AutoGenId ):
         has_left = bool( self._left.children )
         has_right = bool( self._right.children )
         has_center = bool( self._center.children )
-        has_hl = has_left or has_center or has_right
 
         expand_top = False
         expand_bottom = False
         expand_left = False
         expand_right = False
         expand_center = has_center
+        has_hl = has_left or has_center or has_right
 
         # Left and Right just expand if there is no center
         if has_left and not has_center:
@@ -2125,8 +2639,8 @@ class App( _EGObject, _AutoGenId ):
             self._statusbar.show()
             self._statusbar_ctx = self._statusbar.get_context_id( self.id )
             self._statusbar.set_has_resize_grip( False )
-            self._top_layout.pack_end( self._statusbar,
-                                       expand=False, fill=True )
+            self._master_layout.pack_end( self._statusbar,
+                                          expand=False, fill=True )
 
         settings = self._win.get_settings()
         try:
@@ -2145,33 +2659,41 @@ class App( _EGObject, _AutoGenId ):
     # __setup_gui__()
 
 
-    def __setup_menus__( self ):
+    def __setup_gui_menu__( self ):
+        if not self.menu:
+            return
+
         self._menu = gtk.Menu()
-
-        mi = gtk.MenuItem( "Help" )
-        mi.connect( "activate", lambda *x: self.show_help_dialog() )
-        self._menu.append( mi )
-
-        mi = gtk.MenuItem( "About" )
-        mi.connect( "activate", lambda *x: self.show_about_dialog() )
-        self._menu.append( mi )
-
-        mi = gtk.MenuItem( "Preferences" )
-        mi.connect( "activate", lambda *x: self.show_preferences_dialog() )
-        self._menu.append( mi )
-
-        mi = gtk.MenuItem( "Close" )
-        mi.connect( "activate", lambda *x: self.close() )
-        self._menu.append( mi )
-
-        mi = gtk.MenuItem( "Quit" )
-        mi.connect( "activate", lambda *x: quit() )
-        self._menu.append( mi )
-
-        self._menu.show_all()
-
         self._win.set_menu( self._menu )
-    # __setup_menus__()
+        self._menu.show()
+        for item in self.menu:
+            if not isinstance( item, Menu.BaseItem ):
+                raise ValueError( ( "menu item should be Menu.BaseItem, "
+                                    "but got %s instead!" ) %
+                                  type( item ).__name__ )
+            self._menu.append( item._wid )
+            self.__add_widget__( item )
+    # __setup_gui_menu__()
+
+
+    def __setup_gui_toolbar__( self ):
+        if not self.toolbar:
+            return
+
+        self._toolbar = gtk.Toolbar()
+        self._win.add_toolbar( self._toolbar )
+        for item in self.toolbar:
+            if not isinstance( item, Toolbar.BaseItem ):
+                raise ValueError( ( "toolbar item should be "
+                                    "Toolbar.BaseItem, but got %s "
+                                    "instead!" ) %
+                                  type( item ).__name__ )
+            self._toolbar.insert( item._wid, -1 )
+            self.__add_widget__( item )
+
+        self._toolbar.show_all()
+        self._win.show_all() # XXX otherwise hildon don't show it!
+    # __setup_gui_toolbar__()
 
 
     def __setup_gui_left__( self ):
