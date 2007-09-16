@@ -16,6 +16,7 @@ App( title="Test Toolbar",
                             tooltip="test this toolbar item",
                             callback=callback,
                             active=False ),
+              Toolbar.Item( stock="open", callback=callback ),
               ),
      )
 
