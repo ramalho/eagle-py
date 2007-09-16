@@ -45,10 +45,20 @@ def focus_4( app, widget ):
 # focus_4()
 
 
+def any_page_selected( app, tabs, page ):
+    print "page_selected:", app, tabs, page
+
+def first_page_selected( app, tabs, page ):
+    print "first_page_selected", app, tabs, page
+
+
+
 App( title="Test Tabs",
      center=( Tabs( id="t0",
+                    callback=any_page_selected,
                     children=( Tabs.Page( label="First",
                                           children=Label( label="bla" ),
+                                          callback=first_page_selected,
                                           ),
                                Tabs.Page( label="Second",
                                           children=( CloseButton(),

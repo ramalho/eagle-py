@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2005 by Gustavo Sverzut Barbieri
+# Copyright (C) 2005-2007 by Gustavo Sverzut Barbieri
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
@@ -4788,13 +4788,19 @@ class Tabs( _EGWidget ):
         parent = _gen_ro_property( "parent" )
 
         def __init__( self, id=None, label="", children=None,
-                      horizontal=False, active=True, visible=True ):
+                      horizontal=False, active=True, visible=True,
+                      callback=None ):
             """Tabs.Page constructor.
 
             @param id: may not be provided, it will be generated automatically.
             @param label: displayed as Page label.
             @param children: a list of eagle widgets that this page contains.
             @param horizontal: if widgets should be laid out horizontally.
+            @param callback: function (or list of functions) to call when
+                   user select this page. Function will get as parameters:
+                    - App Reference
+                    - Tabs Reference
+                    - Tabs.Page reference
             """
             _EGWidget.__init__( self, id or self.__get_id__(),
                                 active=active, visible=visible )
@@ -4802,6 +4808,7 @@ class Tabs( _EGWidget ):
             self.horizontal = bool( horizontal )
             self.children = _obj_tuple( children )
             self.parent = None
+            self._callback = _callback_tuple( callback )
             self._gtk_label = gtk.Label( self.__label )
 
             self.__setup_gui__()
@@ -4889,14 +4896,20 @@ class Tabs( _EGWidget ):
 
 
     def __init__( self, id, children=None, expand_policy=None,
-                  active=True, visible=True ):
+                  active=True, visible=True, callback=None ):
         """Tabs constructor.
 
         @param id: unique identified.
         @param children: an iterable with L{Tabs.Page}
         @param expand_policy: how this widget should fit space, see
                L{ExpandPolicy.Policy.Rule}.
+        @param callback: function (or list of functions) to call when
+               user change pages. Function will get as parameters:
+                - App Reference
+                - Tabs Reference
+                - Tabs.Page reference
         """
+        self._callback = _callback_tuple( callback )
         if expand_policy is None:
             expand_policy = ExpandPolicy.All()
 
@@ -4916,6 +4929,7 @@ class Tabs( _EGWidget ):
             self.children = tuple( lst )
 
         self.__setup_gui__()
+        self.__setup_connections__()
     # __init__()
 
 
@@ -4926,6 +4940,26 @@ class Tabs( _EGWidget ):
             self._wid.append_page( w._widgets[ 0 ], w._gtk_label )
         self._widgets = ( self._wid, )
     # __setup_gui__()
+
+
+    def __setup_connections__( self ):
+        if self._callback:
+            def callback( notebook, page, page_num ):
+                p = self.children[ page_num ]
+                for c in self._callback:
+                    c( self.app, self, p )
+            # callback()
+            self._wid.connect( "switch-page", callback )
+
+        def callback( notebook, page, page_num, filter_num, filter ):
+            if page_num == filter_num:
+                for c in filter._callback:
+                    c( self.app, self, filter )
+        # callback()
+        for i, c in enumerate(self.children):
+            if c._callback:
+                self._wid.connect( "switch-page", callback, i, c )
+    # __setup_connections__()
 
 
     def _get_app( self ):
