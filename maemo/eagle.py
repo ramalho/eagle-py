@@ -90,6 +90,8 @@ import cPickle as pickle
 import htmllib
 import formatter
 import weakref
+import datetime
+import time
 
 try:
     import pygtk
@@ -5187,6 +5189,98 @@ class Tabs( _EGWidget ):
 # Tabs
 
 
+class _DateEditor( gtk.HBox ):
+    # XXX TODO: report bug with hildon.DateEditor and use it after fixed.
+    def __init__( self, value=None ):
+        gtk.HBox.__init__( self, homogeneous=False, spacing=2 )
+        def Entry( max ):
+            e = gtk.SpinButton( digits=0 )
+            e.show()
+            e.set_range( 1, max )
+            e.set_increments( 1, 10 )
+            self.pack_start( e, fill=True, expand=False )
+            return e
+        # Entry()
+
+        self.year = Entry( 9999 )
+        self.month = Entry( 12 )
+        self.day = Entry( 31 )
+
+        self.value = value or datetime.date.today()
+    # __init__()
+
+
+    def set_value( self, value ):
+        self.year.set_value( value.year )
+        self.month.set_value( value.month )
+        self.day.set_value( value.day )
+    # set_value()
+
+
+    def get_value( self ):
+        return datetime.date( int( self.year.get_value() ),
+                              int( self.month.get_value() ),
+                              int( self.day.get_value() ) )
+    # get_value()
+
+    value = property( get_value, set_value )
+# _DateEditor
+
+
+class _TimeEditor( hildon.TimeEditor ):
+    def __init__( self, value=None ):
+        hildon.TimeEditor.__init__( self )
+        self.value = value or datetime.datetime.now().time()
+    # __init__()
+
+
+    def set_value( self, value ):
+        self.set_time( value.hour, value.minute, value.second )
+    # set_value()
+
+
+    def get_value( self ):
+        return datetime.time( *self.get_time() )
+    # get_value()
+
+    value = property( get_value, set_value )
+# _TimeEditor()
+
+
+class _DateTimeEditor( gtk.HBox ):
+    def __init__( self, value=None ):
+        gtk.HBox.__init__( self, homogeneous=False, spacing=4 )
+
+        self.date = _DateEditor()
+        self.pack_start( self.date, fill=True, expand=False )
+        self.date.show()
+
+        self.time = _TimeEditor()
+        self.pack_start( self.time, fill=True, expand=False )
+        self.time.show()
+
+        self.value = value or datetime.datetime.now()
+    # __init__()
+
+
+    def set_value( self, value ):
+        self.time.set_value( value.time() )
+        self.date.set_value( value.date() )
+    # set_value()
+
+
+    def get_value( self ):
+        t = self.time.get_value()
+        d = self.date.get_value()
+        return datetime.datetime.combine( d, t )
+    # get_value()
+
+    value = property( get_value, set_value )
+# _DateTimeEditor
+
+
+
+
 class Table( _EGWidget ):
     """Data table.
 
@@ -5328,6 +5422,9 @@ class Table( _EGWidget ):
         float: float,
         str: str,
         unicode: unicode,
+        datetime.date: lambda *a: datetime.date.today(),
+        datetime.time: lambda *a: datetime.datetime.now().time(),
+        datetime.datetime: lambda *a: datetime.datetime.now(),
         }
 
 
@@ -5679,6 +5776,12 @@ class Table( _EGWidget ):
             elif tp == Image:
                 entry = gtk.Image()
                 entry.set_from_pixbuf( data[ i ].__get_gtk_pixbuf__() )
+            elif tp == datetime.datetime:
+                entry = _DateTimeEditor( data[ i ] )
+            elif tp == datetime.date:
+                entry = _DateEditor( data[ i ] )
+            elif tp == datetime.time:
+                entry = _TimeEditor( data[ i ] )
             else:
                 entry = gtk.Label( str( data[ i ] ) )
 
@@ -5727,6 +5830,12 @@ class Table( _EGWidget ):
                         r = float( wid.get_value() )
                     elif tp in ( str, unicode ):
                         r = tp( wid.get_text() )
+                    elif tp == datetime.datetime:
+                        r = wid.get_value()
+                    elif tp == datetime.date:
+                        r = wid.get_value()
+                    elif tp == datetime.time():
+                        r = wid.get_value()
                     else:
                         r = data[ i ]
                 result.append( r )
@@ -6045,6 +6154,70 @@ class Table( _EGWidget ):
         # edited()
 
 
+        def date2str( date ):
+            if date:
+                return date.strftime( "%x" )
+            else:
+                return ""
+        # date2str()
+
+
+        def time2str( time ):
+            if time:
+                return time.strftime( "%X" )
+            else:
+                return ""
+        # time2str()
+
+
+        def datetime2str( dt ):
+            if dt:
+                return dt.strftime( "%c" )
+            else:
+                return ""
+        # datetime2str()
+
+        def parse_datetime( text, formats, errmsg ):
+            for f in formats:
+                try:
+                    t = time.strptime( text, f )[ 0 : 6 ]
+                    return datetime.datetime( *t )
+                except ValueError, e:
+                    pass
+
+            p = ", ".join( repr( f ) for f in formats )
+            info( errmsg + " %r should match one of: %s" % ( text, p ) )
+        # parse_datetime()
+
+
+        def date_edited( cell_render, path, text, col ):
+            dt = parse_datetime( text, ( "%x", "%Y-%m-%d", "%y-%m-%d" ),
+                                 "Invalid date." )
+            if dt:
+                self._model[ path ][ col ] = dt.date()
+        # date_edited()
+
+
+        def time_edited( cell_render, path, text, col ):
+            dt = parse_datetime( text, ( "%X", "%H:%M:%S", "%H:%M" ),
+                                 "Invalid time." )
+            if dt:
+                self._model[ path ][ col ] = dt.time()
+        # time_edited()
+
+
+        def datetime_edited( cell_render, path, text, col ):
+            dt = parse_datetime( text, ( "%c", "%x %X", "%X %x",
+                                         "%Y-%m-%d %H:%M:%S",
+                                         "%y-%m-%d %H:%M:%S",
+                                         "%Y-%m-%d %H:%M",
+                                         "%y-%m-%d %H:%M" ),
+                                 "Invalid datetime." )
+            if dt:
+                self._model[ path ][ col ] = dt
+        # datetime_edited()
+
+
         for i, t in enumerate( self.types ):
             if   t == bool:
                 cell_rend = gtk.CellRendererToggle()
@@ -6068,6 +6241,27 @@ class Table( _EGWidget ):
                 cell_rend = gtk.CellRendererPixbuf()
                 cell_rend.model_view_conv = lambda x: x.__get_gtk_pixbuf__()
                 props = {}
+            elif t == datetime.datetime:
+                cell_rend = gtk.CellRendererText()
+                props = { "text": i }
+                cell_rend.model_view_conv = datetime2str
+                if self.editable:
+                    cell_rend.set_property( "editable", True )
+                    cell_rend.connect( "edited", datetime_edited, i )
+            elif t == datetime.date:
+                cell_rend = gtk.CellRendererText()
+                props = { "text": i }
+                cell_rend.model_view_conv = date2str
+                if self.editable:
+                    cell_rend.set_property( "editable", True )
+                    cell_rend.connect( "edited", date_edited, i )
+            elif t == datetime.time:
+                cell_rend = gtk.CellRendererText()
+                props = { "text": i }
+                cell_rend.model_view_conv = time2str
+                if self.editable:
+                    cell_rend.set_property( "editable", True )
+                    cell_rend.connect( "edited", time_edited, i )
             else:
                 cell_rend = gtk.CellRendererText()
                 props = {}
@@ -6160,7 +6354,10 @@ class Table( _EGWidget ):
         self._model = gtk.ListStore( *gtk_types )
 
         def sort_fn( model, itr1, itr2, id ):
-            return cmp( model[ itr1 ][ id ], model[ itr2 ][ id ] )
+            try:
+                return cmp( model[ itr1 ][ id ], model[ itr2 ][ id ] )
+            except TypeError, e:
+                return 0
         # sort_fn()
 
         for i in xrange( len( self.types ) ):
