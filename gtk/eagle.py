@@ -64,7 +64,7 @@ __all__ = [
     "close", "get_desktop_size",
     "App", "Menu", "Toolbar",
     "Entry", "Password",
-    "Spin", "IntSpin", "UIntSpin",
+    "Spin", "IntSpin", "UIntSpin", "Slider",
     "CheckBox",
     "Progress",
     "Color", "Font",
@@ -4065,6 +4065,137 @@ class UIntSpin( IntSpin ):
                        active=active, visible=visible )
     # __init__()
 # UIntSpin
+
+
+class Slider( _EGWidLabelEntry ):
+    """Slider to select from a range."""
+
+    POS_LEFT = 0
+    POS_RIGHT = 1
+    POS_TOP = 2
+    POS_BOTTOM = 3
+    POS_NONE = None
+    POS_AUTO = -1
+
+    default_min = -1e60
+    default_max =  1e60
+
+    value = _gen_ro_property( "value" )
+    min = _gen_ro_property( "min" )
+    max = _gen_ro_property( "max" )
+    step = _gen_ro_property( "step" )
+    digits = _gen_ro_property( "digits" )
+    value_pos = _gen_ro_property( "value_pos" )
+    horizontal = _gen_ro_property( "horizontal" )
+
+    callback = _gen_ro_property( "callback" )
+
+    def __init__( self, id, label="", value=None, min=None, max=None,
+                  step=None, digits=3, value_pos=POS_AUTO,
+                  horizontal=True, callback=None, persistent=False,
+                  expand_policy=None, active=True, visible=True ):
+        """Slider constructor.
+
+        @param id: unique identifier.
+        @param label: what to show on a label on the left side of the widget.
+        @param value: initial content.
+        @param min: minimum value. If None, L{default_min} will be used.
+        @param max: maximum value. If None, L{default_max} will be used.
+        @param step: step to use to decrement/increment using buttons.
+        @param digits: how many digits to show.
+        @param value_pos: where to display value, one of POS_LEFT, POS_RIGHT,
+               POS_TOP, POS_BOTTOM, POS_NONE or POS_AUTO.
+        @param horizontal: whenever to use horizontal or vertical slider.
+        @param callback: function (or list of functions) that will
+               be called when this widget have its data changed.
+               Function will receive as parameters:
+                - App reference
+                - Widget reference
+                - new value
+        @param persistent: if this widget should save its data between
+               sessions.
+        @param expand_policy: how this widget should fit space, see
+               L{ExpandPolicy.Policy.Rule}.
+        """
+        self.value = value
+        self.min = min
+        self.max = max
+        self.step = step
+        self.value_pos = value_pos
+        self.digits = digits
+        self.horizontal = bool( horizontal )
+        self.callback = _callback_tuple( callback )
+
+        _EGWidLabelEntry.__init__( self, id, persistent, label,
+                                   expand_policy=expand_policy,
+                                   active=active, visible=visible )
+
+        self.__setup_connections__()
+    # __init__()
+
+
+    def __setup_gui__( self ):
+        k = {}
+
+        if self.value is not None:
+            k[ "value" ] = self.value
+
+        if self.min is not None:
+            k[ "lower" ] = self.min
+        else:
+            k[ "lower" ] = self.default_min
+
+        if self.max is not None:
+            k[ "upper" ] = self.max
+        else:
+            k[ "upper" ] = self.default_max
+
+        if self.step is not None:
+            k[ "step_incr" ] = self.step
+            k[ "page_incr" ] = self.step * 2
+        else:
+            k[ "step_incr" ] = 1
+            k[ "page_incr" ] = 2
+
+        adj = gtk.Adjustment( **k )
+        if self.horizontal:
+            self._entry = gtk.HScale( adj )
+        else:
+            self._entry = gtk.VScale( adj )
+
+        self._entry.set_digits( self.digits )
+        self._entry.set_name( self.id )
+
+        if self.value_pos == Slider.POS_LEFT:
+            self._entry.set_value_pos( gtk.POS_LEFT )
+        elif self.value_pos == Slider.POS_RIGHT:
+            self._entry.set_value_pos( gtk.POS_RIGHT )
+        elif self.value_pos == Slider.POS_TOP:
+            self._entry.set_value_pos( gtk.POS_TOP )
+        elif self.value_pos == Slider.POS_BOTTOM:
+            self._entry.set_value_pos( gtk.POS_BOTTOM )
+        elif self.value_pos == Slider.POS_NONE:
+            self._entry.set_draw_value( False )
+
+        _EGWidLabelEntry.__setup_gui__( self )
+    # __setup_gui__()
+
+
+    def __setup_connections__( self ):
+        def callback( obj, *args ):
+            v = self.get_value()
+            self.app.data_changed( self, v )
+            for c in self.callback:
+                c( self.app, self, v )
+        # callback()
+        self._entry.connect( "notify::value", callback )
+    # __setup_connections__()
+
+
+    def set_value( self, value ):
+        self._entry.set_value( float( value ) )
+    # set_value()
+# Slider
 
 
 class Color( _EGWidLabelEntry ):
