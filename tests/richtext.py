@@ -32,6 +32,24 @@ App( title="Rich Text Example",
 <h3>level 3 header</h3>
 <p>Here is a paragraph, followed by horizontal rule</p>
 <hr />
+
+<div align="left">Left-aligned text</div>
+
+<div align="center">Centered text</div>
+
+<div align="right">Right-aligned text</div>
+
+<div align="justified">Justified text filling the whole horizontal space.
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
+</div>
+
+<hr />
+
 <p>List of styles:</p>
 <ul>
    <li><b>bold</b></li>

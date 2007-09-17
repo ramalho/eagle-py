@@ -6629,11 +6629,20 @@ class RichText( _EGWidget ):
                 "h2": create_tag( "h2", scale=pango.SCALE_X_LARGE ),
                 "h3": create_tag( "h3", scale=pango.SCALE_LARGE ),
                 "monospaced": create_tag( "monospaced", font="monospace" ),
+                "center": create_tag( "center",
+                                      justification=gtk.JUSTIFY_CENTER ),
+                "left":  create_tag( "left",
+                                     justification=gtk.JUSTIFY_LEFT ),
+                "right": create_tag( "right",
+                                     justification=gtk.JUSTIFY_RIGHT ),
+                "justified": create_tag( "justified",
+                                         justification=gtk.JUSTIFY_FILL )
                 }
             self.tags[ "default" ].set_priority( 0 )
 
             self.font = []
             self.link = []
+            self.divs = []
             self.margin = []
         # __setup_render__()
 
@@ -6652,6 +6661,8 @@ class RichText( _EGWidget ):
         def send_flowing_data( self, data ):
             itr = self.buffer.get_end_iter()
             t = [ self.tags[ "default" ] ] + self.font + self.link
+            for div in self.divs:
+                t.extend( div )
             self.buffer.insert_with_tags( itr, data, *t )
         # send_flowing_data()
 
@@ -6659,6 +6670,8 @@ class RichText( _EGWidget ):
             itr = self.buffer.get_end_iter()
             t = [ self.tags[ "default" ], self.tags[ "monospaced" ] ] + \
                 self.font + self.link
+            for div in self.divs:
+                t.extend( div )
             self.buffer.insert_with_tags( itr, data, *t )
         # send_literal_data()
 
@@ -6689,6 +6702,8 @@ class RichText( _EGWidget ):
         def send_label_data( self, data ):
             itr = self.buffer.get_end_iter()
             t = self.font + self.link + [ self.tags[ "bold" ] ]
+            for div in self.divs:
+                t.extend( div )
 
             margin, level = self.margin[ -1 ]
             self.buffer.insert_with_tags( itr, '\t' * level, *t )
@@ -6742,6 +6757,25 @@ class RichText( _EGWidget ):
         def end_link( self ):
             self.link = []
         # end_link()
+
+
+        def start_div( self, attrs ):
+            div = []
+            if "align" in attrs:
+                align = attrs[ "align" ]
+                try:
+                    div.append( self.tags[ align ] )
+                except KeyError, e:
+                    print >> sys.stderr, "Unknown alignment %r" % align
+            self.divs.append( div )
+        # start_div()
+
+
+        def end_div( self ):
+            if self.divs:
+                self.divs.pop()
+            self.send_paragraph( 1 )
+        # end_div()
 
 
         def new_font( self, font ):
@@ -6829,6 +6863,17 @@ class RichText( _EGWidget ):
         def end_font( self ):
             self.formatter.pop_font()
         # end_font()
+
+
+        def start_div( self, attrs ):
+            k = dict( attrs )
+            self.formatter.push_div( k )
+        # start_div()
+
+
+        def end_div( self ):
+            self.formatter.pop_div()
+        # end_div()
     # _Parser
 
 
@@ -6853,6 +6898,16 @@ class RichText( _EGWidget ):
             else:
                 formatter.AbstractFormatter.push_font( self, font )
         # push_font()
+
+
+        def push_div( self, attrs ):
+            self.writer.start_div( attrs )
+        # push_div()
+
+
+        def pop_div( self ):
+            self.writer.end_div()
+        # pop_div()
     # _Formatter
 
     bgcolor = _gen_ro_property( "bgcolor" )
