@@ -5250,6 +5250,92 @@ class _DateTimeEditor( gtk.HBox ):
 # _DateTimeEditor
 
 
+class _CellRendererButton( gtk.CellRendererText ):
+    __gproperties__ = { "callable": ( gobject.TYPE_PYOBJECT,
+                                      "callable property",
+                                      "callable property",
+                                      gobject.PARAM_READWRITE ) }
+    _button_width = 40
+    _button_height = 20
+
+    def __init__( self ):
+        self.__gobject_init__()
+        gtk.CellRendererText.__init__( self )
+        self.set_property( "xalign", 0.5 )
+        self.set_property( "mode", gtk.CELL_RENDERER_MODE_ACTIVATABLE )
+        self.callable = None
+        self.table = None
+    # __init__()
+
+
+    def do_set_property( self, pspec, value ):
+        if pspec.name == "callable":
+            if callable( value ):
+                self.callable = value
+            else:
+                raise TypeError( "callable property must be callable!" )
+        else:
+            raise AttributeError( "Unknown property %s" % pspec.name )
+    # do_set_property()
+
+
+    def do_get_property( self, pspec ):
+        if pspec.name == "callable":
+            return self.callable
+        else:
+            raise AttributeError( "Unknown property %s" % pspec.name )
+    # do_get_property()
+
+
+    def do_get_size( self, wid, cell_area ):
+        xpad = self.get_property( "xpad" )
+        ypad = self.get_property( "ypad" )
+
+        if not cell_area:
+            x, y = 0, 0
+            w = 2 * xpad + self._button_width
+            h = 2 * ypad + self._button_height
+        else:
+            w = 2 * xpad + cell_area.width
+            h = 2 * ypad + cell_area.height
+
+            xalign = self.get_property( "xalign" )
+            yalign = self.get_property( "yalign" )
+
+            x = max( 0, xalign * ( cell_area.width - w ) )
+            y = max( 0, yalign * ( cell_area.height - h ) )
+
+        return ( x, y, w, h )
+    # do_get_size()
+
+
+    def do_render( self, window, wid, bg_area, cell_area, expose_area, flags ):
+        if not window:
+            return
+
+        xpad = self.get_property( "xpad" )
+        ypad = self.get_property( "ypad" )
+
+        x, y, w, h = self.get_size( wid, cell_area )
+
+        state = gtk.STATE_NORMAL
+        shadow = gtk.SHADOW_OUT
+        wid.get_style().paint_box( window, state, shadow, cell_area,
+                                   wid, "button",
+                                   cell_area.x + x + xpad,
+                                   cell_area.y + y + ypad,
+                                   w - 1, h - 1 )
+        flags = flags & ~gtk.STATE_SELECTED
+        gtk.CellRendererText.do_render( self, window, wid, bg_area,
+                                        cell_area, expose_area, flags )
+    # do_render()
+
+    def do_activate( self, event, wid, path, bg_area, cell_area, flags ):
+        cb = self.get_property( "callable" )
+        cb( self.table.app, self.table, int( path ) )
+        return True
+# _CellRendererButton
+gobject.type_register( _CellRendererButton )
 
 
 class Table( _EGWidget ):
@@ -5266,6 +5352,32 @@ class Table( _EGWidget ):
     [ 1, 3 ]
     """
     spacing = 3
+
+
+    class ProgressCell( int ):
+        """Type used to have a Progress cell on table.
+
+        You can use this type in Table(types=(...), ...) to render it
+        as a progress indicator.
+
+        Values range from 0..100
+        """
+    # ProgressCell
+
+
+    class ButtonCell( object ):
+        """Type used to have a Progress cell on table.
+
+        You can use this type in Table(types=(...), ...) to render it
+        as a progress indicator.
+
+        Values range from 0..100
+        """
+        def __new__( t, *a, **ka ):
+            print t, a, ka
+            return t( *a, **ka )
+        # __new__()
+    # ButtonCell
 
 
     class Row( object ):
@@ -6195,7 +6307,10 @@ class Table( _EGWidget ):
                 if self.editable:
                     cell_rend.set_property( "activatable", True)
                     cell_rend.connect( "toggled", toggled, i )
-
+            elif t == Table.ProgressCell:
+                cell_rend = gtk.CellRendererProgress()
+                props = { "value": i }
+                cell_rend.model_view_conv = None
             elif t in ( int, long, float, str, unicode ):
                 cell_rend = gtk.CellRendererText()
                 props = { "text": i }
@@ -6231,6 +6346,12 @@ class Table( _EGWidget ):
                 if self.editable:
                     cell_rend.set_property( "editable", True )
                     cell_rend.connect( "edited", time_edited, i )
+            elif t == Table.ButtonCell:
+                cell_rend = _CellRendererButton()
+                cell_rend.table = self
+                cell_rend.set_property( "text", self.headers[ i ] )
+                props = { "callable": i }
+                cell_rend.model_view_conv = None
             else:
                 cell_rend = gtk.CellRendererText()
                 props = {}
@@ -6260,6 +6381,10 @@ class Table( _EGWidget ):
                         cell_rend.set_property( "active", v )
                     elif isinstance( cell_rend, gtk.CellRendererPixbuf ):
                         cell_rend.set_property( "pixbuf", v )
+                    elif isinstance( cell_rend, gtk.CellRendererProgress ):
+                        cell_rend.set_property( "value", v )
+                    elif isinstance( cell_rend, _CellRendererButton ):
+                        cell_rend.set_property( "callable", v )
                 # f()
                 col.set_cell_data_func( cell_rend, f, i )
 
@@ -6310,7 +6435,7 @@ class Table( _EGWidget ):
         for i, t in enumerate( self.types ):
             if   t == bool:
                 gtk_types.append( gobject.TYPE_BOOLEAN )
-            elif t == int:
+            elif t in ( int, Table.ProgressCell ):
                 gtk_types.append( gobject.TYPE_INT )
             elif t == long:
                 gtk_types.append( gobject.TYPE_LONG )
