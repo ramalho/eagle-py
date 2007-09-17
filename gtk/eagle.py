@@ -5177,7 +5177,10 @@ class Table( _EGWidget ):
 
 
         def __nonzero__( self ):
-            return self.__items.__nonzero__()
+            if self.__items:
+                return True
+            else:
+                return False
         # __nonzero__()
 
 
@@ -5546,10 +5549,14 @@ class Table( _EGWidget ):
 
     def __setup_connections_changed__( self ):
         def row_changed( model, path, itr ):
-            index = path[ 0 ]
-            v = ( index, Table.Row( model[ path ] ) )
-            for c in self.data_changed_callback:
-                c( self.app, self, v )
+            self._model.handler_block( self._model._hid_row_changed )
+            try:
+                index = path[ 0 ]
+                v = ( index, Table.Row( model[ path ] ) )
+                for c in self.data_changed_callback:
+                    c( self.app, self, v )
+            finally:
+                self._model.handler_unblock( self._model._hid_row_changed )
         # row_changed()
 
 

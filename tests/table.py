@@ -4,6 +4,10 @@ from eagle import *
 
 def data_changed( app, widget, value ):
     print "changed:", app, widget, value
+    idx, values = value
+    if values:
+        values[ 2 ] += " [MODIFIED]"
+        widget[ idx ] = values
 # data_changed()
 
 def selection_changed( app, widget, selected ):
