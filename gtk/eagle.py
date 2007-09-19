@@ -4190,7 +4190,7 @@ class Slider( _EGWidLabelEntry ):
             for c in self.callback:
                 c( self.app, self, v )
         # callback()
-        self._entry.connect( "notify::value", callback )
+        self._entry.connect( "value-changed", callback )
     # __setup_connections__()
 
 
