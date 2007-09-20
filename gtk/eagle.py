@@ -4197,6 +4197,37 @@ class Slider( _EGWidLabelEntry ):
     def set_value( self, value ):
         self._entry.set_value( float( value ) )
     # set_value()
+
+
+    def get_range( self ):
+        adj = self._entry.get_adjustment()
+        min = adj.get_property( "lower" )
+        max = adj.get_property( "upper" )
+        return ( min, max )
+    # get_range()
+
+
+    def set_range( self, min, max ):
+        self._entry.set_range( float( min ), float( max ) )
+    # set_range()
+
+
+    def get_increments( self ):
+        adj = self._entry.get_adjustment()
+        step = adj.get_property( "step-increment" )
+        page_step = adj.get_property( "page-increment" )
+        return ( step, page_step )
+    # get_increments()
+
+
+    def set_increments( self, step, page_step=None ):
+        step = float( step )
+        if page_step is None:
+            page_step = step * 10.0
+        else:
+            page_step = float( page_step )
+        self._entry.set_increments( step, page_step )
+    # set_increments()
 # Slider
 
 
