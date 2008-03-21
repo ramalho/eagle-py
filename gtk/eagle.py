@@ -3838,7 +3838,7 @@ class Password( Entry ):
     Like L{Entry}, but will show '*' instead of typed chars.
     """
     def __init__( self, id, label="", value="", callback=None,
-                  persistent=False, expand_policy=None,
+                  editable=True, persistent=False, expand_policy=None,
                   active=True, visible=True ):
         """Password constructor.
 
@@ -3851,12 +3851,13 @@ class Password( Entry ):
                 - App reference
                 - Widget reference
                 - new value
+        @param editable: if this field is editable by user.
         @param persistent: if this widget should save its data between
                sessions.
         @param expand_policy: how this widget should fit space, see
                L{ExpandPolicy.Policy.Rule}.
         """
-        Entry.__init__( self, id, label, value, callback, persistent,
+        Entry.__init__( self, id, label, value, callback, editable, persistent,
                         expand_policy=expand_policy,
                         active=active, visible=visible )
         self._entry.set_visibility( False )
