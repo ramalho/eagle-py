@@ -5,11 +5,9 @@ import datetime
 
 def data_changed(app, widget, value):
     print "changed:", app, widget, value
-# data_changed()
 
 def selection_changed(app, widget, selected):
     print "seletion:", app, widget, selected
-# selection_changed()
 
 
 app = App(title="Table with datetime",

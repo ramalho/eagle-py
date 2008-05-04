@@ -4,7 +4,6 @@ from eagle import *
 
 def changed(app, entry, value):
     print "app %s, entry %s, value %r" % (app.id, entry.id, value)
-# changed()
 
 
 App(title="Entries Test",

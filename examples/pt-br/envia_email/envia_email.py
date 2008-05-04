@@ -35,7 +35,6 @@ def preencheTabela(table, nomeArquivo):
             error("Erro processando linha %d: %r" % (ln, linha))
 
     arquivo.close()
-# preencheTabela()
 
 
 def salvaTabela(table, nomeArquivo):
@@ -47,7 +46,6 @@ def salvaTabela(table, nomeArquivo):
 
         arquivo.write("%s;%s\n" %(nome, email))
     arquivo.close()
-# salvaTabela()
 
 
 def defineSemMudancas(app):
@@ -59,7 +57,6 @@ def defineSemMudancas(app):
     global mudancas
     mudancas = False
     set_inactive("save", app)
-# defineSemMudancas()
 
 
 def defineNomeArquivo(app, nomeArquivo=None):
@@ -71,7 +68,6 @@ def defineNomeArquivo(app, nomeArquivo=None):
     else:
         app["nomeArquivo"] = "Nenhum arquivo selecionado!"
         gNomeArquivo = None
-# defineNomeArquivo()
 
 
 def escolheArquivo(app, button, nomeArquivo):
@@ -84,7 +80,6 @@ def escolheArquivo(app, button, nomeArquivo):
     if nomeArquivo:
         preencheTabela(app["contatos"], nomeArquivo)
         defineSemMudancas(app)
-# escolheArquivo()
 
 
 def dadosAlterados(app, table, data):
@@ -92,7 +87,6 @@ def dadosAlterados(app, table, data):
     mudancas = True
     sb_ultimoID.append(app.status_message("Mudanças ainda não salvas!"))
     set_active("save", True, app)
-# dadosAlterados()
 
 
 def salvaArquivo(app, button):
@@ -105,7 +99,6 @@ def salvaArquivo(app, button):
     salvaTabela(app["contatos"], gNomeArquivo)
 
     defineSemMudancas(app)
-# salvaArquivo()
 
 
 def quit(app):
@@ -114,7 +107,6 @@ def quit(app):
                      "Continuar e descartá-los?")
     else:
         return True
-# quit()
 
 
 def enviaEmail(app, wid):
@@ -141,7 +133,6 @@ Subject: %(Subject)s\r
 
     servidor.sendmail(msg['From'], msg['To'], texto)
     servidor.quit()
-# enviaEmail()
 
 
 def addContato(app, wid):
@@ -171,7 +162,6 @@ def addContato(app, wid):
         res.append("\"%s\" <%s>" % (nome, email))
 
     app["Contato"] = ",\n".join(res)
-# addContato()
 
 
 def delContato(app, wid):
@@ -198,7 +188,6 @@ def delContato(app, wid):
             res.append(existente)
 
     app["Contato"] = ",\n".join(res)
-# delContato()
 
 
 app = App(title="Envia E-mails",

@@ -9,12 +9,10 @@ def print_data(app, button):
 
     print "active?", get_value("active", app)
     print "something:", get_value("name", app)
-# print_data()
 
 
 def change_color(app, button):
     app["color"] = "green"
-# change_color()
 
 
 def hide_group(app, button):
@@ -24,7 +22,6 @@ def hide_group(app, button):
         hide("group", app)
 
     hide_group.hidden = not hide_group.hidden
-# hide_group()
 hide_group.hidden = False
 
 
@@ -35,55 +32,45 @@ def toggle_spin_active(app, button):
         set_active("rot_hor", True, app)
 
     toggle_spin_active.active = not toggle_spin_active.active
-# toggle_spin_active()
 toggle_spin_active.active = True
 
 def draw_image(app, button):
     i = Image(filename="test.png")
     app["canvas"].draw_image(i)
-# draw_image()
 
 def draw_arc(app, button):
     app["canvas"].draw_arc(x=0, y=0, width=100, height=100,
                            start_angle=0, end_angle=3.14/2,
                            color="red", size=2,
                            fillcolor="blue", filled=True)
-# draw_arc()
 
 
 def raise_exception(app, button):
     raise Exception("As requested, this exception was raised.")
-# raise_exception()
 
 
 def show_info(app, button):
     info("Some info.")
-# show_info()
 
 def show_error(app, button):
     error("Some error.")
-# show_error()
 
 def show_warn(app, button):
     warn("Some warning.")
-# show_warn()
 
 def show_yesno(app, button):
     r = yesno("Some question?")
     info("Question returned: %s" % r)
-# show_yesno()
 
 def show_confirm(app, button):
     r = confirm("Some question?", okdefault=True)
     info("Question returned: %s" % r)
-# show_confirm()
 
 
 
 
 def changed(app, widget, value):
     print app.id, widget.id, "changed to", value
-# changed()
 
 
 def mouse_callback(app, widget, button, x, y):
@@ -93,13 +80,11 @@ def mouse_callback(app, widget, button, x, y):
         x0, y0 = mouse_callback.last_point
         canvas.draw_line(x0, y0, x, y, color=color)
     mouse_callback.last_point = x, y
-# mouse_callback()
 mouse_callback.last_point = None
 
 
 def file_choose(app, widget, filename):
     print app.id, widget.id, filename
-# file_choose()
 
 
 App(title="test app",

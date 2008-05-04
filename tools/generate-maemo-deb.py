@@ -16,7 +16,6 @@ def mkdir(dirname):
     if not os.path.exists(dirname):
         mkdir(os.path.dirname(dirname))
         os.mkdir(dirname)
-# mkdir()
 
 blacklist_start = ["."]
 blacklist_end   = ["~"]
@@ -42,7 +41,6 @@ def recursive_files(directory, prefix=""):
                 else:
                     r.append((fp, dstdir + f))
     return r
-# recursive_files()
 
 def package(name, files, deps):
     tmpdir = "/tmp/%s-%d" % (sys.argv[0], time.time())
@@ -120,7 +118,6 @@ Description: %(desc)s
         os.remove(f)
 
     os.system("rm -fr %s" % tmpdir)
-# package()
 
 
 package("eagle",

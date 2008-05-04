@@ -9,15 +9,12 @@ class Tool(object):
     def mouse(self, app, canvas, buttons, x, y):
         """This tool have a user feedback using mouse on canvas."""
         pass
-    # mouse()
-# Tool
 
 
 
 class Line(Tool):
     def __init__(self):
         self.first_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -30,8 +27,6 @@ class Line(Tool):
                 x0, y0 = self.first_point
                 canvas.draw_line(x0, y0, x, y, color, size)
                 self.first_point = None
-    # mouse()
-# Line
 
 
 
@@ -45,7 +40,6 @@ def_tool="Line"
 def canvas_action(app, canvas, buttons, x, y):
     tool = app["tool"]
     tools[tool].mouse(app, canvas, buttons, x, y)
-# canvas_action()
 
 
 

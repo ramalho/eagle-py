@@ -28,7 +28,6 @@ def le_tabela(table, nome_arquivo):
 
     arquivo.close()
     table.columns_autosize()
-# le_tabela()
 
 
 def salva_tabela(table, nome_arquivo):
@@ -41,7 +40,6 @@ def salva_tabela(table, nome_arquivo):
         arquivo.write("%s;%s;%s;%s\n" %
                       (categoria, descricao, quantidade, preco))
     arquivo.close()
-# salva_tabela()
 
 
 def define_sem_mudancas(app):
@@ -52,7 +50,6 @@ def define_sem_mudancas(app):
     global mudancas
     mudancas = False
     set_inactive("save", app)
-# define_sem_mudancas()
 
 
 def define_nome_arquivo(app, nome_arquivo=None):
@@ -60,7 +57,6 @@ def define_nome_arquivo(app, nome_arquivo=None):
         app["nome_arquivo"] = "Arquivo: %s" % nome_arquivo
     else:
         app["nome_arquivo"] = "Nenhum arquivo selecionado!"
-# define_nome_arquivo()
 
 
 def escolhe_arquivo(app, button, nome_arquivo):
@@ -73,7 +69,6 @@ def escolhe_arquivo(app, button, nome_arquivo):
     if nome_arquivo:
         le_tabela(app["lista"], nome_arquivo)
         define_sem_mudancas(app)
-# escolhe_arquivo()
 
 
 total = 0
@@ -87,7 +82,6 @@ def dados_alterados(app, table, data):
     for linha in table:
         total += (linha[2] * linha[3])
     app["total"] = "R$ %0.2f" %total
-# dados_alterados()
 
 
 def salva_arquivo(app, button):
@@ -97,7 +91,6 @@ def salva_arquivo(app, button):
     define_nome_arquivo(app, nome_arquivo)
     salva_tabela(app["lista"], nome_arquivo)
     define_sem_mudancas(app)
-# salva_arquivo()
 
 
 def quit(app):
@@ -106,7 +99,6 @@ def quit(app):
                      "Continuar e descartá-los?")
     else:
         return True
-# quit()
 
 
 def gera_relatorio(app, table):
@@ -162,12 +154,10 @@ def gera_relatorio(app, table):
 """ % total)
     arquivo.close()
     webbrowser.open_new("file://%s" % caminho)
-# gera_relatorio()
 
 
 def define_nome_relatorio(app, wid, nome_arquivo):
     app["nome_relatorio"] = nome_arquivo
-# define_nome_relatorio()
 
 app = App(title="Lista de Compras",
           help="Lista de compras para casa.",

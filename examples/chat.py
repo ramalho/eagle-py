@@ -19,19 +19,16 @@ class Chat(object):
         self.client_mode = self.connect(host, port)
         if not self.client_mode:
             self.serve(port)
-    # __init__()
 
 
     def __setup_callback__(self):
         self.cb_id = self.app.io_watch(self.conn, self.callback, on_in=True,
                                        on_error=True, on_hungup=True)
-    # __setup_callback__()
 
 
     def __remove_callback__(self):
         if self.cb_id:
             self.app.remove_event_source(self.cb_id)
-    # __remove_callback__()
 
 
     def disconnect(self):
@@ -50,7 +47,6 @@ class Chat(object):
             print "could not connect to server at %s:%s: %s" % \
                 (host, port, e)
             return False
-    # connect()
 
 
     def accept_connection(self, app, sock, *ign, **kign):
@@ -61,7 +57,6 @@ class Chat(object):
         else:
             self.__remove_callback__()
         return False
-    # accept_connection()
 
 
     def serve(self, port):
@@ -69,7 +64,6 @@ class Chat(object):
         self.sock.bind(("", port))
         self.sock.listen(5)
         self.app.io_watch(self.sock, self.accept_connection, on_in=True)
-    # serve()
 
 
     def read(self):
@@ -79,7 +73,6 @@ class Chat(object):
             return self.conn.recv(size)
         except (socket.error, struct.error), e:
             return None
-    # read()
 
 
     def send(self, msg):
@@ -89,8 +82,6 @@ class Chat(object):
             return True
         except socket.error, e:
             return False
-    # send()
-    # Chat
 
 
 re_smile = re.compile("(?P<smile>:-?\))")
@@ -109,12 +100,10 @@ def format(text):
     text = re_link.sub("<a href=\"\\g<url>\">\\g<url></a>", text)
 
     return text
-# escape
 
 
 def link_clicked(app, view, url, offset):
     webbrowser.open_new(url)
-# link_clicked()
 
 
 def send_message(app, button):
@@ -136,7 +125,6 @@ def send_message(app, button):
 """ % (timestamp, t))
     app["entry"] = ""
     app.chat.send(msg)
-# send_message()
 
 
 def receive_message(app, file, on_in, on_out, on_urgent, on_error,
@@ -165,7 +153,6 @@ def receive_message(app, file, on_in, on_out, on_urgent, on_error,
 """ % (timestamp, t))
 
     return True # keep it running
-# receive_message()
 
 
 def create_connection(app):
@@ -185,12 +172,10 @@ def create_connection(app):
     else:
         mid = app.status_message("Waiting for clients at port %d." % port)
     app.last_status_message = mid
-# create_connection()
 
 
 def reconnect(app, *ign):
     create_connection(app)
-# reconnect()
 
 
 app = App(title="Chat",

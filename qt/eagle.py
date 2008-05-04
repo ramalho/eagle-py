@@ -107,7 +107,6 @@ def _gen_ro_property(name, doc=""):
             return getattr(self, naming)
         except AttributeError:
             return None
-    # get()
     def set(self, value):
         try:
             v = getattr(self, naming)
@@ -117,9 +116,7 @@ def _gen_ro_property(name, doc=""):
             setattr(self, naming, value)
         else:
             raise Exception("Read Only property '%s'." % (name,))
-    # set()
     return property(get, set, None, doc)
-# _gen_ro_property()
 
 
 def _callback_tuple(callback):
@@ -135,7 +132,6 @@ def _callback_tuple(callback):
             if not callable(c):
                 raise TypeError("Callback '%s' is not callable!" % (c,))
         return callback
-# _callback_tuple()
 
 
 def _str_tuple(string):
@@ -146,7 +142,6 @@ def _str_tuple(string):
             return (str(string),)
     else:
         return tuple([str(s) for s in string])
-# _str_tuple()
 
 
 def _obj_tuple(obj):
@@ -157,12 +152,10 @@ def _obj_tuple(obj):
             return (obj,)
     else:
         return tuple(obj)
-# _obj_tuple()
 
 
 def _set_icon_list(qtwidget, qticon):
     qtwidget.setWindowIcon(qticon);
-# _set_icon_list()
 
 
 class _Table(QtGui.QWidget):
@@ -192,7 +185,6 @@ class _Table(QtGui.QWidget):
 
         self.setObjectName(id)
         self.__setup_gui__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -209,13 +201,10 @@ class _Table(QtGui.QWidget):
 	    for i in w:
 		# Todo: stretch = ?
 		self._layout.addWidget(i)
-    # __setup_gui__()
 
 
     def __get_widgets__(self):
         return self.children
-    # __get_widgets__()
-    # _Table
 
 
 class _Panel(QtGui.QScrollArea):
@@ -239,7 +228,6 @@ class _Panel(QtGui.QScrollArea):
         QtGui.QScrollArea.__init__(self)
         self.setObjectName(id)
         self.__setup_gui__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -247,12 +235,9 @@ class _Panel(QtGui.QScrollArea):
 	self.setVerticalScrollBarPolicy(self._vscrollbar_policy)
         self._tab = _Table(self, self.id, self.children, self._horizontal)
         self.setWiget(self._tab)
-    # __setup_gui__()
 
     def __get_widgets__(self):
         return self._tab.__get_widgets__()
-    # __get_widgets__()
-    # _Panel
 
 
 class _VPanel(_Panel):
@@ -264,7 +249,6 @@ class _VPanel(_Panel):
     _horizontal = False
     _hscrollbar_policy = QtCore.Qt.ScrollBarAlwaysOff
     _vscrollbar_policy = QtCore.Qt.ScrollBarAsNeeded
-# _VPanel
 
 
 class _HPanel(_Panel):
@@ -276,7 +260,6 @@ class _HPanel(_Panel):
     _horizontal = True
     _hscrollbar_policy = QtCore.Qt.ScrollBarAsNeeded
     _vscrollbar_policy = QtCore.Qt.ScrollBarAlwaysOff
-# _HPanel
 
 
 class _EGObject(object):
@@ -291,14 +274,11 @@ class _EGObject(object):
 
     def __init__(self, id):
         self.id = id
-    # __init__()
 
 
     def __str__(self):
         return "%s(id=%r)" % (self.__class__.__name__, self.id)
-    # __str__()
     __repr__ = __str__
-# _EGObject
 
 
 class AutoGenId(object):
@@ -312,9 +292,7 @@ class AutoGenId(object):
         n = "%s-%d" % (classobj.__name__, classobj.last_id_num)
         classobj.last_id_num += 1
         return n
-    # __get_id__()
     __get_id__ = classmethod(__get_id__)
-# AutoGenId
 
 
 class Image(_EGObject, AutoGenId):
@@ -366,17 +344,14 @@ class Image(_EGObject, AutoGenId):
         elif len(kargs) > 0:
             params = ["%s=%r" % kv for kv in kargs.iteritems()]
             raise ValueError("Unknow parameters: %s" % params)
-    # __init__()
 
 
     def __get_gtk_pixbuf__(self):
         return self._img
-    # __get_gtk_pixbuf__()
 
 
     def __del__(self):
         gc.collect()
-    # __del__()
 
 
     def save(self, filename, format=None, **options):
@@ -412,7 +387,6 @@ class Image(_EGObject, AutoGenId):
                 raise Exception(e)
         else:
             raise ValueError("Unsupported file format: \"%s\"" % format)
-    # save()
 
 
     def get_formats(self):
@@ -427,7 +401,6 @@ class Image(_EGObject, AutoGenId):
         it's just readable
         """
         return gtk.gdk.pixbuf_get_formats()
-    # get_formats()
 
 
     def get_writable_formats(self):
@@ -440,7 +413,6 @@ class Image(_EGObject, AutoGenId):
             if f["is_writable"]:
                 k.append(f)
         return k
-    # get_writable_formats()
 
 
     def load_file(self, filename):
@@ -460,7 +432,6 @@ class Image(_EGObject, AutoGenId):
             self._img = gtk.gdk.pixbuf_new_from_file(filename)
         except gobject.GError, e:
             raise Exception(e)
-    # load_file()
 
 
     def load_data(self, data, width, height,
@@ -510,7 +481,6 @@ class Image(_EGObject, AutoGenId):
         self._img = gtk.gdk.pixbuf_new_from_data(data, colorspace,
                                                  has_alpha, bits_per_sample,
                                                  width, height, rowstride)
-    # load_data()
 
 
     def get_data(self):
@@ -527,22 +497,18 @@ class Image(_EGObject, AutoGenId):
         return (self.get_width(), self.get_height(), self.get_depth(),
                 self.has_alpha(), self.get_rowstride(),
                 self._img.get_pixels())
-    # get_data()
 
     def get_width(self):
         return self._img.get_width()
-    # get_width()
 
 
     def get_height(self):
         return self._img.get_height()
-    # get_height()
 
 
     def get_size(self):
         """Return a tuple (width, heigt)"""
         return (self.get_width(), self.get_height())
-    # get_size()
 
 
     def get_rowstride(self):
@@ -556,27 +522,22 @@ class Image(_EGObject, AutoGenId):
         row stride.
         """
         return self._img.get_rowstride()
-    # get_rowstride()
 
 
     def get_n_channels(self):
         """Number of channels."""
         return self._img.get_n_channels()
-    # get_n_channels()
 
 
     def get_bits_per_pixel(self):
         """Bits per pixel"""
         return self.get_n_channels() * self._img.get_bits_per_sample()
-    # get_bits_per_pixel()
     get_depth = get_bits_per_pixel
 
 
     def has_alpha(self):
         """If it has an alpha channel"""
         return self._img.get_has_alpha()
-    # has_alpha()
-    # Image
 
 
 
@@ -592,13 +553,11 @@ class _EGWidget(_EGObject):
         if app is not None:
             self.app = app
         self._widgets = tuple()
-    # __init__()
 
 
     def __get_resize_mode__(self):
         "Return a tuple with (horizontal, vertical) resize mode"
         return (gtk.FILL, gtk.FILL)
-    # __get_resize_mode__()
 
 
     def __get_widgets__(self):
@@ -607,7 +566,6 @@ class _EGWidget(_EGObject):
         @warning: never use it directly in Eagle applications!
         """
         return self._widgets
-    # __get_widgets__()
 
 
     def set_active(self, active=True):
@@ -618,28 +576,23 @@ class _EGWidget(_EGObject):
         """
         for w in self.__get_widgets__():
             w.set_sensitive(active)
-    # set_active()
 
 
     def set_inactive(self):
         """Same as L{set_active}(False)"""
         self.set_active(False)
-    # set_inactive()
 
 
     def show(self):
         """Make widget visible."""
         for w in self.__get_widgets__():
             w.show()
-    # show()
 
 
     def hide(self):
         """Make widget invisible."""
         for w in self.__get_widgets__():
             w.hide()
-    # hide()
-    # _EGWidget
 
 
 class _EGDataWidget(_EGWidget):
@@ -658,19 +611,15 @@ class _EGDataWidget(_EGWidget):
             self.app = app
         self.persistent = persistent
         self._widgets = tuple()
-    # __init__()
 
 
     def get_value(self):
         """Get data from this widget."""
         raise NotImplementedError
-    # get_value()
 
     def set_value(self, value):
         """Set data to this widget."""
         raise NotImplementedError
-    # set_value()
-    # _EGDataWidget
 
 
 class AboutDialog(_EGWidget, AutoGenId):
@@ -697,12 +646,10 @@ class AboutDialog(_EGWidget, AutoGenId):
         self.copyright = _str_tuple(copyright)
 
         self.__setup_gui__()
-    # __init__()
 
 
     def __del__(self):
         self._diag.destroy()
-    # __del__()
 
 
     def __setup_gui__(self):
@@ -736,7 +683,6 @@ class AboutDialog(_EGWidget, AutoGenId):
         self._text.set_right_margin(self.margin)
 
         self.__setup_text__()
-    # __setup_gui__()
 
 
     def __setup_text__(self):
@@ -790,15 +736,12 @@ class AboutDialog(_EGWidget, AutoGenId):
                 ins(i, l)
                 ins(i, "\n")
             ins(i, "\n\n")
-    # __setup_text__()
 
 
     def run(self):
         self._diag.show_all()
         self._diag.run()
         self._diag.hide()
-    # run()
-    # AboutDialog
 
 
 class HelpDialog(_EGWidget, AutoGenId):
@@ -817,12 +760,10 @@ class HelpDialog(_EGWidget, AutoGenId):
         self.title = title
         self.help = _str_tuple(help)
         self.__setup_gui__()
-    # __init__()
 
 
     def __del__(self):
         self._diag.destroy()
-    # __del__()
 
 
     def __setup_gui__(self):
@@ -854,7 +795,6 @@ class HelpDialog(_EGWidget, AutoGenId):
         self._text.set_right_margin(self.margin)
 
         self.__setup_text__()
-    # __setup_gui__()
 
 
     def __setup_text__(self):
@@ -872,15 +812,12 @@ class HelpDialog(_EGWidget, AutoGenId):
         for l in self.help:
             ins(i, l)
             ins(i, "\n")
-    # __setup_text__()
 
 
     def run(self):
         self._diag.show_all()
         self._diag.run()
         self._diag.hide()
-    # run()
-    # HelpDialog
 
 
 class FileChooser(_EGWidget, AutoGenId):
@@ -914,7 +851,6 @@ class FileChooser(_EGWidget, AutoGenId):
         self.title = title  or self.__gen_title__()
 
         self.__setup_gui__()
-    # __init__()
 
 
     def __gen_title__(self):
@@ -925,12 +861,10 @@ class FileChooser(_EGWidget, AutoGenId):
              }
         title = t.get(self.action, t[self.ACTION_OPEN])
         return title % self.app.title
-    # __gen_title__()
 
 
     def __del__(self):
         self._diag.destroy()
-    # __del__()
 
 
     def __setup_gui__(self):
@@ -982,7 +916,6 @@ class FileChooser(_EGWidget, AutoGenId):
                 raise ValueError("invalid filter!")
         if self.filename:
             self._diag.set_filename(self.filename)
-    # __setup_gui__()
 
 
     def run(self):
@@ -993,8 +926,6 @@ class FileChooser(_EGWidget, AutoGenId):
             return self._diag.get_filename()
         else:
             return None
-    # run()
-    # FileChooser
 
 
 class PreferencesDialog(_EGWidget, AutoGenId):
@@ -1010,12 +941,10 @@ class PreferencesDialog(_EGWidget, AutoGenId):
         self.children = _obj_tuple(children)
         self.__setup_gui__()
         self.__add_widgets_to_app__()
-    # __init__()
 
 
     def __del__(self):
         self._diag.destroy()
-    # __del__()
 
 
     def __setup_gui__(self):
@@ -1038,7 +967,6 @@ class PreferencesDialog(_EGWidget, AutoGenId):
         self._sw.add_with_viewport(self._tab)
         self._sw.get_child().set_shadow_type(gtk.SHADOW_NONE)
         self._sw.set_shadow_type(gtk.SHADOW_NONE)
-    # __setup_gui__()
 
 
     def __add_widgets_to_app__(self):
@@ -1046,15 +974,12 @@ class PreferencesDialog(_EGWidget, AutoGenId):
             if isinstance(w, _EGDataWidget):
                 w.persistent = True
             self.app.__add_widget__(w)
-    # __add_widgets_to_app__()
 
 
     def run(self):
         self._diag.show_all()
         self._diag.run()
         self._diag.hide()
-    # run()
-    # PreferencesDialog
 
 
 class DebugDialog(_EGObject, AutoGenId):
@@ -1073,7 +998,6 @@ class DebugDialog(_EGObject, AutoGenId):
     def __init__(self):
         _EGObject.__init__(self, self.__get_id__())
         self.__setup_gui__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -1130,7 +1054,6 @@ class DebugDialog(_EGObject, AutoGenId):
         self._diag.vbox.pack_start(self._sw, expand=True, fill=True)
         self._sw.show()
         self.__setup_text__()
-    # __setup_gui__()
 
 
     def __setup_text__(self):
@@ -1140,7 +1063,6 @@ class DebugDialog(_EGObject, AutoGenId):
                              family="monospace")
         self._buf.create_tag("exc", foreground="#880000",
                              weight=pango.WEIGHT_BOLD)
-    # __setup_text__()
 
 
     def show_exception(self, exctype, value, tb):
@@ -1161,7 +1083,6 @@ class DebugDialog(_EGObject, AutoGenId):
         self._insert_text(msg, "exc")
         self._insert_text(" ")
         self._insert_text(arguments)
-    # show_exception()
 
 
     def save_exception(self, exctype, value, tb):
@@ -1183,7 +1104,6 @@ class DebugDialog(_EGObject, AutoGenId):
         f.close()
         self._save_name.set_text(filename)
         sys.stderr.write("Traceback saved to '%s'.\n" % filename)
-    # save_exception()
 
 
     def print_tb(self, tb, limit=None):
@@ -1205,13 +1125,11 @@ class DebugDialog(_EGObject, AutoGenId):
                 self._insert_text("    " + line.strip() + "\n\n", "code")
             tb = tb.tb_next
             n = n+1
-    # print_tb()
 
 
     def _insert_text(self, text, *tags):
         end_iter = self._buf.get_end_iter()
         self._buf.insert_with_tags_by_name(end_iter, text, *tags)
-    # _insert_text()
 
 
     def _print_file(self, filename, lineno, name):
@@ -1227,12 +1145,10 @@ class DebugDialog(_EGObject, AutoGenId):
         self._insert_text("Function: ", "label")
         self._insert_text(name)
         self._insert_text("\n")
-    # _print_file()
 
     def _start_debugger(self):
         import pdb
         pdb.pm()
-    # _start_debugger()
 
 
 
@@ -1240,7 +1156,6 @@ class DebugDialog(_EGObject, AutoGenId):
         r = self._diag.run()
         if r == gtk.RESPONSE_CLOSE or gtk.RESPONSE_DELETE_EVENT:
             raise SystemExit(error)
-    # run()
 
 
     def except_hook(exctype, value, tb):
@@ -1252,9 +1167,7 @@ class DebugDialog(_EGObject, AutoGenId):
             d.destroy()
 
         raise SystemExit
-    # except_hook()
     except_hook = staticmethod(except_hook)
-# DebugDialog
 sys.excepthook = DebugDialog.except_hook
 
 
@@ -1274,7 +1187,6 @@ class _EGWidLabelEntry(_EGDataWidget):
         _EGDataWidget.__init__(self, id, persistent)
         self.label = label or id
         self.__setup_gui__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -1283,26 +1195,21 @@ class _EGWidLabelEntry(_EGDataWidget):
         self._label.set_alignment(xalign=1.0, yalign=0.5)
         self._label.set_mnemonic_widget(self._entry)
         self._widgets = (self._label, self._entry)
-    # __setup_gui__()
 
 
     def get_value(self):
         return self._entry.get_value()
-    # get_value()
 
 
     def set_value(self, value):
         self._entry.set_value(value)
-    # set_value()
 
 
     def __str__(self):
         return "%s(id=%r, label=%r, value=%r)" % \
             (self.__class__.__name__, self.id, self.label,
              self.get_value())
-    # __str__()
     __repr__ = __str__
-# _EGWidLabelEntry
 
 
 class App(_EGObject, AutoGenId):
@@ -1436,7 +1343,6 @@ class App(_EGObject, AutoGenId):
         self.__setup_gui__()
         self.__setup_connections__()
         self.load()
-    # __init__()
 
 
     def __getitem__(self, name):
@@ -1445,7 +1351,6 @@ class App(_EGObject, AutoGenId):
             return w.get_value()
         else:
             return w
-    # __getitem__()
 
 
     def __setitem__(self, name, value):
@@ -1458,7 +1363,6 @@ class App(_EGObject, AutoGenId):
             raise TypeError(
                 "Could not set value of widget '%s' of type '%s'." % \
                     (name, type(w).__name__))
-    # __setitem__()
 
 
     def get_widget_by_id(self, widget_id):
@@ -1468,7 +1372,6 @@ class App(_EGObject, AutoGenId):
             return widget_id
         else:
             return self._widgets.get(widget_id, None)
-    # get_widget_by_id()
 
 
     def show_about_dialog(self):
@@ -1483,7 +1386,6 @@ class App(_EGObject, AutoGenId):
                            copyright=self.copyright,
                            )
         diag.run()
-    # show_about_dialog()
 
 
     def show_help_dialog(self):
@@ -1493,7 +1395,6 @@ class App(_EGObject, AutoGenId):
                           help=self.help,
                           )
         diag.run()
-    # show_help_dialog()
 
 
     def file_chooser(self, action, filename=None,
@@ -1509,18 +1410,15 @@ class App(_EGObject, AutoGenId):
                            filename=filename, filter=filter,
                            multiple=multiple)
         return diag.run()
-    # file_chooser()
 
 
     def show_preferences_dialog(self):
         """Show L{PreferencesDialog} associated with this App."""
         return self._preferences.run()
-    # show_preferences_dialog()
 
 
     def __get_window__(self):
         return self._win
-    # __get_window__()
 
 
     def __add_to_app_list__(self):
@@ -1531,7 +1429,6 @@ class App(_EGObject, AutoGenId):
             raise ValueError("App id '%s' already existent!" % self.id)
 
         _apps[self.id] = self
-    # __add_to_app_list__()
 
 
     def __add_widget__(self, widget):
@@ -1555,7 +1452,6 @@ class App(_EGObject, AutoGenId):
                 raise ValueError(("Object \"%s\" already is in another "
                                   "App: \"%s\"") % \
                                      (widget.id, id))
-    # __add_widget__()
 
 
     def __setup_gui__(self):
@@ -1623,43 +1519,35 @@ class App(_EGObject, AutoGenId):
                                       expand=False, fill=True)
 
         self._win.show_all()
-    # __setup_gui__()
 
 
     def __setup_gui_left__(self):
         self._left = _VPanel(self, id="left", children=self.left)
-    # __setup_gui_left__()
 
 
     def __setup_gui_right__(self):
         self._right =_VPanel(self, id="right", children=self.right)
-    # __setup_gui_right__()
 
 
     def __setup_gui_center__(self):
         self._center = _VPanel(self, id="center", children=self.center)
-    # __setup_gui_center__()
 
 
     def __setup_gui_top__(self):
         self._top = _HPanel(self, id="top", children=self.top)
-    # __setup_gui_top__()
 
 
     def __setup_gui_bottom__(self):
         self._bottom = _HPanel(self, id="bottom", children=self.bottom)
-    # __setup_gui_bottom__()
 
 
     def __setup_gui_preferences__(self):
         self._preferences = PreferencesDialog(self,
                                               children=self.preferences)
-    # __setup_gui_preferences__()
 
 
     def __setup_connections__(self):
         self._win.connect("delete_event", self.__delete_event__)
-    # __setup_connections__()
 
 
     def data_changed(self, widget, value):
@@ -1670,7 +1558,6 @@ class App(_EGObject, AutoGenId):
         self.save()
         for c in self.data_changed_callback:
             c(self, widget, value)
-    # data_changed()
 
 
     def __do_close__(self):
@@ -1685,7 +1572,6 @@ class App(_EGObject, AutoGenId):
             gtk.main_quit()
 
         return True
-    # __do_close__()
 
 
     def __delete_event__(self, *args):
@@ -1693,12 +1579,10 @@ class App(_EGObject, AutoGenId):
             return False
         else:
             return True
-    # __delete_event__()
 
 
     def __persistence_filename__(self):
         return "%s.save_data" % self.id
-    # __persistence_filename__()
 
 
     def save(self):
@@ -1715,7 +1599,6 @@ class App(_EGObject, AutoGenId):
             f = open(self.__persistence_filename__(), "wb")
             pickle.dump(d, f, pickle.HIGHEST_PROTOCOL)
             f.close()
-    # save()
 
 
     def load(self):
@@ -1738,14 +1621,12 @@ class App(_EGObject, AutoGenId):
                 w = None
             if isinstance(w, _EGDataWidget) and w.persistent:
                 w.set_value(v)
-    # load()
 
 
     def close(self):
         """Close application window."""
         if self.__do_close__():
             self._win.destroy()
-    # close()
 
 
     def status_message(self, message):
@@ -1759,7 +1640,6 @@ class App(_EGObject, AutoGenId):
             return self._statusbar.push(self._statusbar_ctx, message)
         else:
             raise ValueError("App '%s' doesn't use statusbar!" % self.id)
-    # status_message()
 
 
     def remove_status_message(self, message_id):
@@ -1772,7 +1652,6 @@ class App(_EGObject, AutoGenId):
             self._statusbar.remove(self._statusbar_ctx, message_id)
         else:
             raise ValueError("App '%s' doesn't use statusbar!" % self.id)
-    # remove_status_message()
 
 
     def timeout_add(self, interval, callback):
@@ -1787,9 +1666,7 @@ class App(_EGObject, AutoGenId):
         """
         def wrap(*args):
             return callback(self)
-        # wrap()
         return gobject.timeout_add(interval, wrap)
-    # timeout_add()
 
 
     def idle_add(self, callback):
@@ -1805,9 +1682,7 @@ class App(_EGObject, AutoGenId):
         """
         def wrap(*args):
             return callback(self)
-        # wrap()
         return gobject.idle_add(wrap)
-    # idle_add()
 
 
 
@@ -1840,7 +1715,6 @@ class App(_EGObject, AutoGenId):
             return callback(self, source, on_in=on_in,
                             on_out=on_out, on_urgent=on_urgent,
                             on_error=on_error, on_hungup=on_hungup)
-        # wrap()
 
         condition = 0
         if on_in:
@@ -1854,7 +1728,6 @@ class App(_EGObject, AutoGenId):
         if on_hungup:
             condition |= gobject.IO_HUP
         return gobject.io_add_watch(file, condition, wrap)
-    # io_watch()
 
 
     def remove_event_source(self, event_id):
@@ -1867,8 +1740,6 @@ class App(_EGObject, AutoGenId):
         @return: C{True} if it was removed.
         """
         return gobject.source_remove(event_id)
-    # remove_event_source()
-    # App
 
 
 class Canvas(_EGWidget):
@@ -1945,7 +1816,6 @@ class Canvas(_EGWidget):
 
         self.__setup_gui__(width, height)
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self, width, height):
@@ -1965,14 +1835,12 @@ class Canvas(_EGWidget):
         self._sw.show_all()
 
         self._widgets = (self._frame,)
-    # __setup_gui__()
 
 
     def __set_useful_attributes__(self):
         self._style = self._area.get_style()
         self._fg_gc_normal = self._style.fg_gc[gtk.STATE_NORMAL]
         self._bg_gc_normal = self._style.bg_gc[gtk.STATE_NORMAL]
-    # __set_useful_attributes__()
 
 
     def __setup_connections__(self):
@@ -1982,7 +1850,6 @@ class Canvas(_EGWidget):
                 w, h = self._area.size_request()
                 self.resize(w, h)
             return True
-        # configure_event()
         self._area.connect("configure_event", configure_event)
 
 
@@ -1992,7 +1859,6 @@ class Canvas(_EGWidget):
             widget.window.draw_drawable(gc, self._pixmap, x, y, x, y,
                                         width, height)
             return False
-        # expose_event()
         self._area.connect("expose_event", expose_event)
 
 
@@ -2009,7 +1875,6 @@ class Canvas(_EGWidget):
             if state & gtk.gdk.BUTTON5_MASK:
                 buttons |= self.MOUSE_BUTTON_5
             return buttons
-        # get_buttons()
 
         buttons_map = {
             1: self.MOUSE_BUTTON_1,
@@ -2030,7 +1895,6 @@ class Canvas(_EGWidget):
                 for c in self._callback:
                     c(self.app, self, btns, x, y)
             return True
-        # button_press_event()
         if self._callback:
             self._area.connect("button_press_event", button_press_event)
 
@@ -2046,7 +1910,6 @@ class Canvas(_EGWidget):
                 for c in self._callback:
                     c(self.app, self, btns, x, y)
             return True
-        # button_press_event()
         if self._callback:
             self._area.connect("button_release_event", button_release_event)
 
@@ -2072,7 +1935,6 @@ class Canvas(_EGWidget):
                     c(self.app, self, btns, x, y)
 
             return True
-        # motion_notify_event()
         if self._callback:
             self._area.connect("motion_notify_event", motion_notify_event)
 
@@ -2084,12 +1946,10 @@ class Canvas(_EGWidget):
                               gtk.gdk.BUTTON_RELEASE_MASK |
                               gtk.gdk.POINTER_MOTION_MASK |
                               gtk.gdk.POINTER_MOTION_HINT_MASK)
-    # __setup_connections__()
 
 
     def __get_resize_mode__(self):
         return (gtk.FILL | gtk.EXPAND, gtk.FILL | gtk.EXPAND)
-    # __get_resize_mode__()
 
 
 
@@ -2124,7 +1984,6 @@ class Canvas(_EGWidget):
                 a, r, g, b = color
 
         return a, r, g, b
-    # __color_from__()
     __color_from__ = staticmethod(__color_from__)
 
 
@@ -2133,7 +1992,6 @@ class Canvas(_EGWidget):
         g = int(color[2] / 255.0 * 65535)
         b = int(color[3] / 255.0 * 65535)
         return gtk.gdk.Color(r, g, b)
-    # __to_gtk_color__()
 
 
     def __configure_gc__(self, fgcolor=None, bgcolor=None, fill=None,
@@ -2158,7 +2016,6 @@ class Canvas(_EGWidget):
         if bgcolor is not None:
             gc.set_rgb_bg_color(self.__to_gtk_color__(bgcolor))
         return gc
-    # __configure_gc__()
 
 
     def resize(self, width, height):
@@ -2173,7 +2030,6 @@ class Canvas(_EGWidget):
             w, h = old.get_size()
             self._pixmap.draw_drawable(self._fg_gc_normal, old,
                                        0, 0, 0, 0, w, h)
-    # resize()
 
 
     def draw_image(self, image, x=0, y=0,
@@ -2214,7 +2070,6 @@ class Canvas(_EGWidget):
         self._pixmap.draw_pixbuf(self._fg_gc_normal,
                                  p, src_x, src_y, x, y, width, height)
         self._area.queue_draw_area(x, y, width, width)
-    # draw_image()
 
 
     def draw_text(self, text, x=0, y=0,
@@ -2286,7 +2141,6 @@ class Canvas(_EGWidget):
                                  fgcolor, bgcolor)
         w, h = layout.get_pixel_size()
         self._area.queue_draw_area(x, y, w, h)
-    # draw_text()
 
 
 
@@ -2295,7 +2149,6 @@ class Canvas(_EGWidget):
         gc = self.__configure_gc__(fgcolor=color)
         self._pixmap.draw_point(gc, x, y)
         self._area.queue_draw_area(x, y, 1, 1)
-    # draw_point()
 
 
     def draw_points(self, points, color=None):
@@ -2308,7 +2161,6 @@ class Canvas(_EGWidget):
         self._pixmap.draw_points(gc, points)
         w, h = self._pixmap.get_size()
         self._area.queue_draw_area(0, 0, w, h)
-    # draw_poinst()
 
 
     def draw_line(self, x0, y0, x1, y1, color=None, size=1):
@@ -2321,7 +2173,6 @@ class Canvas(_EGWidget):
         w, h = abs(x1 - x0) + size2, abs(y1 - y0) + size2
         x, y = max(min(x0, x1) - size, 0), max(min(y0, y1) - size, 0)
         self._area.queue_draw_area(x, y, w, h)
-    # draw_line()
 
 
     def draw_segments(self, segments, color=None, size=1):
@@ -2336,7 +2187,6 @@ class Canvas(_EGWidget):
         self._pixmap.draw_segments(gc, segments)
         w, h = self._pixmap.get_size()
         self._area.queue_draw_area(0, 0, w, h)
-    # draw_segments()
 
 
     def draw_lines(self, points, color=None, size=1):
@@ -2349,7 +2199,6 @@ class Canvas(_EGWidget):
         self._pixmap.draw_lines(gc, points)
         w, h = self._pixmap.get_size()
         self._area.queue_draw_area(0, 0, w, h)
-    # draw_lines()
 
 
     def draw_rectangle(self, x, y, width, height, color=None, size=1,
@@ -2373,7 +2222,6 @@ class Canvas(_EGWidget):
 
         half = size / 2
         self._area.queue_draw_area(x-half, y-half, width+size, height+size)
-    # draw_rectangle()
 
 
     def draw_arc(self, x, y, width, height, start_angle, end_angle,
@@ -2410,7 +2258,6 @@ class Canvas(_EGWidget):
 
         half = size / 2
         self._area.queue_draw_area(x-half, y-half, width+size, height+size)
-    # draw_arc()
 
 
     def draw_polygon(self, points, color=None, size=1,
@@ -2434,25 +2281,21 @@ class Canvas(_EGWidget):
 
         w, h = self._pixmap.get_size()
         self._area.queue_draw_area(0, 0, w, h)
-    # draw_polygon()
 
 
     def clear(self):
         """Clear using bgcolor."""
         self.fill(self.bgcolor)
-    # clear()
 
 
     def fill(self, color):
         w, h = self.get_size()
         self.draw_rectangle(0, 0, w, h, color, size=0, fillcolor=color,
                             filled=True)
-    # fill()
 
 
     def get_size(self):
         return self._pixmap.get_size()
-    # get_size()
 
 
     def get_image(self):
@@ -2462,16 +2305,13 @@ class Canvas(_EGWidget):
         img.get_from_drawable(self._pixmap, self._area.get_colormap(),
                               0, 0, 0, 0, w, h)
         return Image(__int_image__=img)
-    # get_image()
 
 
     def __str__(self):
         return "%s(id=%r, width=%r, height=%r, label=%r)" % \
             (self.__class__.__name__, self.id, self.width, self.height,
              self.label)
-    # __str__()
     __repr__ = __str__
-# Canvas
 
 
 class _MultiLineEntry(gtk.ScrolledWindow):
@@ -2489,24 +2329,19 @@ class _MultiLineEntry(gtk.ScrolledWindow):
         self.textview.set_left_margin(2)
         self.textview.set_right_margin(2)
         self.textview.get_buffer().connect("changed", self.__emit_changed__)
-    # __init__()
 
 
     def __emit_changed__(self, *args):
         self.emit("changed")
-    # __emit_changed__
 
 
     def set_text(self, value):
         self.textview.get_buffer().set_text(value)
-    # set_text()
 
 
     def get_text(self):
         b = self.textview.get_buffer()
         return b.get_text(b.get_start_iter(), b.get_end_iter())
-    # get_text()
-    # _MultiLineEntry
 gobject.signal_new("changed",
                    _MultiLineEntry,
                    gobject.SIGNAL_RUN_LAST,
@@ -2548,7 +2383,6 @@ class Entry(_EGWidLabelEntry):
 
         self.__setup_gui__()
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -2561,7 +2395,6 @@ class Entry(_EGWidLabelEntry):
         self._entry.set_text(self.value)
 
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -2570,19 +2403,15 @@ class Entry(_EGWidLabelEntry):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._entry.connect("changed", callback)
-    # __setup_connections__()
 
 
     def get_value(self):
         return self._entry.get_text()
-    # get_value()
 
 
     def set_value(self, value):
         self._entry.set_text(str(value))
-    # set_value()
 
 
     def __get_resize_mode__(self):
@@ -2597,8 +2426,6 @@ class Entry(_EGWidLabelEntry):
         else:
             return ((gtk.FILL, gtk.FILL | gtk.EXPAND),
                     (gtk.FILL, gtk.FILL))
-    # __get_resize_mode__()
-    # Entry
 
 
 class Password(Entry):
@@ -2623,8 +2450,6 @@ class Password(Entry):
         """
         Entry.__init__(self, id, label, value, callback, persistent)
         self._entry.set_visibility(False)
-    # __init__()
-    # Password
 
 
 class Spin(_EGWidLabelEntry):
@@ -2675,7 +2500,6 @@ class Spin(_EGWidLabelEntry):
         _EGWidLabelEntry.__init__(self, id, persistent, label)
 
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -2708,7 +2532,6 @@ class Spin(_EGWidLabelEntry):
         self._entry.set_snap_to_ticks(False)
 
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -2717,15 +2540,11 @@ class Spin(_EGWidLabelEntry):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._entry.connect("value-changed", callback)
-    # __setup_connections__()
 
 
     def set_value(self, value):
         self._entry.set_value(float(value))
-    # set_value()
-    # Spin
 
 
 class IntSpin(Spin):
@@ -2767,18 +2586,14 @@ class IntSpin(Spin):
             step = int(step)
         Spin.__init__(self, id, label, value, min, max, step, 0, callback,
                       persistent)
-    # __init__()
 
 
     def get_value(self):
         return int(Spin.get_value(self))
-    # get_value()
 
 
     def set_value(self, value):
         Spin.set_value(self, int(value))
-    # set_value()
-    # IntSpin
 
 
 class UIntSpin(IntSpin):
@@ -2812,8 +2627,6 @@ class UIntSpin(IntSpin):
             raise ValueError("UIntSpin cannot have min < 0!")
         Spin.__init__(self, id, label, value, min, max, step, 0, callback,
                       persistent)
-    # __init__()
-    # UIntSpin
 
 
 class Color(_EGWidLabelEntry):
@@ -2852,7 +2665,6 @@ class Color(_EGWidLabelEntry):
         _EGWidLabelEntry.__init__(self, id, persistent, label)
 
         self.__setup_connections__()
-    # __init__()
 
 
     def color_from(color):
@@ -2877,7 +2689,6 @@ class Color(_EGWidLabelEntry):
                 a, r, g, b = color
 
         return a, r, g, b
-    # color_from()
     color_from = staticmethod(color_from)
 
 
@@ -2895,7 +2706,6 @@ class Color(_EGWidLabelEntry):
             alpha = int(self.color[0] / 255.0 * 65535)
             self._entry.set_alpha(alpha)
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -2904,9 +2714,7 @@ class Color(_EGWidLabelEntry):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._entry.connect("color-set", callback)
-    # __setup_connections__()
 
 
     def get_value(self):
@@ -2923,7 +2731,6 @@ class Color(_EGWidLabelEntry):
             return (a, r, g, b)
         else:
             return (r, g, b)
-    # get_value()
 
 
     def set_value(self, value):
@@ -2942,8 +2749,6 @@ class Color(_EGWidLabelEntry):
 
         c = gtk.gdk.Color(r, g, b)
         self._entry.set_color(c)
-    # set_value()
-    # Color
 
 
 class Font(_EGWidLabelEntry):
@@ -2975,7 +2780,6 @@ class Font(_EGWidLabelEntry):
         _EGWidLabelEntry.__init__(self, id, persistent, label)
 
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -2983,7 +2787,6 @@ class Font(_EGWidLabelEntry):
         self._entry.set_name(self.id)
         self._entry.set_show_style(True)
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -2992,20 +2795,15 @@ class Font(_EGWidLabelEntry):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._entry.connect("font-set", callback)
-    # __setup_connections__()
 
 
     def get_value(self):
         return self._entry.get_font_name()
-    # get_value()
 
 
     def set_value(self, value):
         self._entry.set_font_name(value)
-    # set_value()
-    # Font
 
 
 class Selection(_EGWidLabelEntry):
@@ -3039,7 +2837,6 @@ class Selection(_EGWidLabelEntry):
         _EGWidLabelEntry.__init__(self, id, persistent, label)
 
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -3051,7 +2848,6 @@ class Selection(_EGWidLabelEntry):
                 self._entry.set_active(i)
 
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -3060,21 +2856,17 @@ class Selection(_EGWidLabelEntry):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._entry.connect("changed", callback)
-    # __setup_connections__()
 
 
     def get_value(self):
         return self._entry.get_active_text()
-    # get_value()
 
 
     def set_value(self, value):
         for i, o in enumerate(self._entry.get_model()):
             if o[0] == value:
                 self._entry.set_active(i)
-    # set_value()
 
 
     def append(self, value, set_active=False):
@@ -3090,7 +2882,6 @@ class Selection(_EGWidLabelEntry):
                 self.set_value(value)
         else:
             raise ValueError("value already in selection")
-    # append()
 
 
     def prepend(self, value):
@@ -3106,7 +2897,6 @@ class Selection(_EGWidLabelEntry):
                 self.set_value(value)
         else:
             raise ValueError("value already in selection")
-    # prepend()
 
 
     def insert(self, position, value):
@@ -3122,7 +2912,6 @@ class Selection(_EGWidLabelEntry):
                 self.set_value(value)
         else:
             raise ValueError("value already in selection")
-    # insert()
 
 
     def remove(self, value):
@@ -3138,37 +2927,30 @@ class Selection(_EGWidLabelEntry):
                 return
 
         raise ValueError("value not in selection")
-    # remove()
 
 
     def items(self):
         """Returns every item/option in this selection."""
         return [str(x[0]) for x in  self._entry.get_model()]
-    # items()
     options = items
 
 
     def __len__(self):
         return len(self._entry.get_model())
-    # __len__()
 
 
     def __contains__(self, value):
         return value in self.items()
-    # __contains__()
 
 
     def __iadd__(self, value):
         """Same as L{append}"""
         self.append(value)
-    # __iadd__()
 
 
     def __isub__(self, value):
         """Same as L{remove}"""
         self.remove(value)
-    # __isub__()
-    # Selection
 
 
 class Progress(_EGWidLabelEntry):
@@ -3182,19 +2964,16 @@ class Progress(_EGWidLabelEntry):
         """
         self.value = value
         _EGWidLabelEntry.__init__(self, id, False, label)
-    # __init__()
 
     def __setup_gui__(self):
         self._entry = gtk.ProgressBar()
         self._entry.set_name(self.id)
         self.set_value(self.value)
         _EGWidLabelEntry.__setup_gui__(self)
-    # __setup_gui__()
 
 
     def get_value(self):
         return self._entry.get_fraction()
-    # get_value()
 
 
     def set_value(self, value):
@@ -3205,14 +2984,11 @@ class Progress(_EGWidLabelEntry):
                               "between 0.0 and 1.0!") % self.id)
         self._entry.set_fraction(value)
         self._entry.set_text("%d%%" % (int(value * 100),))
-    # set_value()
 
 
     def pulse(self):
         """Animate progress bar."""
         self._entry.pulse()
-    # pulse()
-    # Progress
 
 
 class CheckBox(_EGDataWidget):
@@ -3246,7 +3022,6 @@ class CheckBox(_EGDataWidget):
 
         self.__setup_gui__()
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -3254,7 +3029,6 @@ class CheckBox(_EGDataWidget):
         self._wid.set_name(self.id)
         self._wid.set_active(self.state)
         self._widgets = (self._wid,)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
@@ -3263,15 +3037,11 @@ class CheckBox(_EGDataWidget):
             self.app.data_changed(self, v)
             for c in self.callback:
                 c(self.app, self, v)
-        # callback()
         self._wid.connect("toggled", callback)
-    # __setup_connections__()
 
 
     def get_value(self):
         return self._wid.get_active()
-    # get_value()
-    # CheckBox
 
 
 class Group(_EGWidget):
@@ -3289,7 +3059,6 @@ class Group(_EGWidget):
             return self.__ro_app
         except AttributeError:
             return None
-    # _get_app()
 
     def _set_app(self, value):
         # We need to overload app setter in order to add
@@ -3303,7 +3072,6 @@ class Group(_EGWidget):
             self.__add_widgets_to_app__()
         else:
             raise Exception("Read Only property 'app'.")
-    # _set_app()
     app = property(_get_app, _set_app)
 
 
@@ -3320,7 +3088,6 @@ class Group(_EGWidget):
         self.children = children or tuple()
 
         self.__setup_gui__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -3330,14 +3097,11 @@ class Group(_EGWidget):
                                 children=self.children)
         self._frame.add(self._contents)
         self._widgets = (self._frame,)
-    # __setup_gui__()
 
 
     def __add_widgets_to_app__(self):
         for w in self.children:
             self.app.__add_widget__(w)
-    # __add_widgets_to_app__()
-    # Group
 
 
 class Button(_EGWidget):
@@ -3447,7 +3211,6 @@ class Button(_EGWidget):
 
         self.__setup_gui__()
         self.__setup_connections__()
-    # __init__()
 
 
     def __setup_gui__(self):
@@ -3460,17 +3223,13 @@ class Button(_EGWidget):
         self._button = gtk.Button(**k)
         self._button.set_name(self.id)
         self._widgets = (self._button,)
-    # __setup_gui__()
 
 
     def __setup_connections__(self):
         def callback(obj):
             for c in self.callback:
                 c(self.app, self)
-        # callback()
         self._button.connect("clicked", callback)
-    # __setup_connections__()
-    # Button
 
 
 class AboutButton(Button, AutoGenId):
@@ -3479,11 +3238,8 @@ class AboutButton(Button, AutoGenId):
         """You may not provide id, it will be generated automatically"""
         def show_about(app_id, wid_id):
             self.app.show_about_dialog()
-        # show_about()
         Button.__init__(self, id or self.__get_id__(),
                         stock="about", callback=show_about)
-    # __init__()
-    # AboutButton
 
 
 class CloseButton(Button, AutoGenId):
@@ -3492,11 +3248,8 @@ class CloseButton(Button, AutoGenId):
         """You may not provide id, it will be generated automatically"""
         def close(app_id, wid_id):
             self.app.close()
-        # close()
         Button.__init__(self, id or self.__get_id__(),
                         stock="close", callback=close)
-    # __init__()
-    # CloseButton
 
 
 class QuitButton(Button, AutoGenId):
@@ -3505,11 +3258,8 @@ class QuitButton(Button, AutoGenId):
         """You may not provide id, it will be generated automatically"""
         def c(app_id, wid_id):
             quit()
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="quit", callback=c)
-    # __init__()
-    # QuitButton
 
 
 class HelpButton(Button, AutoGenId):
@@ -3518,11 +3268,8 @@ class HelpButton(Button, AutoGenId):
         """You may not provide id, it will be generated automatically"""
         def c(app_id, wid_id):
             self.app.show_help_dialog()
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="help", callback=c)
-    # __init__()
-    # HelpButton
 
 
 class OpenFileButton(Button, AutoGenId):
@@ -3548,11 +3295,8 @@ class OpenFileButton(Button, AutoGenId):
                                       filter=filter, multiple=multiple)
             if f is not None and callback:
                 callback(self.app, self, f)
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="open", callback=c)
-    # __init__()
-    # OpenFileButton
 
 
 class SelectFolderButton(Button, AutoGenId):
@@ -3573,11 +3317,8 @@ class SelectFolderButton(Button, AutoGenId):
             f = self.app.file_chooser(FileChooser.ACTION_SELECT_FOLDER)
             if f is not None and callback:
                 callback(self.app, self, f)
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="open", callback=c)
-    # __init__()
-    # SelectFolderButton
 
 
 class SaveFileButton(Button, AutoGenId):
@@ -3603,11 +3344,8 @@ class SaveFileButton(Button, AutoGenId):
                                       filter=filter)
             if f is not None and callback:
                 callback(self.app, self, f)
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="save", callback=c)
-    # __init__()
-    # SaveFileButton
 
 
 class PreferencesButton(Button, AutoGenId):
@@ -3616,11 +3354,8 @@ class PreferencesButton(Button, AutoGenId):
         """You may not provide id, it will be generated automatically"""
         def c(app_id, wid_id):
             f = self.app.show_preferences_dialog()
-        # c()
         Button.__init__(self, id or self.__get_id__(),
                         stock="preferences", callback=c)
-    # __init__()
-    # PreferencesButton
 
 
 class HSeparator(_EGWidget, AutoGenId):
@@ -3631,8 +3366,6 @@ class HSeparator(_EGWidget, AutoGenId):
         self._wid = gtk.HSeparator()
         self._wid.set_name(self.id)
         self._widgets = (self._wid,)
-    # __init__()
-    # HSeparator
 
 
 class VSeparator(_EGWidget):
@@ -3643,8 +3376,6 @@ class VSeparator(_EGWidget):
         self._wid = gtk.VSeparator()
         self._wid.set_name(self.id)
         self._widgets = (self._wid,)
-    # __init__()
-    # VSeparator
 
 
 class Label(_EGDataWidget, AutoGenId):
@@ -3676,24 +3407,19 @@ class Label(_EGDataWidget, AutoGenId):
         self._wid.set_name(self.id)
         self._wid.set_alignment(xalign=halignment, yalign=valignment)
         self._widgets = (self._wid,)
-    # __init__()
 
 
     def get_value(self):
         return self._wid.get_text()
-    # get_value()
 
 
     def set_value(self, value):
         self._wid.set_text(str(value))
-    # set_value()
 
 
     def __str__(self):
         return "%s(id=%r, label=%r)" % \
             (self.__class__.__name__, self.id, self.label)
-    # __str__()
-    # Label
 
 
 def information(message):
@@ -3705,7 +3431,6 @@ def information(message):
     d.run()
     d.destroy()
     return
-# information()
 info = information
 
 
@@ -3718,7 +3443,6 @@ def warning(message):
     d.run()
     d.destroy()
     return
-# warning()
 warn = warning
 
 
@@ -3731,7 +3455,6 @@ def error(message):
     d.run()
     d.destroy()
     return
-# error()
 err = error
 
 
@@ -3758,7 +3481,6 @@ def yesno(message, yesdefault=False):
         return False
     else:
         return yesdefault
-# yesno()
 
 
 
@@ -3785,7 +3507,6 @@ def confirm(message, okdefault=False):
         return False
     else:
         return okdefault
-# confirm()
 
 
 
@@ -3795,12 +3516,10 @@ def run():
         gtk.main()
     except KeyboardInterrupt:
         raise SystemExit("User quit using Control-C")
-# run()
 
 def quit():
     """Quit the event loop"""
     gtk.main_quit()
-# quit()
 
 
 def get_app_by_id(app_id):
@@ -3820,7 +3539,6 @@ def get_app_by_id(app_id):
         return app_id
     else:
         raise ValueError("app_id must be string or App instance!")
-# get_app_by_id()
 
 
 def get_widget_by_id(widget_id, app_id=None):
@@ -3839,7 +3557,6 @@ def get_widget_by_id(widget_id, app_id=None):
             raise ValueError("Widget id \"%s\" doesn't exists!" % widget_id)
         else:
             return w
-# get_widget_by_id()
 
 
 def get_value(widget_id, app_id=None):
@@ -3849,7 +3566,6 @@ def get_value(widget_id, app_id=None):
         return wid.get_value()
     except ValueError, e:
         raise ValueError(e)
-# get_value()
 
 
 def set_value(widget_id, value, app_id=None):
@@ -3859,7 +3575,6 @@ def set_value(widget_id, value, app_id=None):
         wid.set_value(value)
     except ValueError, e:
         raise ValueError(e)
-# set_value()
 
 
 def show(widget_id, app_id=None):
@@ -3869,7 +3584,6 @@ def show(widget_id, app_id=None):
         wid.show()
     except ValueError, e:
         raise ValueError(e)
-# show()
 
 
 def hide(widget_id, app_id=None):
@@ -3879,7 +3593,6 @@ def hide(widget_id, app_id=None):
         wid.hide()
     except ValueError, e:
         raise ValueError(e)
-# hide()
 
 
 def set_active(widget_id, active=True, app_id=None):
@@ -3889,7 +3602,6 @@ def set_active(widget_id, active=True, app_id=None):
         wid.set_active(active)
     except ValueError, e:
         raise ValueError(e)
-# set_active()
 
 
 def set_inactive(widget_id, app_id=None):
@@ -3901,7 +3613,6 @@ def set_inactive(widget_id, app_id=None):
         wid.set_inactive()
     except ValueError, e:
         raise ValueError(e)
-# set_inactive()
 
 
 def close(app_id=None):
@@ -3911,4 +3622,3 @@ def close(app_id=None):
         app.close()
     except ValueError, e:
         raise ValueError(e)
-# close()

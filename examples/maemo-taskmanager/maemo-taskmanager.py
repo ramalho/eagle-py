@@ -19,7 +19,6 @@ def units(number):
         return "%d %s" % (n, unit)
     else:
         return str(number)
-# units()
 
 
 class ProcessInfo(object):
@@ -32,7 +31,6 @@ class ProcessInfo(object):
         self.vmsize = 0
         self.vmrss = 0
         self.update()
-    # __init__()
 
 
     def update(self):
@@ -59,7 +57,6 @@ class ProcessInfo(object):
 
         self.__load_cmdline__()
         self.__load_mem__()
-    # update()
 
 
     def __load_mem__(self):
@@ -77,7 +74,6 @@ class ProcessInfo(object):
                 self.vmsize = int(l[l.index(':') + 1 : -3]) * 1024
             elif l.startswith("VmRSS"):
                 self.vmrss = int(l[l.index(':') + 1 : -3]) * 1024
-    # __load_mem__()
 
 
     def __load_cmdline__(self):
@@ -87,8 +83,6 @@ class ProcessInfo(object):
             f.close()
         except (OSError, IOError), e:
             return
-    # __load_cmdline__()
-    # ProcessInfo
 
 
 class System(object):
@@ -113,7 +107,6 @@ class System(object):
         self.processes = dict()
 
         self.update()
-    # __init__()
 
 
     def is_blacklisted(self, process):
@@ -122,7 +115,6 @@ class System(object):
 	    if cmdline.startswith(b):
 		return True
 	return False
-    # is_blacklisted()
 
 
     def update(self):
@@ -166,7 +158,6 @@ class System(object):
         for p in old_pids:
             if p not in pids:
                 del self.processes[p]
-    # update()
 
 
     def update_global(self):
@@ -190,7 +181,6 @@ class System(object):
 
         self.memtotal *= 1024
         self.memfree  *= 1024
-    # update_global()
 
 
     def cpu_usage(self, pid):
@@ -200,7 +190,6 @@ class System(object):
             return min(i.cpu_diff * 100 / cpu_diff, 99)
         else:
             return 0
-    # cpu_usage()
 
 
     def mem_usage(self, pid):
@@ -210,8 +199,6 @@ class System(object):
             return min(i.vmrss * 100 / memtotal, 99)
         else:
             return 0
-    # mem_usage()
-    # System
 
 
 def kill(app, button):
@@ -226,7 +213,6 @@ def kill(app, button):
         msg = "Do you really want to kill \"%s\" (%d)?" % (pinfo.name, pid)
         if confirm(msg):
             os.kill(pid, signal.SIGKILL)
-# kill()
 
 
 def refresh(app):
@@ -239,7 +225,6 @@ def refresh(app):
     refresh_info(app, app["info"], processes.selected())
     refresh_graphs(app)
     return True
-# refresh()
 
 states = {
     "R": "Running",
@@ -265,7 +250,6 @@ def refresh_info(app, table, processes_rows):
     table[3][1] = units(info.vmrss)
     table[4][1] = info.cmdline
     table.columns_autosize()
-# refresh_info()
 
 
 def refresh_processes(app, table):
@@ -320,7 +304,6 @@ def refresh_processes(app, table):
         del table[idx]
 
     table.columns_autosize()
-# refresh_processes()
 
 
 def draw_graph(canvas, samples, color):
@@ -340,14 +323,12 @@ def draw_graph(canvas, samples, color):
 
     canvas.draw_polygon(points, color=color, size=0, fillcolor=color,
                         filled=True)
-# draw_graph()
 
 
 class Samples(object):
     def __init__(self, n_samples):
         self.samples = [0] * n_samples
         self.index = 0
-    # __init__()
 
 
     def append(self, value):
@@ -359,23 +340,18 @@ class Samples(object):
 
         self.samples[self.index] = value
         self.index += 1
-    # append()
 
 
     def __len__(self):
         return len(self.samples)
-    # __len__()
 
 
     def __getitem__(self, index):
         return self.samples[index]
-    # __getitem__()
 
 
     def __setitem__(self, index, value):
         self.samples[index] = value
-    # __setitem__()
-    # Samples
 
 
 def refresh_graph_cpu_load(app, canvas):
@@ -395,7 +371,6 @@ def refresh_graph_cpu_load(app, canvas):
 
     # Draw it
     draw_graph(canvas, refresh_graph_cpu_load.samples, "red")
-# refresh_graph_cpu_load()
 refresh_graph_cpu_load.samples = Samples(30)
 
 
@@ -416,14 +391,12 @@ def refresh_graph_memory_load(app, canvas):
 
     # Draw it
     draw_graph(canvas, refresh_graph_memory_load.samples, "red")
-# refresh_graph_memory_load()
 refresh_graph_memory_load.samples = Samples(30)
 
 
 def refresh_graphs(app):
     refresh_graph_cpu_load(app, app["cpu_load"])
     refresh_graph_memory_load(app, app["memory_load"])
-# refresh_graphs()
 
 
 def refresh_rate_changed(app, entry, value):
@@ -435,12 +408,10 @@ def refresh_rate_changed(app, entry, value):
         app.remove_event_source(id)
 
     app.refresh_id = app.timeout_add(value * 1000, refresh)
-# refresh_rate_changed()
 
 
 def blacklist_changed(app, entry, value):
     refresh(app)
-# blacklist_changed()
 
 
 def show_info_changed(app, entry, is_show):
@@ -449,13 +420,11 @@ def show_info_changed(app, entry, is_show):
 	info.show()
     else:
 	info.hide()
-# show_info_changed()
 
 
 
 def selected_process(app, info_table, rows):
     refresh_info(app, app["info"], rows)
-# selected_process()
 
 
 def process_format(app, table, row, col, value):
@@ -463,7 +432,6 @@ def process_format(app, table, row, col, value):
         return Table.CellFormat(bold=True, fgcolor="red")
     elif col == 2 and value == app.max_mem:
         return Table.CellFormat(bold=True, fgcolor="red")
-# process_format()
 
 
 processes_widgets = (

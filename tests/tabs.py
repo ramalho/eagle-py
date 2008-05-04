@@ -12,37 +12,30 @@ def bt0(app, widget):
         info("Exception: %s" % e)
 
     print "t0, page 2 label is", app["t0"].get_page(2)
-# bt0()
 
 
 def disable_4(app, widget):
     app["t0"].get_page(4).set_inactive()
-# disable_4()
 
 
 def enable_4(app, widget):
     app["t0"].get_page(4).set_active()
-# enable_4()
 
 
 def hide_3(app, widget):
     app["t0"].get_page(3).hide()
-# hide_3()
 
 
 def show_3(app, widget):
     app["t0"].get_page(3).show()
-# show_3()
 
 
 def focus_0(app, widget):
     app["t0"].focus_page(0)
-# focus_0()
 
 
 def focus_4(app, widget):
     app["t0"][4].focus()
-# focus_4()
 
 
 def any_page_selected(app, tabs, page):

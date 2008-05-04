@@ -7,7 +7,6 @@ rfd, wfd = os.pipe()
 
 def add_data(app, button):
     os.write(wfd, "data\n")
-# add_data()
 
 def io_watch_read(app, fileobj, **kargs):
     print "io event:", app, fileobj, kargs
@@ -23,7 +22,6 @@ def io_watch_read(app, fileobj, **kargs):
     app["entry"] = v
 
     return True
-# io_watch_read()
 
 
 event_id = None
@@ -34,7 +32,6 @@ def start(app, button):
     event_id = app.io_watch(rfd, io_watch_read, on_in=True)
     button.set_inactive()
     app["stop"].set_active()
-# start()
 
 
 def stop(app, button):
@@ -43,7 +40,6 @@ def stop(app, button):
     event_id = None
     button.set_inactive()
     app["start"].set_active()
-# stop()
 
 
 app = App(title="I/O watch example",

@@ -32,9 +32,7 @@ class Player(object):
                 elif t == gst.MESSAGE_ERROR:
                     err, debug = message.parse_error()
                     print "Error: %s" % err, debug
-            # on_message()
             self.bus.connect("message", on_message)
-    # __init__()
 
 
     def play(self, filename):
@@ -42,7 +40,6 @@ class Player(object):
         self.bin.set_state(gst.STATE_PLAYING)
         self.filename = filename
         self.is_playing = True
-    # play()
 
 
     def stop(self):
@@ -50,7 +47,6 @@ class Player(object):
         self.source.set_property("location", "")
         self.filename = None
         self.is_playing = False
-    # stop()
 
 
     def pause(self):
@@ -60,13 +56,10 @@ class Player(object):
             self.bin.set_state(gst.STATE_PLAYING)
 
         self.is_playing = not self.is_playing
-    # pause()
-    # Player
 
 
 def add_file(app, button, value):
     app["playlist"].append(value)
-# add_file()
 
 
 def play(app, button):
@@ -81,7 +74,6 @@ def play(app, button):
         app["pause"].set_active()
         app["stop"].set_active()
         app["now_playing"] = "Playing %s" % app.player.filename
-# play()
 
 
 def pause(app, button):
@@ -97,7 +89,6 @@ def pause(app, button):
         app["pause"].set_active()
         app["stop"].set_active()
     app["now_playing"] = msg
-# pause()
 
 
 def stop(app, button):
@@ -106,13 +97,11 @@ def stop(app, button):
     app["pause"].set_inactive()
     app["stop"].set_inactive()
     app["now_playing"] = "Nothing is playing!"
-# stop()
 
 
 def playlist_selected(app, table, rows):
     if rows:
         app["play"].set_active()
-# playlist_selected()
 
 
 def end_of_stream(player):
@@ -121,7 +110,6 @@ def end_of_stream(player):
     app["pause"].set_inactive()
     app["stop"].set_inactive()
     app["now_playing"] = "Nothing is playing!"
-# end_of_stream()
 
 
 app = App(id="music_player",

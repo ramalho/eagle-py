@@ -4,7 +4,6 @@ from eagle import *
 
 def f(app, table, row_idx):
     info("clicked: %s, %s, row_idx=%d" % (app, table, row_idx))
-# f()
 
 
 app = App(title="Table with datetime",

@@ -9,15 +9,12 @@ class Tool(object):
     def mouse(self, app, canvas, buttons, x, y):
         """This tool have a user feedback using mouse on canvas."""
         pass
-    # mouse()
-# Tool
 
 
 
 class Line(Tool):
     def __init__(self):
         self.first_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -30,15 +27,12 @@ class Line(Tool):
                 x0, y0 = self.first_point
                 canvas.draw_line(x0, y0, x, y, color, size)
                 self.first_point = None
-    # mouse()
-# Line
 
 
 
 class Pencil(Tool):
     def __init__(self):
         self.last_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -62,15 +56,12 @@ class Pencil(Tool):
         else:
             # Button 1 was released, reset last point
             self.last_point = None
-    # mouse()
-# Pencil
 
 
 
 class Rectangle(Tool):
     def __init__(self):
         self.first_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -95,8 +86,6 @@ class Rectangle(Tool):
 
                 canvas.draw_rectangle(x0, y0, w, h, fg, size, bg, fill)
                 self.first_point = None
-    # mouse()
-# Rectangle
 
 
 
@@ -112,8 +101,6 @@ class Text(Tool):
                 bg = None
 
             canvas.draw_text(text, x, y, fg, bg, font)
-    # mouse()
-# Text
 
 
 
@@ -130,7 +117,6 @@ def_tool="Line"
 def canvas_action(app, canvas, buttons, x, y):
     tool = app["tool"]
     tools[tool].mouse(app, canvas, buttons, x, y)
-# canvas_action()
 
 
 

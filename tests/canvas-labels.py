@@ -8,12 +8,10 @@ def change_nonexistent(app, button):
         return
     v = app.get_widget_by_id(button.id[1 :])
     v.set_label("Make it crash")
-# change_nonexistent()
 
 def change_placeholder(app, button):
     v = app.get_widget_by_id(button.id[1 :])
     v.set_label("New Label")
-# change_placeholder()
 
 
 App(title="Canvas test using label and scrollbars properties",

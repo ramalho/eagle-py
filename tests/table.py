@@ -8,11 +8,9 @@ def data_changed(app, widget, value):
     if values:
         values[2] += " [MODIFIED]"
         widget[idx] = values
-# data_changed()
 
 def selection_changed(app, widget, selected):
     print "seletion:", app, widget, selected
-# selection_changed()
 
 
 app = App(title="Simple Table",

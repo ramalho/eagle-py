@@ -10,14 +10,12 @@ class Undo(object):
         self.canvas = app["canvas"]
         self.button = app["undo"]
         self.button.set_inactive()
-    # __init__()
 
 
     def push(self):
         img = self.canvas.get_image()
         self.last_images.append(img)
         self.button.set_active()
-    # push()
 
 
     def pop(self):
@@ -27,8 +25,6 @@ class Undo(object):
 
         if not self.last_images:
             self.button.set_inactive()
-    # pop()
-# Undo
 
 
 
@@ -39,15 +35,12 @@ class Tool(object):
     def mouse(self, app, canvas, buttons, x, y):
         """This tool have a user feedback using mouse on canvas."""
         pass
-    # mouse()
-# Tool
 
 
 
 class Line(Tool):
     def __init__(self):
         self.first_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -61,8 +54,6 @@ class Line(Tool):
                 app.undo.push()
                 canvas.draw_line(x0, y0, x, y, color, size)
                 self.first_point = None
-    # mouse()
-# Line
 
 
 
@@ -70,7 +61,6 @@ class Pencil(Tool):
     def __init__(self):
         self.last_point = None
         self.changed = False
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -99,15 +89,12 @@ class Pencil(Tool):
             # Button 1 was released, reset last point
             self.last_point = None
             self.changed = False
-    # mouse()
-# Pencil
 
 
 
 class Rectangle(Tool):
     def __init__(self):
         self.first_point = None
-    # __init__()
 
 
     def mouse(self, app, canvas, buttons, x, y):
@@ -133,8 +120,6 @@ class Rectangle(Tool):
                 app.undo.push()
                 canvas.draw_rectangle(x0, y0, w, h, fg, size, bg, fill)
                 self.first_point = None
-    # mouse()
-# Rectangle
 
 
 
@@ -151,8 +136,6 @@ class Text(Tool):
 
             app.undo.push()
             canvas.draw_text(text, x, y, fg, bg, font)
-    # mouse()
-# Text
 
 
 
@@ -169,7 +152,6 @@ def_tool="Line"
 def canvas_action(app, canvas, buttons, x, y):
     tool = app["tool"]
     tools[tool].mouse(app, canvas, buttons, x, y)
-# canvas_action()
 
 
 def save(app, button, filename):
@@ -179,23 +161,19 @@ def save(app, button, filename):
         img.save(filename)
     except Exception, e:
         error(str(e))
-# save()
 
 
 def clear(app, button):
     app.undo.push()
     app["canvas"].clear()
-# clear()
 
 
 def confirm_quit(app):
     return yesno("Are you sure you want to close '%s'?" % app.title)
-# confirm_quit()
 
 
 def do_undo(app, button):
     app.undo.pop()
-# do_undo()
 
 
 

@@ -4,7 +4,6 @@ from eagle import App, CheckBox, run
 
 def toggle_decoration(app, cb, value):
     app.window_decorated = value
-# toggle_decoration()
 
 
 App(title="Change Window Decoration",

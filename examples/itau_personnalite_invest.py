@@ -308,7 +308,6 @@ def redraw_graph2(app):
     for x in selected:
 	capital.append([])
 	PV = 1000
-	# capital[-1].append(PV)
         item = x[5]
 	ble = item[4:16]
 	ble.reverse()

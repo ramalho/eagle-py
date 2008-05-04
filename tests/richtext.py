@@ -9,16 +9,13 @@ def img_provider(filename):
     if filename.startswith("myapp://"):
         data = chr(127) * 22 * 22 * 3
         return Image(data=data, width=22, height=22)
-# img_provider()
 
 
 def clear(app, button):
     app["richtext"].set_text("")
-# clear()
 
 def append(app, button):
     app["richtext"].append("<p>another paragraph!</p>")
-# append()
 
 
 

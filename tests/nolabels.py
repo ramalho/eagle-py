@@ -11,18 +11,15 @@ def change_entry_label_nonexistent(app, button):
     # This is needed with DataWidgets
     v = app.get_widget_by_id(button.id[1 :])
     v.set_label("Make it crash")
-# change_entry_label_nonexistent()
 
 def change_entry_label_placeholder(app, button):
     # use get_widget() to get access to widget not its contents.
     # This is needed with DataWidgets
     v = app.get_widget_by_id(button.id[1 :])
     v.set_label("New Label")
-# change_entry_label_placeholder()
 
 def change_bt_label(app, button):
     button.set_label("New Label")
-# change_bt_label()
 
 
 App(title="Test use of widgets without associate labels",

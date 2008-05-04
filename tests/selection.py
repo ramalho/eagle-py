@@ -13,7 +13,6 @@ def add_option(app, button):
         selection.append(v, True)
     except ValueError:
         info("Option '%s' already added!" % v)
-# add_option()
 
 
 def remove_option(app, button):
@@ -26,10 +25,8 @@ def remove_option(app, button):
     try:
         selection -= v
         ## same as:
-        # selection.remove(v)
     except ValueError:
         info("'%s' was not an option!" % v)
-# remove_option()
 
 
 App(title="Selection box capabilities",

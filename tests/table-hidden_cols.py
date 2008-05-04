@@ -4,21 +4,17 @@ from eagle import *
 
 def selection_changed(app, widget, selected):
     print "seletion:", app, widget, selected
-# selection_changed()
 
 
 class MyType(object):
     def default_value():
         return MyType()
-    # default_value()
     default_value = staticmethod(default_value)
-# MyType
 
 
 def cell_format_func(app, table, row, col, value):
     if col == 0:
         return Table.CellFormat(contents=lambda x: "str()=%s" % x)
-# cell_format_func()
 
 
 app = App(title="Simple Table",

@@ -28,7 +28,6 @@ def test_name(name):
     except socket.gaierror, e:
         print "test_name(%r): %s" % (name, e)
         return False, None
-# test_name()
 
 def test_ip(ip, port):
     try:
@@ -42,7 +41,6 @@ def test_ip(ip, port):
     except (socket.error, socket.herror, socket.timeout), e:
         print "test_ip(%r, %r): %s" % (ip, port, e)
         return False, None
-# test_ip()
 
 
 def clear_results(app, button):
@@ -55,7 +53,6 @@ def clear_results(app, button):
     for row in table:
         row[1] = 0.0
         row[2] = ""
-# clear_results()
 
 def cell_format(idx):
     def f(app, table, row, col, value):
@@ -66,9 +63,7 @@ def cell_format(idx):
                 return Table.CellFormat(fgcolor="red")
             elif value == "Ok":
                 return Table.CellFormat(fgcolor="#009900", bold=True)
-    # f()
     return f
-# cell_format()
 
 def run_tests(app, button):
     app["progress"] = 0.0
@@ -113,7 +108,6 @@ def run_tests(app, button):
     # end for
 
     app["progress"] = 0
-# run_tests()
 
 
 

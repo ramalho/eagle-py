@@ -37,7 +37,6 @@ def populate_table(table, fname):
             error("Error processing line %d: %r" % (ln, line))
 
     f.close()
-# populate_table()
 
 
 def save_table(table, fname):
@@ -51,7 +50,6 @@ def save_table(table, fname):
             f.write("export ")
         f.write("%s=%r\n" % (var, contents))
     f.close()
-# save_table()
 
 
 def set_no_changes(app):
@@ -63,7 +61,6 @@ def set_no_changes(app):
     global changes
     changes = False
     set_inactive("save", app)
-# set_no_changes()
 
 def set_filename(app, fname=None):
     global filename
@@ -74,7 +71,6 @@ def set_filename(app, fname=None):
     else:
         app["filename"] = "No file selected!"
         filename = None
-# set_filename()
 
 
 def choose_file(app, button, fname):
@@ -87,7 +83,6 @@ def choose_file(app, button, fname):
     if fname:
         populate_table(app["vars"], fname)
         set_no_changes(app)
-# choose_file()
 
 
 def data_changed(app, table, data):
@@ -95,7 +90,6 @@ def data_changed(app, table, data):
     changes = True
     sb_lastid.append(app.status_message("Changes still not saved!"))
     set_active("save", True, app)
-# data_changed()
 
 
 def save_file(app, button):
@@ -108,7 +102,6 @@ def save_file(app, button):
     save_table(app["vars"], filename)
 
     set_no_changes(app)
-# save_file()
 
 
 def quit(app):
@@ -116,7 +109,6 @@ def quit(app):
         return yesno("There is still unsaved data. Exit and discard data?")
     else:
         return True
-# quit()
 
 
 app = App(title="Variables Editor",
