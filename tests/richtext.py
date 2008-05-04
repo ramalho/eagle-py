@@ -3,30 +3,30 @@
 from eagle import *
 
 # Must be alive when using, so put in img_test until the end of application
-img_test = Image( id="test", filename="test.png" )
+img_test = Image(id="test", filename="test.png")
 
-def img_provider( filename ):
-    if filename.startswith( "myapp://" ):
-        data = chr( 127 ) * 22 * 22 * 3
-        return Image( data=data, width=22, height=22 )
+def img_provider(filename):
+    if filename.startswith("myapp://"):
+        data = chr(127) * 22 * 22 * 3
+        return Image(data=data, width=22, height=22)
 # img_provider()
 
 
-def clear( app, button ):
-    app[ "richtext" ].set_text( "" )
+def clear(app, button):
+    app["richtext"].set_text("")
 # clear()
 
-def append( app, button ):
-    app[ "richtext" ].append( "<p>another paragraph!</p>" )
+def append(app, button):
+    app["richtext"].append("<p>another paragraph!</p>")
 # append()
 
 
 
 
-App( title="Rich Text Example",
-     center=( RichText( id="richtext",
-                        img_provider=img_provider,
-                        text="""\
+App(title="Rich Text Example",
+    center=(RichText(id="richtext",
+                     img_provider=img_provider,
+                     text="""\
 <h1>level 1 header</h1>
 <h2>level 2 header</h2>
 <h3>level 3 header</h3>
@@ -74,7 +74,7 @@ Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc Abc
 <font bgcolor=\"#d9d9d9\">
 <pre>
 # we also support pre formatted text:
-def function( arg0, arg1, *args, **kargs ):
+def function(arg0, arg1, *args, **kargs):
     print "arg0:", arg0
     print "arg1:", arg1
     print "args:", args
@@ -85,12 +85,12 @@ def function( arg0, arg1, *args, **kargs ):
 <br />
 <a name="end-anchor">end of page</a>
 """
-                        ),
-              ),
-     bottom=(
-              Button( id="clear", stock="clear", callback=clear ),
-              Button( id="append", stock="add", callback=append ),
-              )
-     )
+                     ),
+            ),
+    bottom=(
+        Button(id="clear", stock="clear", callback=clear),
+        Button(id="append", stock="add", callback=append),
+        )
+    )
 
 run()

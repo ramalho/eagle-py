@@ -126,7 +126,7 @@ def data_changed(app, *args):
         y = graph.height - 30
 
     txt = ("f(x) = %0.3e * x² + %0.3e * x + %0.3e\n"
-           "roots: { %s, %s }") % (a, b, c, r0, r1)
+           "roots: {%s, %s}") % (a, b, c, r0, r1)
     graph.draw_text(txt, 2, y, fgcolor="red", bgcolor="white",
                     font_size=graph_font_size)
 

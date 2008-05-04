@@ -19,7 +19,7 @@ mudancas = False
 sb_ultimoID = []
 
 def preencheTabela(table, nomeArquivo):
-    del table[ : ] # limpa tabela
+    del table[:] # limpa tabela
 
     # ler dados do arquivo
     arquivo = open(nomeArquivo, "r")
@@ -42,7 +42,7 @@ def salvaTabela(table, nomeArquivo):
     arquivo = open(nomeArquivo, "w")
     for n, (nome, email) in enumerate(table):
         if not (nome and email):
-            error( "linha inválida %d pulada" %n)
+            error("linha inválida %d pulada" %n)
             continue
 
         arquivo.write("%s;%s\n" %(nome, email))
@@ -54,7 +54,7 @@ def defineSemMudancas(app):
     for id in sb_ultimoID:
         app.remove_status_message(id)
 
-    del sb_ultimoID[ : ]
+    del sb_ultimoID[:]
 
     global mudancas
     mudancas = False

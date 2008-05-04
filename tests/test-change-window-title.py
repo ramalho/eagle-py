@@ -2,7 +2,7 @@
 
 from eagle import App, Entry, run
 
-def change_title( app, entry, value ):
+def change_title(app, entry, value):
     app.title = value
 # change_title()
 

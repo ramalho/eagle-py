@@ -35,7 +35,7 @@ def salva_tabela(table, nome_arquivo):
     arquivo = codecs.open(nome_arquivo, "w", encoding="utf-8")
     for n, (categoria, descricao, quantidade, preco) in enumerate(table):
         if not (categoria and descricao):
-            error( "linha inválida %d pulada" % n)
+            error("linha inválida %d pulada" % n)
             continue
 
         arquivo.write("%s;%s;%s;%s\n" %

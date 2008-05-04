@@ -45,117 +45,117 @@ import setuptools
 pjoin = os.path.join
 
 
-blacklist_start = [ "." ]
-blacklist_end   = [ "~", ".pyc", ".pyo" ]
+blacklist_start = ["."]
+blacklist_end   = ["~", ".pyc", ".pyo"]
 
-def listfiles( *args ):
-    p = pjoin( *args )
-    files = glob( p )
+def listfiles(*args):
+    p = pjoin(*args)
+    files = glob(p)
     r = []
     for f in files:
-        if os.path.isfile( f ):
-            fname = os.path.basename( f )
+        if os.path.isfile(f):
+            fname = os.path.basename(f)
             for b in blacklist_start:
-                if fname.startswith( b ):
+                if fname.startswith(b):
                     break
             else:
                 for b in blacklist_end:
-                    if fname.endswith( b ):
+                    if fname.endswith(b):
                         break
                 else:
-                    r.append( f )
+                    r.append(f)
     return r
 
 
-def recursive_data_files( *args ):
-    files = listfiles( *args )
+def recursive_data_files(*args):
+    files = listfiles(*args)
 
-    dirname = list( args[ : -1 ] or [ "." ] )
-    d = pjoin( *dirname )
+    dirname = list(args[: -1] or ["."])
+    d = pjoin(*dirname)
 
-    ret = [ ( d, files ) ]
+    ret = [(d, files)]
 
     try:
-        l = os.listdir( d )
+        l = os.listdir(d)
     except OSError, e:
         return []
 
     for f in l:
-        if f.startswith( "." ):
+        if f.startswith("."):
             continue
 
-        fp = pjoin( d, f )
-        if os.path.isdir( fp ):
-            a = dirname + [ f, args[ -1 ] ]
-            ret.extend( recursive_data_files( *a ) )
+        fp = pjoin(d, f)
+        if os.path.isdir(fp):
+            a = dirname + [f, args[-1]]
+            ret.extend(recursive_data_files(*a))
 
     return ret
 
 
-def setup( module, install_requires=None, data_files=None ):
-    data_files = list( data_files or [] )
+def setup(module, install_requires=None, data_files=None):
+    data_files = list(data_files or [])
     data_files += [
-        ( "tests", listfiles( "tests", "*" ) ),
-        ( "examples", listfiles( "examples", "*" ) ),
+        ("tests", listfiles("tests", "*")),
+        ("examples", listfiles("examples", "*")),
         ]
-    data_files += recursive_data_files( module, "share", "*" )
+    data_files += recursive_data_files(module, "share", "*")
 
-    docs = recursive_data_files( "docs", "*" )
-    for i, ( d, f ) in enumerate( docs ):
-        docs[ i ] = ( d, f )
+    docs = recursive_data_files("docs", "*")
+    for i, (d, f) in enumerate(docs):
+        docs[i] = (d, f)
 
     data_files += docs
 
     # prefix data_files with share/python2.4-maemo/
-    pkg = "python%s.%s-eagle" % ( sys.version_info[ 0 ],
-                                  sys.version_info[ 1 ] )
+    pkg = "python%s.%s-eagle" % (sys.version_info[0],
+                                 sys.version_info[1])
     prefix = "share/%s" % pkg
     doc_prefix = "share/doc/%s" % pkg
     tmp = []
     doc = "docs"
-    module_doc = pjoin( module, "share", "docs" )
-    for ( a, b ) in data_files:
-        if a.startswith( doc ):
-            p = pjoin( doc_prefix, a[ len( doc ) + 1 : ] )
-        elif a.startswith( module_doc ):
-            p = pjoin( doc_prefix, a[ len( module_doc ) + 1 : ] )
+    module_doc = pjoin(module, "share", "docs")
+    for (a, b) in data_files:
+        if a.startswith(doc):
+            p = pjoin(doc_prefix, a[len(doc) + 1 :])
+        elif a.startswith(module_doc):
+            p = pjoin(doc_prefix, a[len(module_doc) + 1 :])
         else:
-            p = pjoin( prefix, a )
+            p = pjoin(prefix, a)
 
         if b:
-            tmp.append( ( p, b ) )
+            tmp.append((p, b))
     data_files = tmp
 
 
     return setuptools \
-           .setup( name=("eagle-%s" % module),
-                   py_modules=[ "eagle" ],
-                   package_dir = { '': module },
-                   include_package_data=True,
-                   data_files=data_files,
-                   install_requires=install_requires,
-                   version=__version__,
-                   description=__description__,
-                   long_description=__long_description__,
-                   url=__url__,
-                   license=__license__,
-                   author=__author__,
-                   author_email=__author_email__,
-                   classifiers=[
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: X11 Applications",
-        "Environment :: Win32 (MS Windows)",
-        "Environment :: MacOS X",
-        "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python",
-        ]
-                   )
+        .setup(name=("eagle-%s" % module),
+               py_modules=["eagle"],
+               package_dir = {'': module},
+               include_package_data=True,
+               data_files=data_files,
+               install_requires=install_requires,
+               version=__version__,
+               description=__description__,
+               long_description=__long_description__,
+               url=__url__,
+               license=__license__,
+               author=__author__,
+               author_email=__author_email__,
+               classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: X11 Applications",
+            "Environment :: Win32 (MS Windows)",
+            "Environment :: MacOS X",
+            "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            ]
+               )
 
-cwd = os.path.basename( os.getcwd() ).split( '-' )
+cwd = os.path.basename(os.getcwd()).split('-')
 
-if len( cwd ) > 1:
-    module = cwd[ 1 ]
+if len(cwd) > 1:
+    module = cwd[1]
 else:
     module = None
 
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     # eagle-MODULE[-version] will build just MODULE
     # if MODULE is missing, build everything
     if not module or module == "gtk":
-        setup( "gtk", [] )
+        setup("gtk", [])
 
     if not module or module == "maemo":
-        setup( "maemo", [] )
+        setup("maemo", [])

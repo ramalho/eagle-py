@@ -31,11 +31,11 @@ ALL  = 1
 class Stats(object):
     def __init__(self, points):
         self.n = len(points)
-        xlist = [ p.x for p in points ];
+        xlist = [p.x for p in points];
         self.xmin = min(xlist)
         self.xmax = max(xlist)
 
-        ylist = [ p.y for p in points ]
+        ylist = [p.y for p in points]
         ylist.sort()
         self.q1_y = self.quartile(ylist, 1)
         self.q2_y = self.quartile(ylist, 2)
@@ -161,7 +161,7 @@ class ASPlotter(ASPointList):
         sy = self.aspect_ratio * self.default_width / ht
         #print 'WD:', wd, 'HT:', ht, sx, sy
 
-        clip = canvas.clip(path.rect(sx * xmin, sy * ymin, sx * wd, sy * ht) )
+        clip = canvas.clip(path.rect(sx * xmin, sy * ymin, sx * wd, sy * ht))
 
         c = canvas.canvas([clip])
         #c.stroke(path.rect(sx*xmin, sy*ymin, sx*wd, sy*ht))

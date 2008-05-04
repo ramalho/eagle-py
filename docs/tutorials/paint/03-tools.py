@@ -2,11 +2,11 @@
 
 from eagle import *
 
-class Tool( object ):
+class Tool(object):
     """Interface to be implemented by tools."""
 
 
-    def mouse( self, app, canvas, buttons, x, y ):
+    def mouse(self, app, canvas, buttons, x, y):
         """This tool have a user feedback using mouse on canvas."""
         pass
     # mouse()
@@ -14,37 +14,37 @@ class Tool( object ):
 
 
 
-class Line( Tool ):
-    def __init__( self ):
+class Line(Tool):
+    def __init__(self):
         self.first_point = None
     # __init__()
 
 
-    def mouse( self, app, canvas, buttons, x, y ):
+    def mouse(self, app, canvas, buttons, x, y):
         if buttons & Canvas.MOUSE_BUTTON_1:
             if self.first_point is None:
-                self.first_point = ( x, y )
+                self.first_point = (x, y)
             else:
-                color = app[ "fg" ]
-                size  = app[ "size" ]
+                color = app["fg"]
+                size  = app["size"]
                 x0, y0 = self.first_point
-                canvas.draw_line( x0, y0, x, y, color, size )
+                canvas.draw_line(x0, y0, x, y, color, size)
                 self.first_point = None
     # mouse()
 # Line
 
 
 
-class Pencil( Tool ):
-    def __init__( self ):
+class Pencil(Tool):
+    def __init__(self):
         self.last_point = None
     # __init__()
 
 
-    def mouse( self, app, canvas, buttons, x, y ):
+    def mouse(self, app, canvas, buttons, x, y):
         if buttons & Canvas.MOUSE_BUTTON_1:
-            color = app[ "fg" ]
-            size  = app[ "size" ]
+            color = app["fg"]
+            size  = app["size"]
             if self.last_point is not None:
                 x0, y0 = self.last_point
             else:
@@ -52,13 +52,13 @@ class Pencil( Tool ):
                 y0 = y
 
             if size == 1:
-                canvas.draw_point( x, y, color )
+                canvas.draw_point(x, y, color)
             else:
                 half = size / 2
-                canvas.draw_rectangle( x-half, y-half, size, size, color, 1,
-                                       color, True )
-            canvas.draw_line( x0, y0, x, y, color, size )
-            self.last_point = ( x, y )
+                canvas.draw_rectangle(x-half, y-half, size, size, color, 1,
+                                       color, True)
+            canvas.draw_line(x0, y0, x, y, color, size)
+            self.last_point = (x, y)
         else:
             # Button 1 was released, reset last point
             self.last_point = None
@@ -67,21 +67,21 @@ class Pencil( Tool ):
 
 
 
-class Rectangle( Tool ):
-    def __init__( self ):
+class Rectangle(Tool):
+    def __init__(self):
         self.first_point = None
     # __init__()
 
 
-    def mouse( self, app, canvas, buttons, x, y ):
+    def mouse(self, app, canvas, buttons, x, y):
         if buttons & Canvas.MOUSE_BUTTON_1:
             if self.first_point is None:
-                self.first_point = ( x, y )
+                self.first_point = (x, y)
             else:
-                fg   = app[ "fg" ]
-                bg   = app[ "bg" ]
-                size = app[ "size" ]
-                fill = app[ "rectfill" ]
+                fg   = app["fg"]
+                bg   = app["bg"]
+                size = app["size"]
+                fill = app["rectfill"]
 
                 x0, y0 = self.first_point
 
@@ -93,25 +93,25 @@ class Rectangle( Tool ):
                 w = x - x0
                 h = y - y0
 
-                canvas.draw_rectangle( x0, y0, w, h, fg, size, bg, fill )
+                canvas.draw_rectangle(x0, y0, w, h, fg, size, bg, fill)
                 self.first_point = None
     # mouse()
 # Rectangle
 
 
 
-class Text( Tool ):
-    def mouse( self, app, canvas, buttons, x, y ):
-        if buttons & Canvas.MOUSE_BUTTON_1 and app[ "text" ]:
-            text  = app[ "text" ]
-            fg    = app[ "fg" ]
-            bg    = app[ "bg" ]
-            font  = app[ "font" ]
+class Text(Tool):
+    def mouse(self, app, canvas, buttons, x, y):
+        if buttons & Canvas.MOUSE_BUTTON_1 and app["text"]:
+            text  = app["text"]
+            fg    = app["fg"]
+            bg    = app["bg"]
+            font  = app["font"]
 
-            if app[ "textbgtransp" ]:
+            if app["textbgtransp"]:
                 bg = None
 
-            canvas.draw_text( text, x, y, fg, bg, font )
+            canvas.draw_text(text, x, y, fg, bg, font)
     # mouse()
 # Text
 
@@ -127,66 +127,66 @@ def_tool="Line"
 
 
 
-def canvas_action( app, canvas, buttons, x, y ):
-    tool = app[ "tool" ]
-    tools[ tool ].mouse( app, canvas, buttons, x, y )
+def canvas_action(app, canvas, buttons, x, y):
+    tool = app["tool"]
+    tools[tool].mouse(app, canvas, buttons, x, y)
 # canvas_action()
 
 
 
-app = App( title="Paint",
+app = App(title="Paint",
            id="paint",
            statusbar=True,
-           left=( Color( id="fg",
+           left=(Color(id="fg",
                          label="Foreground:",
                          color="black",
                          ),
-                  Color( id="bg",
+                  Color(id="bg",
                          label="Background:",
-                         color=( 255, 0, 0 ),
+                         color=(255, 0, 0),
                          ),
-                  Selection( id="tool",
+                  Selection(id="tool",
                              label="Tool:",
                              options=tools.keys(),
                              active=def_tool,
                              ),
-                  UIntSpin( id="size",
+                  UIntSpin(id="size",
                             label="Line Size:",
                             min=1,
                             value=1,
                             ),
                   ),
-           right=( Group( id="textgroup",
+           right=(Group(id="textgroup",
                           label="Text Properties:",
-                          children=( Entry( id="text",
+                          children=(Entry(id="text",
                                             label="Contents:",
                                             ),
-                                     Font( id="font",
+                                     Font(id="font",
                                            label="Font:",
                                            ),
-                                     CheckBox( id="textbgtransp",
+                                     CheckBox(id="textbgtransp",
                                                label="Transparent background?",
                                                ),
                                      ),
                           ),
-                   Group( id="rectgroup",
+                   Group(id="rectgroup",
                           label="Rectangle Properties:",
-                          children=( CheckBox( id="rectfill",
+                          children=(CheckBox(id="rectfill",
                                                label="Fill?",
                                                ),
                                      ),
                           ),
                    ),
-           top=( SaveFileButton(),
+           top=(SaveFileButton(),
                  CloseButton(),
-                 Button( id="undo",
+                 Button(id="undo",
                          stock="undo",
                          ),
-                 Button( id="clear",
+                 Button(id="clear",
                          stock="clear",
                          ),
                  ),
-           center=( Canvas( id="canvas",
+           center=(Canvas(id="canvas",
                             label="Draw Here:",
                             width=400,
                             height=400,

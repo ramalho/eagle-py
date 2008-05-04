@@ -132,7 +132,7 @@ def download_and_parse_unlocked(app):
     table = []
     results = re_line.finditer(contents)
     for r in results:
-        row = [ None ] * len(pos_remap)
+        row = [None] * len(pos_remap)
         for i, v in enumerate(r.groups()):
             v = v.strip()
             if i == 0:
