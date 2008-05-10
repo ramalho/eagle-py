@@ -81,6 +81,7 @@ __all__ = [
     "AboutDialog", "HelpDialog", "FileChooser",
     "RichText",
     "ExpandPolicy",
+    "NativeSlot",
     ]
 
 import os
@@ -7297,6 +7298,48 @@ class Label(_EGDataWidget, _AutoGenId):
     def __str__(self):
         return "%s(id=%r, label=%r)" % \
             (self.__class__.__name__, self.id, self.label)
+
+
+class NativeSlot(_EGWidget, _AutoGenId):
+    """Native Slot to plug in system-dependent components.
+
+    While Eagle and other toolkits as GTK, QT and others try to
+    provide all the widgets you may need, occasionally you might need
+    more specific extensions that are provided by third
+    parties. Usually these extensions are integrated by means of the
+    most low-level components, usually called native windows, surfaces
+    or slots. In Eagle these are called "NativeSlots".
+
+    NativeSlots will be visually integrated in your application,
+    respecting the provided expand_policy, but they'll draw nothing by
+    default, instead they provide the native resource with
+    L{get_resource()}, which will return system-dependent resources
+    that could be used by third parties.
+
+    On X11 systems, L{get_resource()} will return 'Window'
+    identification number, that can be used by third party like
+    MPlayer to draw things on it. Example: one can create NativeSlot,
+    then use get_resource() and give this value as MPlayer's '-wid'
+    parameter.
+
+    @warning: this breaks portability of your applications, avoid using it.
+    @warning: not supported on Eagle-GTK on MS Windows.
+    """
+    def __init__(self, id=None,  expand_policy=None):
+        """NativeSlot constructor.
+
+        @param id: may not be provided, it will be generated automatically.
+        @param expand_policy: how this widget should fit space, see
+        L{ExpandPolicy.Policy.Rule}.
+        """
+        _EGWidget.__init__(self, id or self.__get_id__(),
+                            expand_policy=expand_policy)
+        self._wid = gtk.EventBox()
+        self._wid.set_name(self.id)
+        self._widgets = (self._wid,)
+
+    def get_resource(self):
+        return self._wid.window.xid
 
 
 def information(message):
