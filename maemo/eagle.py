@@ -5816,7 +5816,6 @@ class Table(_EGWidget):
     def __setup_table__(self):
         self.__setup_model__()
         self._table = gtk.TreeView(self._model)
-        self._table.set_property("allow-checkbox-mode", False)
         self._table.show()
         self._table.set_name("table-%s" % self.id)
         self._table.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
