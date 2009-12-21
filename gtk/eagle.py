@@ -1210,7 +1210,10 @@ class FileChooser(_EGWidget, _AutoGenId):
         r = self._diag.run()
         self._diag.hide()
         if r == gtk.RESPONSE_ACCEPT:
-            return self._diag.get_filename()
+            if self.multiple:
+                return self._diag.get_filenames()
+            else:
+                return self._diag.get_filename()
         else:
             return None
 
