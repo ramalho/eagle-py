@@ -1962,7 +1962,7 @@ class Toolbar(object):
         def set_tooltip(self, value):
             self._tooltip = value or ""
             if self._wid and self.app and self._tooltip:
-                self._wid.set_tooltip(self.app._tooltips, self._tooltip)
+                self._wid.set_tooltip_text(self._tooltip)
 
         def get_tooltip(self):
             return self._tooltip
@@ -1985,7 +1985,7 @@ class Toolbar(object):
             if v is None:
                 self.__ro_app = value
                 if self._wid:
-                    self._wid.set_tooltip(value._tooltips, self.tooltip)
+                    self._wid.set_tooltip_text(self.tooltip)
             else:
                 raise Exception("Read Only property 'app'.")
         app = property(_get_app, _set_app)
@@ -2345,7 +2345,6 @@ class App(_EGObject, _AutoGenId):
         self._win = hildon.Window()
         _prg.add_window(self._win)
         self._win_in_fullscreen = False
-        self._tooltips = gtk.Tooltips()
 
         self._master_layout = gtk.VBox(False)
         self._master_layout.set_border_width(0)
